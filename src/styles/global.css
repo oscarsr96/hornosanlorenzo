@@ -57,7 +57,7 @@ a {
   color: inherit;
   text-decoration: none;
 }
-a:hover {
+:where(p, li, dd, blockquote) a:hover {
   color: var(--color-accent-dark);
 }
 
