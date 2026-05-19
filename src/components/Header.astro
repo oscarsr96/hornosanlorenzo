@@ -89,8 +89,23 @@ const here = Astro.url.pathname;
   >
     <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 text-sm font-semibold uppercase tracking-[0.12em]">
       {links.map((l) => (
-        <a href={l.href} class="py-2 text-white/95">{l.label}</a>
+        <a href={l.href} data-mobile-nav-link class="py-2 text-white/95">{l.label}</a>
       ))}
     </div>
   </nav>
 </header>
+
+<script>
+  const closeMobileNav = () => {
+    document.getElementById("mobile-nav")?.classList.add("hidden");
+  };
+
+  // Close immediately on tap (before navigation finishes)
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("[data-mobile-nav-link]")) closeMobileNav();
+  });
+
+  // Also close after every view-transition page swap (covers back/forward)
+  document.addEventListener("astro:page-load", closeMobileNav);
+</script>
