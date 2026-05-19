@@ -46,7 +46,7 @@ export default function AddToCart({
         onClick={onAdd}
         style={{
           background: "var(--color-ink)",
-          color: "var(--color-cream)",
+          color: "white",
           border: "none",
           padding: "0.5rem 1rem",
           borderRadius: 9999,
@@ -176,7 +176,7 @@ export default function AddToCart({
         onClick={onAdd}
         style={{
           background: "var(--color-ink)",
-          color: "var(--color-cream)",
+          color: "white",
           border: "none",
           padding: "0.875rem 1.5rem",
           borderRadius: 9999,

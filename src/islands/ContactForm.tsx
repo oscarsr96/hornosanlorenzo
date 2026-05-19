@@ -122,7 +122,7 @@ export default function ContactForm() {
         disabled={!canSend}
         style={{
           background: canSend ? "var(--color-ink)" : "var(--color-ink-muted)",
-          color: "var(--color-cream)",
+          color: "white",
           border: "none",
           padding: "0.875rem 1.5rem",
           borderRadius: 9999,

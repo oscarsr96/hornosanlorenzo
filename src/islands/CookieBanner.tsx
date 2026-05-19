@@ -84,7 +84,7 @@ export default function CookieBanner() {
             style={{
               border: "none",
               background: "var(--color-cream)",
-              color: "var(--color-ink)",
+              color: "var(--color-hot)",
               padding: "0.5rem 1rem",
               borderRadius: 9999,
               cursor: "pointer",

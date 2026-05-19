@@ -12,7 +12,7 @@ export default function CartBadge() {
         alignItems: "center",
         gap: "0.5rem",
         background: "var(--color-ink)",
-        color: "var(--color-cream)",
+        color: "white",
         padding: "0.5rem 0.875rem",
         borderRadius: 9999,
         fontSize: 13,

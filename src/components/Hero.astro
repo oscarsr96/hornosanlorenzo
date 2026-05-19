@@ -26,12 +26,12 @@ const { eyebrow, title, italicTail, body, image, imageAlt, primaryCta, secondary
       {body && <p class="mt-5 max-w-md text-[color:var(--color-ink-muted)] text-lg">{body}</p>}
       <div class="mt-7 flex flex-wrap gap-3">
         {primaryCta && (
-          <a href={primaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full bg-[color:var(--color-ink)] text-[color:var(--color-cream)] font-semibold hover:scale-[1.02] transition-transform">
+          <a href={primaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full bg-[color:var(--color-ink)] text-white font-semibold hover:scale-[1.02] transition-transform">
             {primaryCta.label} →
           </a>
         )}
         {secondaryCta && (
-          <a href={secondaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full border border-[color:var(--color-ink)] text-[color:var(--color-ink)] font-semibold">
+          <a href={secondaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full border-2 border-[color:var(--color-hot)] text-[color:var(--color-hot)] font-semibold">
             {secondaryCta.label}
           </a>
         )}
