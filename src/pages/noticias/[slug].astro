@@ -1,0 +1,52 @@
+---
+import { Image } from "astro:assets";
+import { getCollection, render } from "astro:content";
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import { formatDate } from "~/lib/format";
+import { site } from "~/data/site";
+
+export async function getStaticPaths() {
+  const items = await getCollection("noticias", ({ data }) => !data.draft);
+  return items.map((n) => ({ params: { slug: n.id }, props: { item: n } }));
+}
+
+const { item } = Astro.props;
+const { Content } = await render(item);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: item.data.title,
+  datePublished: item.data.date.toISOString(),
+  image: new URL(item.data.image.src, Astro.site).toString(),
+  publisher: {
+    "@type": "Organization",
+    name: site.name,
+    logo: { "@type": "ImageObject", url: new URL("/favicon.svg", Astro.site).toString() },
+  },
+};
+---
+<MarketingLayout
+  title={item.data.title}
+  description={item.data.excerpt}
+  type="article"
+  jsonLd={jsonLd}
+>
+  <article class="mx-auto max-w-3xl px-4 sm:px-6 py-12">
+    <nav aria-label="Breadcrumb" class="text-xs text-[color:var(--color-ink-muted)] uppercase tracking-widest mb-4">
+      <a href="/">Inicio</a> · <a href="/noticias">Noticias</a> · <span>{item.data.title}</span>
+    </nav>
+
+    <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">{formatDate(item.data.date)}</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">{item.data.title}</h1>
+    <p class="text-lg text-[color:var(--color-ink-muted)] mt-4">{item.data.excerpt}</p>
+
+    <div class="mt-8 rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
+      <Image src={item.data.image} alt={item.data.imageAlt} widths={[600, 900, 1200]} sizes="(min-width:768px) 720px, 100vw" class="w-full h-auto" />
+    </div>
+
+    <div class="prose prose-stone mt-8 max-w-none [&_p]:my-4 text-[color:var(--color-ink)]">
+      <Content />
+    </div>
+  </article>
+</MarketingLayout>
