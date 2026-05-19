@@ -1,12 +1,104 @@
 ---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import Hero from "~/components/Hero.astro";
+import PromoBanner from "~/components/PromoBanner.astro";
+import ProductCard from "~/components/ProductCard.astro";
+import ServiceCard from "~/components/ServiceCard.astro";
+import StoreCard from "~/components/StoreCard.astro";
+import SectionLabel from "~/components/SectionLabel.astro";
+import { getCollection } from "astro:content";
+import { services } from "~/data/services";
+import { stores } from "~/data/stores";
+import { site } from "~/data/site";
+
+const productsAll = await getCollection("products");
+const featured = productsAll
+  .filter((p) => p.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 6);
+
+const heroImage = (await import("../../public/images/hero/hero-pan.jpg")).default;
+
+const localBizJsonLd = stores.map((s) => ({
+  "@context": "https://schema.org",
+  "@type": "Bakery",
+  name: s.name,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: s.address,
+    addressLocality: s.city,
+    postalCode: s.postal,
+    addressCountry: "ES",
+  },
+  telephone: s.phone,
+  geo: { "@type": "GeoCoordinates", latitude: s.coords.lat, longitude: s.coords.lng },
+  openingHours: s.hoursText,
+}));
 ---
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Horno San Lorenzo — bootstrap</title>
-  </head>
-  <body>
-    <p>Bootstrap OK. Replaced in Task 19.</p>
-  </body>
-</html>
+<MarketingLayout
+  title={site.name}
+  description={site.tagline}
+  jsonLd={localBizJsonLd}
+>
+  <Hero
+    eyebrow="Desde 1986"
+    title="Pan de pueblo,"
+    italicTail="hecho a mano."
+    body="Masa madre, fermentación lenta y harinas trazables. Lo de siempre, presentado con respeto."
+    image={heroImage}
+    imageAlt="Pan recién horneado sobre tabla de madera"
+    primaryCta={{ href: "/catalogo", label: "Ver catálogo" }}
+    secondaryCta={{ href: "/tiendas", label: "Nuestras tiendas" }}
+  />
+
+  <PromoBanner
+    label="Temporada · diciembre"
+    title="Roscón de Reyes — reservas abiertas"
+    ctaHref="/catalogo/roscon-de-reyes"
+    ctaLabel="Reservar"
+  />
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <div class="flex items-end justify-between gap-4 mb-8">
+      <div>
+        <SectionLabel number="01" label="Lo que más se vende" />
+        <h2 class="text-3xl sm:text-4xl mt-2">Nuestros imprescindibles</h2>
+      </div>
+      <a href="/catalogo" class="text-sm font-semibold underline">Ver todo el catálogo →</a>
+    </div>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {featured.map((p) => (
+        <ProductCard
+          slug={p.id}
+          name={p.data.name}
+          category={p.data.category}
+          image={p.data.image}
+          imageAlt={p.data.imageAlt}
+          shortDescription={p.data.shortDescription}
+          priceCents={p.data.priceCents}
+          unit={p.data.unit}
+          variants={p.data.variants}
+        />
+      ))}
+    </div>
+  </section>
+
+  <section class="bg-[color:var(--color-cream)]">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+      <SectionLabel number="02" label="Lo que hacemos" />
+      <h2 class="text-3xl sm:text-4xl mt-2">Servicios</h2>
+      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">No solo vendemos en tienda — también llevamos pan a casa, atendemos eventos y servimos a otros restaurantes.</p>
+      <div class="mt-8 grid gap-5 md:grid-cols-3">
+        {services.map((s) => <ServiceCard service={s} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <SectionLabel number="03" label="Dónde estamos" />
+    <h2 class="text-3xl sm:text-4xl mt-2">Dos tiendas en Madrid</h2>
+    <div class="mt-8 grid gap-8">
+      {stores.map((s) => <StoreCard store={s} />)}
+    </div>
+  </section>
+</MarketingLayout>
