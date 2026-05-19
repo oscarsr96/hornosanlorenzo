@@ -14,57 +14,82 @@ const links = [
 const here = Astro.url.pathname;
 ---
 <header
-  class="border-b border-[color:var(--color-line)] bg-[color:var(--color-cream)] sticky top-0 z-50 backdrop-blur"
+  class="border-b border-[color:var(--color-line)] sticky top-0 z-50 backdrop-blur"
   transition:persist
 >
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-    <a href="/" class="flex items-center gap-3 leading-none" aria-label={`${site.name} — inicio`}>
-      <img
-        src="/logo.png"
-        alt="Horno San Lorenzo"
-        width="1336"
-        height="552"
-        class="h-9 sm:h-10 w-auto"
-        decoding="async"
-        fetchpriority="high"
-      />
-      <span class="hidden sm:inline text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-ink-muted)] font-semibold">
-        desde 1986
-      </span>
-    </a>
+  <!-- Top band: logo -->
+  <div class="bg-[color:var(--color-cream)]">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <span aria-hidden="true"></span>
 
-    <nav aria-label="Principal" class="hidden md:flex items-center gap-5 text-sm">
-      {links.map((l) => (
-        <a
-          href={l.href}
-          aria-current={here.startsWith(l.href) ? "page" : undefined}
-          class:list={[
-            "text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]",
-            here.startsWith(l.href) && "text-[color:var(--color-ink)] font-semibold",
-          ]}
-        >
-          {l.label}
-        </a>
-      ))}
-    </nav>
-
-    <div class="flex items-center gap-3">
-      <CartBadge client:only="react" />
-      <button
-        class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-[color:var(--color-line)] text-[color:var(--color-ink)]"
-        aria-label="Abrir menú"
-        onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
-        type="button"
+      <a
+        href="/"
+        class="flex flex-col items-center leading-none"
+        aria-label={`${site.name} — inicio`}
       >
-        ☰
-      </button>
+        <img
+          src="/logo.png"
+          alt="Horno San Lorenzo"
+          width="1336"
+          height="552"
+          class="h-12 sm:h-16 w-auto"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <span class="mt-1 text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">
+          desde 1986
+        </span>
+      </a>
+
+      <div class="flex items-center justify-end gap-3">
+        <CartBadge client:only="react" />
+        <button
+          class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-[color:var(--color-line)] text-[color:var(--color-ink)]"
+          aria-label="Abrir menú"
+          onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+          type="button"
+        >
+          ☰
+        </button>
+      </div>
     </div>
   </div>
 
-  <nav id="mobile-nav" aria-label="Móvil" class="md:hidden hidden border-t border-[color:var(--color-line)] bg-[color:var(--color-cream)]">
-    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 text-sm">
+  <!-- Bottom band: red nav -->
+  <nav
+    aria-label="Principal"
+    class="hidden md:block bg-[color:var(--color-hot)] text-white"
+  >
+    <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-center gap-8 text-sm font-semibold uppercase tracking-[0.12em]">
+      {links.map((l) => {
+        const active = l.href === "/" ? here === "/" : here.startsWith(l.href);
+        return (
+          <li>
+            <a
+              href={l.href}
+              aria-current={active ? "page" : undefined}
+              class:list={[
+                "block py-3 text-white/90 hover:text-white border-b-2 border-transparent hover:border-white/60 transition-colors",
+                active && "text-white border-white",
+              ]}
+            >
+              {l.label}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </nav>
+
+  <!-- Mobile menu (collapsed) -->
+  <nav
+    id="mobile-nav"
+    aria-label="Móvil"
+    class="md:hidden hidden bg-[color:var(--color-hot)] text-white"
+  >
+    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 text-sm font-semibold uppercase tracking-[0.12em]">
       {links.map((l) => (
-        <a href={l.href} class="py-1 text-[color:var(--color-ink)]">{l.label}</a>
+        <a href={l.href} class="py-2 text-white/95">{l.label}</a>
       ))}
     </div>
   </nav>
