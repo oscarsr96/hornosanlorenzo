@@ -1,0 +1,47 @@
+---
+import { Image } from "astro:assets";
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  italicTail?: string;
+  body?: string;
+  image: ImageMetadata | string;
+  imageAlt: string;
+  primaryCta?: { href: string; label: string };
+  secondaryCta?: { href: string; label: string };
+}
+const { eyebrow, title, italicTail, body, image, imageAlt, primaryCta, secondaryCta } = Astro.props;
+---
+<section class="relative bg-[color:var(--color-cream)] overflow-hidden">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-20 grid gap-10 md:grid-cols-2 items-center">
+    <div>
+      {eyebrow && (
+        <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold mb-3">{eyebrow}</p>
+      )}
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl leading-[0.95] text-[color:var(--color-ink)]">
+        {title}
+        {italicTail && <em class="italic text-[color:var(--color-accent-dark)] font-normal block">{italicTail}</em>}
+      </h1>
+      {body && <p class="mt-5 max-w-md text-[color:var(--color-ink-muted)] text-lg">{body}</p>}
+      <div class="mt-7 flex flex-wrap gap-3">
+        {primaryCta && (
+          <a href={primaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full bg-[color:var(--color-ink)] text-[color:var(--color-cream)] font-semibold hover:scale-[1.02] transition-transform">
+            {primaryCta.label} →
+          </a>
+        )}
+        {secondaryCta && (
+          <a href={secondaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full border border-[color:var(--color-ink)] text-[color:var(--color-ink)] font-semibold">
+            {secondaryCta.label}
+          </a>
+        )}
+      </div>
+    </div>
+    <div class="relative aspect-[4/3] md:aspect-[5/4] rounded-2xl overflow-hidden shadow-[var(--shadow-card)]">
+      {typeof image === "string"
+        ? <img src={image} alt={imageAlt} width="900" height="700" class="w-full h-full object-cover" />
+        : <Image src={image} alt={imageAlt} widths={[480, 800, 1200]} sizes="(min-width:768px) 600px, 100vw" class="w-full h-full object-cover" />
+      }
+    </div>
+  </div>
+</section>
