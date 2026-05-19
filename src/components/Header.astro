@@ -1,0 +1,65 @@
+---
+import CartBadge from "~/islands/CartBadge.tsx";
+import { site } from "~/data/site";
+
+const links = [
+  { href: "/catalogo",            label: "Catálogo" },
+  { href: "/servicios",           label: "Servicios" },
+  { href: "/noticias",            label: "Noticias" },
+  { href: "/tradicion-y-calidad", label: "Tradición" },
+  { href: "/tiendas",             label: "Tiendas" },
+  { href: "/contacto",            label: "Contacto" },
+];
+
+const here = Astro.url.pathname;
+---
+<header
+  class="border-b border-[color:var(--color-line)] bg-[color:var(--color-cream)] sticky top-0 z-50 backdrop-blur"
+  transition:persist
+>
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <a href="/" class="flex flex-col leading-none" aria-label={`${site.name} — inicio`}>
+      <span class="font-[family-name:var(--font-display)] italic text-[color:var(--color-ink)] text-lg sm:text-xl font-semibold">
+        Horno San Lorenzo
+      </span>
+      <span class="text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-ink-muted)] mt-0.5 font-semibold">
+        desde 1986
+      </span>
+    </a>
+
+    <nav aria-label="Principal" class="hidden md:flex items-center gap-5 text-sm">
+      {links.map((l) => (
+        <a
+          href={l.href}
+          aria-current={here.startsWith(l.href) ? "page" : undefined}
+          class:list={[
+            "text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]",
+            here.startsWith(l.href) && "text-[color:var(--color-ink)] font-semibold",
+          ]}
+        >
+          {l.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <CartBadge client:only="react" />
+      <button
+        class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-[color:var(--color-line)] text-[color:var(--color-ink)]"
+        aria-label="Abrir menú"
+        onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+        type="button"
+      >
+        ☰
+      </button>
+    </div>
+  </div>
+
+  <nav id="mobile-nav" aria-label="Móvil" class="md:hidden hidden border-t border-[color:var(--color-line)] bg-[color:var(--color-cream)]">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 text-sm">
+      {links.map((l) => (
+        <a href={l.href} class="py-1 text-[color:var(--color-ink)]">{l.label}</a>
+      ))}
+    </div>
+  </nav>
+</header>

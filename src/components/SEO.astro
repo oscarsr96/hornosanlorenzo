@@ -48,5 +48,5 @@ const jsonLdItems = jsonLd
 <meta name="geo.placename" content="Alcobendas; Pozuelo de Alarcón" />
 
 {jsonLdItems.map((item) => (
-  <script type="application/ld+json" set:html={JSON.stringify(item)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(item)} />
 ))}
