@@ -22,7 +22,7 @@ const orgJsonLd = {
   "@type": "Organization",
   name: site.name,
   url: site.url,
-  logo: new URL("/favicon.svg", Astro.site ?? site.url).toString(),
+  logo: new URL("/logo.png", Astro.site ?? site.url).toString(),
   foundingDate: String(site.founded),
   sameAs: [site.social.instagram, site.social.facebook],
 };

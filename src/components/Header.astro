@@ -18,11 +18,17 @@ const here = Astro.url.pathname;
   transition:persist
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-    <a href="/" class="flex flex-col leading-none" aria-label={`${site.name} — inicio`}>
-      <span class="font-[family-name:var(--font-display)] italic text-[color:var(--color-ink)] text-lg sm:text-xl font-semibold">
-        Horno San Lorenzo
-      </span>
-      <span class="text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-ink-muted)] mt-0.5 font-semibold">
+    <a href="/" class="flex items-center gap-3 leading-none" aria-label={`${site.name} — inicio`}>
+      <img
+        src="/logo.png"
+        alt="Horno San Lorenzo"
+        width="1336"
+        height="552"
+        class="h-9 sm:h-10 w-auto"
+        decoding="async"
+        fetchpriority="high"
+      />
+      <span class="hidden sm:inline text-[10px] uppercase tracking-[0.2em] text-[color:var(--color-ink-muted)] font-semibold">
         desde 1986
       </span>
     </a>
