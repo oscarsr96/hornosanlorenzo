@@ -1,0 +1,25 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import ServiceCard from "~/components/ServiceCard.astro";
+import { services } from "~/data/services";
+---
+<MarketingLayout
+  title="Servicios"
+  description="A domicilio, catering y distribución a hostelería. Atendemos a particulares y empresas."
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Servicios</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Lo que ofrecemos.</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-2xl">Servimos a particulares y a empresas: a domicilio, catering para eventos y distribución profesional a la hostelería madrileña.</p>
+
+    <div class="mt-10 grid gap-6 md:grid-cols-3">
+      {services.map((s) => <ServiceCard service={s} />)}
+    </div>
+
+    <div class="mt-16 bg-[color:var(--color-cream)] rounded-[var(--radius-card)] p-8 sm:p-12 text-center">
+      <h2 class="text-3xl sm:text-4xl">¿Necesitas un presupuesto?</h2>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl mx-auto">Cuéntanos qué tienes en mente y te respondemos en menos de 24 horas.</p>
+      <a href="/contacto" class="inline-block mt-6 bg-[color:var(--color-ink)] text-[color:var(--color-cream)] px-6 py-3 rounded-full font-semibold">Hablamos →</a>
+    </div>
+  </section>
+</MarketingLayout>

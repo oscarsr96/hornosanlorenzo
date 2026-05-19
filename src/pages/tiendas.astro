@@ -1,0 +1,35 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import StoreCard from "~/components/StoreCard.astro";
+import { stores } from "~/data/stores";
+
+const jsonLd = stores.map((s) => ({
+  "@context": "https://schema.org",
+  "@type": "Bakery",
+  name: s.name,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: s.address,
+    addressLocality: s.city,
+    postalCode: s.postal,
+    addressCountry: "ES",
+  },
+  telephone: s.phone,
+  email: s.email,
+  geo: { "@type": "GeoCoordinates", latitude: s.coords.lat, longitude: s.coords.lng },
+  openingHours: s.hoursText,
+}));
+---
+<MarketingLayout
+  title="Tiendas"
+  description="Dos tiendas en Madrid: Alcobendas (central) y Pozuelo de Alarcón."
+  jsonLd={jsonLd}
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Tiendas</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Dos sitios donde encontrarnos.</h1>
+    <div class="mt-10 grid gap-8">
+      {stores.map((s) => <StoreCard store={s} />)}
+    </div>
+  </section>
+</MarketingLayout>
