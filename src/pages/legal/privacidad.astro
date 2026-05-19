@@ -1,0 +1,29 @@
+---
+import LegalLayout from "~/layouts/LegalLayout.astro";
+import { site } from "~/data/site";
+---
+<LegalLayout title="Política de privacidad" description="Cómo tratamos tus datos cuando contactas con nosotros.">
+  <p>
+    Esta política regula el tratamiento de datos personales que se realiza a través del formulario de contacto del sitio.
+  </p>
+  <h2>Responsable del tratamiento</h2>
+  <p>Horno San Lorenzo (datos completos en el <a href="/legal/aviso-legal">aviso legal</a>).</p>
+  <h2>Datos que recogemos</h2>
+  <ul>
+    <li>Nombre y apellidos.</li>
+    <li>Email.</li>
+    <li>Teléfono (opcional).</li>
+    <li>Contenido del mensaje.</li>
+  </ul>
+  <h2>Finalidad</h2>
+  <p>Responder a tu consulta. No usamos tus datos para marketing ni los cedemos a terceros.</p>
+  <h2>Base legal</h2>
+  <p>Consentimiento expreso al marcar la casilla del formulario.</p>
+  <h2>Plazo de conservación</h2>
+  <p>Hasta la resolución de la consulta y, posteriormente, durante el plazo legal de prescripción de obligaciones.</p>
+  <h2>Tus derechos</h2>
+  <p>
+    Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a
+    <a href={`mailto:${site.email}`}>{site.email}</a>. También puedes reclamar ante la Agencia Española de Protección de Datos.
+  </p>
+</LegalLayout>
