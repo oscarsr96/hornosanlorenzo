@@ -1,0 +1,35 @@
+---
+import { Image } from "astro:assets";
+import { formatDate } from "~/lib/format";
+
+interface Props {
+  slug: string;
+  title: string;
+  excerpt: string;
+  date: Date;
+  image: ImageMetadata;
+  imageAlt: string;
+}
+const { slug, title, excerpt, date, image, imageAlt } = Astro.props;
+---
+<article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)]">
+  <a href={`/noticias/${slug}`} class="block">
+    <div class="aspect-[16/10] overflow-hidden">
+      <Image
+        src={image}
+        alt={imageAlt}
+        widths={[400, 800]}
+        sizes="(min-width:768px) 400px, 100vw"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+    </div>
+  </a>
+  <div class="p-5">
+    <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">{formatDate(date)}</p>
+    <h3 class="font-[family-name:var(--font-display)] text-xl mt-1">
+      <a href={`/noticias/${slug}`} class="hover:text-[color:var(--color-accent-dark)]">{title}</a>
+    </h3>
+    <p class="text-sm text-[color:var(--color-ink-muted)] mt-2 line-clamp-3">{excerpt}</p>
+    <a href={`/noticias/${slug}`} class="inline-block mt-3 text-sm text-[color:var(--color-accent-dark)] font-semibold">Leer más →</a>
+  </div>
+</article>

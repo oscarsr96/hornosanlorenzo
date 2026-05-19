@@ -1,0 +1,35 @@
+---
+import MapEmbed from "~/components/MapEmbed.astro";
+import type { Store } from "~/data/stores";
+
+interface Props { store: Store; }
+const { store } = Astro.props;
+---
+<article class="grid gap-6 md:grid-cols-2 items-start bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] p-5 sm:p-8 shadow-[var(--shadow-card)]">
+  <div>
+    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">{store.shortName}</p>
+    <h2 class="text-2xl sm:text-3xl mt-1">{store.name}</h2>
+    <p class="text-[color:var(--color-ink-muted)] mt-3">{store.address}</p>
+    <p class="text-[color:var(--color-ink-muted)]">{store.postal} {store.city}</p>
+
+    <dl class="mt-5 grid gap-3 text-sm">
+      <div>
+        <dt class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Horario</dt>
+        <dd>{store.hoursText}</dd>
+      </div>
+      <div>
+        <dt class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Teléfono</dt>
+        <dd><a href={`tel:${store.phone}`}>{store.phoneDisplay}</a></dd>
+      </div>
+      <div>
+        <dt class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Email</dt>
+        <dd><a href={`mailto:${store.email}`}>{store.email}</a></dd>
+      </div>
+    </dl>
+
+    <a href={store.mapsLink} rel="noopener" target="_blank" class="inline-flex items-center mt-6 px-5 py-2.5 rounded-full bg-[color:var(--color-ink)] text-[color:var(--color-cream)] font-semibold">
+      Cómo llegar →
+    </a>
+  </div>
+  <MapEmbed embedUrl={store.mapsEmbed} externalUrl={store.mapsLink} title={store.shortName} />
+</article>

@@ -1,0 +1,51 @@
+---
+interface Props {
+  embedUrl: string;
+  externalUrl: string;
+  title: string;
+}
+const { embedUrl, externalUrl, title } = Astro.props;
+---
+<div class="relative aspect-[4/3] sm:aspect-[16/9] rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)] bg-[color:var(--color-cream)]" data-mapembed>
+  <noscript>
+    <a href={externalUrl} rel="noopener" target="_blank" class="absolute inset-0 grid place-items-center text-sm text-[color:var(--color-ink-muted)]">
+      Ver mapa en Google Maps →
+    </a>
+  </noscript>
+  <div class="absolute inset-0 grid place-items-center text-sm text-[color:var(--color-ink-muted)] text-center p-4" data-mapplaceholder>
+    <p>
+      Acepta cookies para ver el mapa,<br />
+      o <a href={externalUrl} rel="noopener" target="_blank" class="underline">ábrelo en Google Maps →</a>
+    </p>
+  </div>
+  <iframe
+    title={`Mapa — ${title}`}
+    src=""
+    data-embed-url={embedUrl}
+    width="100%"
+    height="100%"
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+    class="absolute inset-0 w-full h-full hidden"
+    data-mapframe
+  ></iframe>
+</div>
+
+<script>
+  function maybeLoadMaps() {
+    const consent = localStorage.getItem("hsl-cookie-consent");
+    if (consent !== "accepted") return;
+    document.querySelectorAll<HTMLElement>("[data-mapembed]").forEach((wrap) => {
+      const iframe = wrap.querySelector<HTMLIFrameElement>("[data-mapframe]");
+      const placeholder = wrap.querySelector<HTMLElement>("[data-mapplaceholder]");
+      if (!iframe || iframe.src) return;
+      iframe.src = iframe.dataset.embedUrl ?? "";
+      iframe.classList.remove("hidden");
+      placeholder?.classList.add("hidden");
+    });
+  }
+  maybeLoadMaps();
+  window.addEventListener("hsl-cookie-consent-change", (e) => {
+    if ((e as CustomEvent).detail === "accepted") maybeLoadMaps();
+  });
+</script>
