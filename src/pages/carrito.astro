@@ -1,0 +1,10 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import CartPage from "~/islands/CartPage.tsx";
+---
+<MarketingLayout
+  title="Tu pedido"
+  description="Revisa tu pedido y termínalo por WhatsApp."
+>
+  <CartPage client:only="react" />
+</MarketingLayout>
