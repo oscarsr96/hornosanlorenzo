@@ -1,0 +1,56 @@
+---
+import "~/styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import SEO from "~/components/SEO.astro";
+import SkipLink from "~/components/SkipLink.astro";
+import ToastHost from "~/islands/ToastHost.tsx";
+import Analytics from "@vercel/analytics/astro";
+import { site } from "~/data/site";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  canonical?: string;
+  type?: "website" | "article" | "product";
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
+}
+
+const props = Astro.props;
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: site.name,
+  url: site.url,
+  logo: new URL("/favicon.svg", Astro.site ?? site.url).toString(),
+  foundingDate: String(site.founded),
+  sameAs: [site.social.instagram, site.social.facebook],
+};
+const jsonLd = props.jsonLd
+  ? (Array.isArray(props.jsonLd) ? [orgJsonLd, ...props.jsonLd] : [orgJsonLd, props.jsonLd])
+  : [orgJsonLd];
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4ecdf" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <ClientRouter />
+    <SEO
+      title={props.title}
+      description={props.description}
+      image={props.image}
+      canonical={props.canonical}
+      type={props.type}
+      jsonLd={jsonLd}
+    />
+  </head>
+  <body>
+    <SkipLink />
+    <slot />
+    <ToastHost client:load />
+    <Analytics />
+  </body>
+</html>
