@@ -17,7 +17,7 @@ const featured = productsAll
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 6);
 
-const heroImage = (await import("../../public/images/productos/croissant-mantequilla.jpg")).default;
+const heroImage = (await import("../../public/images/productos/bolleria.jpeg")).default;
 
 const localBizJsonLd = stores.map((s) => ({
   "@context": "https://schema.org",
