@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { addItem, type CartItem } from "~/lib/cart";
 import { emitToast } from "~/islands/ToastHost";
+import { formatPriceCents } from "~/lib/format";
 
 type Variant = { id: string; label: string; priceCents: number };
 
@@ -8,6 +9,7 @@ type Props = {
   slug: string;
   name: string;
   unitPriceCents: number;
+  unit?: string;
   variants?: Variant[];
   compact?: boolean;
 };
@@ -16,6 +18,7 @@ export default function AddToCart({
   slug,
   name,
   unitPriceCents,
+  unit,
   variants,
   compact,
 }: Props) {
@@ -62,6 +65,29 @@ export default function AddToCart({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <p
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: "1.875rem",
+          lineHeight: 1.1,
+          margin: 0,
+        }}
+      >
+        {formatPriceCents(finalPrice)}
+        {unit && (
+          <span
+            style={{
+              fontSize: "0.875rem",
+              color: "var(--color-ink-muted)",
+              fontWeight: 400,
+            }}
+          >
+            {" "}
+            / {unit}
+          </span>
+        )}
+      </p>
+
       {variants && variants.length > 1 && (
         <fieldset style={{ border: "none", padding: 0 }}>
           <legend
@@ -186,11 +212,7 @@ export default function AddToCart({
           transition: "transform .15s",
         }}
       >
-        Añadir al pedido ·{" "}
-        {new Intl.NumberFormat("es-ES", {
-          style: "currency",
-          currency: "EUR",
-        }).format((finalPrice * qty) / 100)}
+        Añadir al pedido · {formatPriceCents(finalPrice * qty)}
       </button>
     </div>
   );
