@@ -34,9 +34,8 @@ export default function CartBadge() {
         alignItems: "center",
       }}
     >
-      {/* Mobile: icon-only with floating count */}
+      {/* Icon-only with floating count */}
       <span
-        className="md:hidden"
         style={{
           position: "relative",
           display: "inline-flex",
@@ -72,41 +71,6 @@ export default function CartBadge() {
             {totalQty}
           </span>
         )}
-      </span>
-
-      {/* Desktop: pill with label + count */}
-      <span
-        className="hidden md:inline-flex"
-        style={{
-          alignItems: "center",
-          gap: "0.5rem",
-          background: "var(--color-ink)",
-          color: "white",
-          padding: "0.5rem 0.875rem",
-          borderRadius: 9999,
-          fontSize: 13,
-          fontWeight: 600,
-        }}
-      >
-        <span>Mi pedido</span>
-        <span
-          style={{
-            background: hasItems
-              ? "var(--color-hot)"
-              : "var(--color-ink-muted)",
-            color: "white",
-            borderRadius: 9999,
-            minWidth: 22,
-            height: 22,
-            padding: "0 7px",
-            fontSize: 11,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {totalQty}
-        </span>
       </span>
     </a>
   );
