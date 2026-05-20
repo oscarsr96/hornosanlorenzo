@@ -20,7 +20,6 @@ const { embedUrl, externalUrl, title } = Astro.props;
   </div>
   <iframe
     title={`Mapa — ${title}`}
-    src=""
     data-embed-url={embedUrl}
     width="100%"
     height="100%"
@@ -38,7 +37,7 @@ const { embedUrl, externalUrl, title } = Astro.props;
     document.querySelectorAll<HTMLElement>("[data-mapembed]").forEach((wrap) => {
       const iframe = wrap.querySelector<HTMLIFrameElement>("[data-mapframe]");
       const placeholder = wrap.querySelector<HTMLElement>("[data-mapplaceholder]");
-      if (!iframe || iframe.src) return;
+      if (!iframe || iframe.getAttribute("src")) return;
       iframe.src = iframe.dataset.embedUrl ?? "";
       iframe.classList.remove("hidden");
       placeholder?.classList.add("hidden");
