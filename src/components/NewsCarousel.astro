@@ -1,0 +1,201 @@
+---
+import NewsCard from "~/components/NewsCard.astro";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  items: CollectionEntry<"noticias">[];
+}
+const { items } = Astro.props;
+---
+<div class="news-carousel" data-news-carousel>
+  <div class="news-carousel__track" data-track tabindex="0" aria-label="Noticias" role="region">
+    {items.map((n) => (
+      <div class="news-carousel__slide" data-slide>
+        <NewsCard
+          slug={n.id}
+          title={n.data.title}
+          excerpt={n.data.excerpt}
+          date={n.data.date}
+          image={n.data.image}
+          imageAlt={n.data.imageAlt}
+        />
+      </div>
+    ))}
+  </div>
+
+  <div class="news-carousel__controls">
+    <button type="button" class="news-carousel__arrow" data-prev aria-label="Noticia anterior">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="news-carousel__dots" data-dots role="tablist" aria-label="Ir a la noticia"></div>
+    <button type="button" class="news-carousel__arrow" data-next aria-label="Noticia siguiente">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  .news-carousel__track {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    position: relative;
+    padding-bottom: 0.25rem;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .news-carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+  .news-carousel__track:focus-visible {
+    outline: 2px solid var(--color-accent-dark);
+    outline-offset: 4px;
+    border-radius: var(--radius-card);
+  }
+  .news-carousel__slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+  @media (min-width: 640px) {
+    .news-carousel__slide {
+      flex-basis: calc((100% - 1.5rem) / 2);
+    }
+  }
+  @media (min-width: 1024px) {
+    .news-carousel__slide {
+      flex-basis: calc((100% - 3rem) / 3);
+    }
+  }
+
+  .news-carousel__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.75rem;
+  }
+  .news-carousel__arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .news-carousel__arrow:hover {
+    background: var(--color-ink);
+    color: white;
+  }
+  .news-carousel__dots {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .news-carousel__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 9999px;
+    border: none;
+    padding: 0;
+    background: var(--color-line);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .news-carousel__dot[aria-selected="true"] {
+    background: var(--color-hot);
+    transform: scale(1.3);
+  }
+</style>
+
+<script>
+  function initNewsCarousel(root: HTMLElement) {
+    const track = root.querySelector<HTMLElement>("[data-track]");
+    const dotsBox = root.querySelector<HTMLElement>("[data-dots]");
+    const prev = root.querySelector<HTMLButtonElement>("[data-prev]");
+    const next = root.querySelector<HTMLButtonElement>("[data-next]");
+    const slides = Array.from(root.querySelectorAll<HTMLElement>("[data-slide]"));
+    if (!track || !dotsBox || slides.length === 0) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Reachable scroll positions ("pages") depend on how many slides fit per view.
+    let pages: number[] = [];
+    let dots: HTMLButtonElement[] = [];
+
+    const buildPages = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      pages = slides
+        .map((s) => Math.min(s.offsetLeft, max))
+        .filter((x, i, arr) => arr.indexOf(x) === i); // unique left positions
+
+      dotsBox.innerHTML = "";
+      dots = pages.map((_, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "news-carousel__dot";
+        b.setAttribute("aria-label", `Ir al grupo ${i + 1}`);
+        b.addEventListener("click", () => goToPage(i));
+        dotsBox.appendChild(b);
+        return b;
+      });
+      syncDots();
+    };
+
+    const activePage = () => {
+      const x = track.scrollLeft;
+      let best = 0;
+      let min = Infinity;
+      pages.forEach((p, i) => {
+        const d = Math.abs(p - x);
+        if (d < min) { min = d; best = i; }
+      });
+      return best;
+    };
+
+    const syncDots = () => {
+      const active = activePage();
+      dots.forEach((d, i) => d.setAttribute("aria-selected", String(i === active)));
+    };
+
+    const goToPage = (i: number, smooth = true) => {
+      const idx = (i + pages.length) % pages.length;
+      track.scrollTo({ left: pages[idx], behavior: smooth ? "smooth" : "auto" });
+    };
+
+    prev?.addEventListener("click", () => goToPage(activePage() - 1));
+    next?.addEventListener("click", () => goToPage(activePage() + 1));
+
+    let raf = 0;
+    track.addEventListener("scroll", () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(syncDots);
+    });
+
+    let resizeTimer = 0;
+    window.addEventListener("resize", () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(buildPages, 150);
+    });
+
+    buildPages();
+
+    if (!reduceMotion) {
+      let timer = window.setInterval(() => goToPage(activePage() + 1), 5000);
+      const stop = () => { if (timer) { window.clearInterval(timer); timer = 0; } };
+      const start = () => { if (!timer) timer = window.setInterval(() => goToPage(activePage() + 1), 5000); };
+      root.addEventListener("pointerenter", stop);
+      root.addEventListener("pointerleave", start);
+      root.addEventListener("focusin", stop);
+      root.addEventListener("focusout", start);
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-news-carousel]").forEach(initNewsCarousel);
+</script>
