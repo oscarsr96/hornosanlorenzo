@@ -1,5 +1,4 @@
 export const categoryIds = [
-  "panes",
   "bolleria",
   "tartas",
   "salado",
@@ -15,7 +14,6 @@ export type Category = {
 };
 
 export const categories: readonly Category[] = [
-  { id: "panes", label: "Panes", short: "Masa madre, fermentación lenta" },
   {
     id: "bolleria",
     label: "Bollería",

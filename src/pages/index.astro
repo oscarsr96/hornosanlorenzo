@@ -17,7 +17,7 @@ const featured = productsAll
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 6);
 
-const heroImage = (await import("../../public/images/hero/hero-pan.jpg")).default;
+const heroImage = (await import("../../public/images/productos/croissant-mantequilla.jpg")).default;
 
 const localBizJsonLd = stores.map((s) => ({
   "@context": "https://schema.org",
@@ -42,11 +42,11 @@ const localBizJsonLd = stores.map((s) => ({
 >
   <Hero
     eyebrow="Desde 1986"
-    title="Pan de pueblo,"
-    italicTail="hecho a mano."
-    body="Masa madre, fermentación lenta y harinas trazables. Lo de siempre, presentado con respeto."
+    title="Pastelería artesana,"
+    italicTail="hecha cada día."
+    body="Bollería, tartas y dulces de obrador. Mantequilla de verdad, recetas de siempre y horno cada mañana."
     image={heroImage}
-    imageAlt="Pan recién horneado sobre tabla de madera"
+    imageAlt="Croissants de mantequilla recién horneados"
     primaryCta={{ href: "/catalogo", label: "Ver catálogo" }}
     secondaryCta={{ href: "/tiendas", label: "Nuestras tiendas" }}
   />
@@ -87,7 +87,7 @@ const localBizJsonLd = stores.map((s) => ({
     <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
       <SectionLabel number="02" label="Lo que hacemos" />
       <h2 class="text-3xl sm:text-4xl mt-2">Servicios</h2>
-      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">No solo vendemos en tienda — también llevamos pan a casa, atendemos eventos y servimos a otros restaurantes.</p>
+      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">No solo vendemos en tienda — también llevamos nuestros dulces a casa, atendemos eventos y servimos a otros restaurantes.</p>
       <div class="mt-8 grid gap-5 md:grid-cols-3">
         {services.map((s) => <ServiceCard service={s} />)}
       </div>

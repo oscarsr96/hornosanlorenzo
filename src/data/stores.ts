@@ -57,7 +57,7 @@ export const stores: readonly Store[] = [
       "https://www.google.com/maps?q=Avenida+Europa+28+Pozuelo+de+Alarcon",
     coords: { lat: 40.4378, lng: -3.809 },
     image: "/images/tiendas/pozuelo.jpg",
-    imageAlt: "Tienda de Pozuelo, escaparate con bollería y pan",
+    imageAlt: "Tienda de Pozuelo, escaparate con bollería y tartas",
   },
 ] as const;
 

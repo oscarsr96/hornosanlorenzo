@@ -10,7 +10,7 @@ export const services: readonly Service[] = [
   {
     id: "domicilio",
     title: "Servicio a domicilio",
-    short: "Recibe el pan en casa, de lunes a sábado.",
+    short: "Recibe tus dulces en casa, de lunes a sábado.",
     body: "Pedidos por WhatsApp o teléfono antes de las 11:00, entrega esa misma tarde en Alcobendas, Pozuelo y municipios cercanos. Pedido mínimo 15 €.",
     icon: "truck",
   },
@@ -25,7 +25,7 @@ export const services: readonly Service[] = [
     id: "horeca",
     title: "Distribución a hostelería",
     short: "Bares, restaurantes, hoteles y cafeterías.",
-    body: "Reparto diario de pan, bollería y panecillos. Catálogo profesional, precios mayoristas, facturación mensual. Cubrimos toda la zona norte y oeste de Madrid.",
+    body: "Reparto diario de bollería, hojaldres y tartas. Catálogo profesional, precios mayoristas, facturación mensual. Cubrimos toda la zona norte y oeste de Madrid.",
     icon: "store",
   },
 ] as const;

@@ -1,14 +1,14 @@
 export const tradicion = {
   intro:
-    "Desde 1986 horneamos en Madrid el mismo pan que aprendimos a hacer en casa: masa madre viva, fermentaciones largas, harinas que sabemos de dónde vienen.",
+    "Desde 1986 horneamos en Madrid la misma pastelería que aprendimos a hacer en casa: mantequilla de verdad, hojaldres laminados a mano y recetas que no cambian con las modas.",
   pillars: [
     {
-      title: "Masa madre, no acelerada",
-      body: "Fermentamos entre 18 y 24 horas según la pieza. El pan que sale del horno tiene corteza, alma y aguante para tres días sobre la mesa.",
+      title: "Mantequilla, nunca margarina",
+      body: "Hojaldres y bollería con mantequilla de verdad. Laminamos en frío, capa a capa, para que cada bocado sea ligero y crujiente.",
     },
     {
-      title: "Harina española trazable",
-      body: "Trabajamos con molinos de Castilla y León y Aragón. Sabemos qué trigo es, dónde se cultivó y cómo se molió. Sin mezclas anónimas.",
+      title: "Ingredientes que reconoces",
+      body: "Huevo fresco, chocolate de cobertura, fruta de temporada. Sabemos qué entra en cada pieza. Sin mezclas anónimas.",
     },
     {
       title: "Sin atajos químicos",
@@ -16,11 +16,11 @@ export const tradicion = {
     },
     {
       title: "El equipo que sigue",
-      body: "Tres generaciones de panaderos. El obrador no para de noche para que la primera barra de la mañana esté caliente cuando abren las puertas.",
+      body: "Tres generaciones de pasteleros. El obrador no para de noche para que la bollería de la mañana esté recién hecha cuando abren las puertas.",
     },
   ],
   certifications: [
-    "Pan 100 % artesano (Real Decreto 308/2019)",
+    "Pastelería y bollería 100 % artesana",
     "Inscritos en el registro sanitario de Madrid desde 1986",
   ],
 } as const;

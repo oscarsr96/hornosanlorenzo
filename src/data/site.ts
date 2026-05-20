@@ -1,7 +1,7 @@
 export const site = {
   name: "Horno San Lorenzo",
   short: "HSL",
-  tagline: "Pan de pueblo, hecho a mano. Desde 1986.",
+  tagline: "Pastelería artesana, hecha cada día. Desde 1986.",
   founded: 1986,
   url: import.meta.env.PUBLIC_SITE_URL,
   whatsapp: import.meta.env.PUBLIC_WHATSAPP_NUMBER,
