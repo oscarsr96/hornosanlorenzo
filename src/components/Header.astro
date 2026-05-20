@@ -92,6 +92,7 @@ const here = Astro.url.pathname;
       {links.map((l) => (
         <a href={l.href} data-mobile-nav-link class="py-2 text-white/95">{l.label}</a>
       ))}
+      <SocialLinks class="mt-2 pt-3 border-t border-white/20" />
     </div>
   </nav>
 </header>
