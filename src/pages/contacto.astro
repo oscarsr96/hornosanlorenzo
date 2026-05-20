@@ -1,8 +1,8 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import ContactForm from "~/islands/ContactForm.tsx";
+import SocialLinks from "~/components/SocialLinks.astro";
 import { stores } from "~/data/stores";
-import { site } from "~/data/site";
 ---
 <MarketingLayout
   title="Contacto"
@@ -24,7 +24,7 @@ import { site } from "~/data/site";
         ))}
         <li>
           <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Redes</p>
-          <p class="mt-1"><a href={site.social.instagram} rel="noopener" target="_blank">Instagram</a> · <a href={site.social.facebook} rel="noopener" target="_blank">Facebook</a></p>
+          <SocialLinks class="mt-2" />
         </li>
       </ul>
     </div>
