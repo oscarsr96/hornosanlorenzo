@@ -1,60 +1,13 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useCart } from "~/hooks/useCart";
-import { stores, type StoreId } from "~/data/stores";
-import {
-  buildWhatsAppMessage,
-  buildWhatsAppUrl,
-  type PickupInfo,
-} from "~/lib/whatsapp";
 import { formatPriceCents } from "~/lib/format";
-
-const PHONE = import.meta.env.PUBLIC_WHATSAPP_NUMBER;
-
-function nextNDays(start: Date, n: number) {
-  const days: string[] = [];
-  const d = new Date(start);
-  d.setDate(d.getDate() + 1);
-  for (let i = 0; i < n; i++) {
-    days.push(d.toISOString().slice(0, 10));
-    d.setDate(d.getDate() + 1);
-  }
-  return days;
-}
+import { MODE_COPY } from "~/lib/entrega";
+import CheckoutFlow from "~/islands/CheckoutFlow";
 
 export default function CartPage() {
   const { cart, totalCents, totalQty, updateQty, removeItem, clearCart } =
     useCart();
-
-  const [storeId, setStoreId] = useState<StoreId>("alcobendas");
-  const [dateISO, setDateISO] = useState<string>("");
-  const [slot, setSlot] = useState<PickupInfo["slot"]>("morning");
-  const [name, setName] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
-
-  const store = stores.find((s) => s.id === storeId)!;
-  const availableDates = useMemo(() => {
-    const days = nextNDays(new Date(), 7);
-    return days.filter((d) => {
-      const dow = new Date(d + "T00:00:00").getDay();
-      return store.openDays.includes(dow);
-    });
-  }, [store]);
-
-  const canSubmit = cart.items.length > 0 && dateISO !== "";
-
-  function submit() {
-    if (!canSubmit) return;
-    const pickup: PickupInfo = {
-      storeId,
-      dateISO,
-      slot,
-      name: name.trim() || undefined,
-      notes: notes.trim() || undefined,
-    };
-    const msg = buildWhatsAppMessage(cart, pickup);
-    const url = buildWhatsAppUrl(PHONE, msg);
-    window.location.href = url;
-  }
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   if (cart.items.length === 0) {
     return (
@@ -78,17 +31,7 @@ export default function CartPage() {
         <p style={{ color: "var(--color-ink-muted)", marginBottom: 24 }}>
           Empieza por el catálogo y añade lo que necesites.
         </p>
-        <a
-          href="/catalogo"
-          style={{
-            display: "inline-block",
-            background: "var(--color-caramelo)",
-            color: "var(--color-leche)",
-            padding: "0.875rem 1.5rem",
-            borderRadius: 0,
-            fontWeight: 700,
-          }}
-        >
+        <a href="/catalogo" className="btn btn-primario">
           Ver catálogo →
         </a>
       </section>
@@ -97,17 +40,7 @@ export default function CartPage() {
 
   return (
     <section style={{ maxWidth: 960, margin: "0 auto", padding: "2rem 1rem" }}>
-      <p
-        style={{
-          fontSize: 11,
-          textTransform: "uppercase",
-          letterSpacing: "0.25em",
-          color: "var(--color-ink-muted)",
-          fontWeight: 600,
-        }}
-      >
-        Tu pedido
-      </p>
+      <p className="numeracion">Tu pedido</p>
       <h1
         style={{
           fontFamily: "var(--font-display)",
@@ -127,9 +60,8 @@ export default function CartPage() {
               gridTemplateColumns: "1fr auto",
               gap: 16,
               padding: 16,
-              border: "1px solid var(--color-line)",
-              borderRadius: 0,
-              background: "var(--color-paper)",
+              border: "1px solid var(--color-avellana)",
+              background: "var(--color-leche)",
             }}
           >
             <div>
@@ -163,18 +95,17 @@ export default function CartPage() {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  border: "1px solid var(--color-line)",
-                  borderRadius: 0,
+                  border: "1px solid var(--color-avellana)",
                 }}
               >
                 <button
                   onClick={() =>
                     updateQty(item.slug, item.variantId, item.qty - 1)
                   }
-                  aria-label="−"
+                  aria-label={`Quitar una unidad de ${item.name}`}
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -191,10 +122,10 @@ export default function CartPage() {
                   onClick={() =>
                     updateQty(item.slug, item.variantId, item.qty + 1)
                   }
-                  aria-label="+"
+                  aria-label={`Añadir una unidad de ${item.name}`}
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -250,216 +181,37 @@ export default function CartPage() {
         </span>
       </div>
 
-      <hr
+      {/* Condiciones de entrega del brief, antes de entrar al flujo */}
+      <div
         style={{
-          margin: "32px 0",
-          border: "none",
-          borderTop: "1px solid var(--color-line)",
+          marginTop: 24,
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
         }}
-      />
-
-      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28 }}>
-        Recogida
-      </h2>
-
-      <fieldset style={{ border: "none", padding: 0, marginTop: 16 }}>
-        <legend
-          style={{
-            fontSize: 11,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "var(--color-ink-muted)",
-            fontWeight: 600,
-          }}
-        >
-          📍 Tienda
-        </legend>
-        <div
-          style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}
-        >
-          {stores.map((s) => (
-            <label
-              key={s.id}
+      >
+        {(["domicilio", "recogida"] as const).map((m) => (
+          <div
+            key={m}
+            style={{
+              padding: "1rem 1.25rem",
+              border: "1px solid var(--color-avellana)",
+              background: "var(--color-latte)",
+            }}
+          >
+            <p className="numeracion">{MODE_COPY[m].label}</p>
+            <p
               style={{
-                padding: "0.75rem 1rem",
-                border:
-                  storeId === s.id
-                    ? "2px solid var(--color-ink)"
-                    : "1px solid var(--color-line)",
-                borderRadius: 0,
-                cursor: "pointer",
-                background: storeId === s.id ? "var(--color-cream)" : "white",
+                marginTop: 8,
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "var(--color-ink-muted)",
               }}
             >
-              <input
-                type="radio"
-                name="store"
-                value={s.id}
-                checked={storeId === s.id}
-                onChange={() => {
-                  setStoreId(s.id);
-                  setDateISO("");
-                }}
-                style={{ position: "absolute", opacity: 0 }}
-              />
-              <strong style={{ display: "block" }}>{s.shortName}</strong>
-              <span style={{ fontSize: 12, color: "var(--color-ink-muted)" }}>
-                {s.hoursText}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div style={{ marginTop: 24 }}>
-        <label
-          htmlFor="pickup-date"
-          style={{
-            fontSize: 11,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "var(--color-ink-muted)",
-            fontWeight: 600,
-          }}
-        >
-          📅 Día
-        </label>
-        <select
-          id="pickup-date"
-          value={dateISO}
-          onChange={(e) => setDateISO(e.target.value)}
-          style={{
-            display: "block",
-            marginTop: 8,
-            padding: "0.75rem 1rem",
-            border: "1px solid var(--color-line)",
-            borderRadius: 0,
-            background: "white",
-            fontSize: 14,
-            width: "100%",
-            maxWidth: 320,
-          }}
-        >
-          <option value="">Elige un día</option>
-          {availableDates.map((d) => (
-            <option key={d} value={d}>
-              {new Intl.DateTimeFormat("es-ES", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-              }).format(new Date(d + "T00:00:00"))}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <fieldset style={{ border: "none", padding: 0, marginTop: 24 }}>
-        <legend
-          style={{
-            fontSize: 11,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "var(--color-ink-muted)",
-            fontWeight: 600,
-          }}
-        >
-          🕘 Franja
-        </legend>
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          {[
-            { id: "morning", label: "Mañana" },
-            { id: "afternoon", label: "Tarde" },
-          ].map((s) => (
-            <label
-              key={s.id}
-              style={{
-                padding: "0.5rem 1rem",
-                border:
-                  slot === s.id
-                    ? "2px solid var(--color-ink)"
-                    : "1px solid var(--color-line)",
-                borderRadius: 0,
-                cursor: "pointer",
-                background: slot === s.id ? "var(--color-cream)" : "white",
-                fontSize: 14,
-              }}
-            >
-              <input
-                type="radio"
-                name="slot"
-                value={s.id}
-                checked={slot === s.id}
-                onChange={() => setSlot(s.id as PickupInfo["slot"])}
-                style={{ position: "absolute", opacity: 0 }}
-              />
-              {s.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div style={{ marginTop: 24 }}>
-        <label
-          htmlFor="pickup-name"
-          style={{
-            fontSize: 11,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "var(--color-ink-muted)",
-            fontWeight: 600,
-          }}
-        >
-          👤 Tu nombre (opcional)
-        </label>
-        <input
-          id="pickup-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Para que sepan quién pregunta"
-          style={{
-            display: "block",
-            marginTop: 8,
-            padding: "0.75rem 1rem",
-            border: "1px solid var(--color-line)",
-            borderRadius: 0,
-            width: "100%",
-            maxWidth: 320,
-            fontSize: 14,
-          }}
-        />
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        <label
-          htmlFor="pickup-notes"
-          style={{
-            fontSize: 11,
-            textTransform: "uppercase",
-            letterSpacing: "0.25em",
-            color: "var(--color-ink-muted)",
-            fontWeight: 600,
-          }}
-        >
-          📝 Notas (opcional)
-        </label>
-        <textarea
-          id="pickup-notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          placeholder="Alergias, indicaciones, lo que necesites"
-          style={{
-            display: "block",
-            marginTop: 8,
-            padding: "0.75rem 1rem",
-            border: "1px solid var(--color-line)",
-            borderRadius: 0,
-            width: "100%",
-            maxWidth: 480,
-            fontSize: 14,
-            fontFamily: "inherit",
-          }}
-        />
+              {MODE_COPY[m].body}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div
@@ -467,48 +219,18 @@ export default function CartPage() {
           position: "sticky",
           bottom: 16,
           marginTop: 32,
-          background: "var(--color-paper)",
+          background: "var(--color-leche)",
           padding: 16,
-          border: "1px solid var(--color-line)",
-          borderRadius: 0,
+          border: "1px solid var(--color-avellana)",
         }}
       >
         <button
-          onClick={submit}
-          disabled={!canSubmit}
-          style={{
-            width: "100%",
-            background: canSubmit
-              ? "var(--color-wa)"
-              : "var(--color-ink-muted)",
-            color: "var(--color-leche)",
-            border: "none",
-            padding: "1rem 1.5rem",
-            borderRadius: 0,
-            fontSize: 16,
-            fontWeight: 700,
-            cursor: canSubmit ? "pointer" : "not-allowed",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
+          onClick={() => setCheckoutOpen(true)}
+          className="btn btn-primario"
+          style={{ width: "100%", border: "none", fontSize: 16 }}
         >
-          ✓ Pedir por WhatsApp · {formatPriceCents(totalCents)}
+          Continuar con el pedido · {formatPriceCents(totalCents)}
         </button>
-        <p
-          style={{
-            marginTop: 8,
-            fontSize: 12,
-            color: "var(--color-ink-muted)",
-            fontStyle: "italic",
-            textAlign: "center",
-          }}
-        >
-          Al pulsar se abre WhatsApp con el pedido escrito. El horno te confirma
-          disponibilidad, precio final y hora exacta antes de prepararlo. Aún no
-          estás comprando.
-        </p>
       </div>
 
       <p style={{ textAlign: "center", marginTop: 16 }}>
@@ -528,6 +250,14 @@ export default function CartPage() {
           Vaciar carrito
         </button>
       </p>
+
+      {checkoutOpen && (
+        <CheckoutFlow
+          cart={cart}
+          totalCents={totalCents}
+          onClose={() => setCheckoutOpen(false)}
+        />
+      )}
     </section>
   );
 }
