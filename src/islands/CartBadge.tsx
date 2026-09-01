@@ -58,7 +58,7 @@ export default function CartBadge() {
               padding: "0 5px",
               background: "var(--color-hot)",
               color: "white",
-              borderRadius: 9999,
+              borderRadius: 0,
               fontSize: 10,
               fontWeight: 700,
               lineHeight: 1,

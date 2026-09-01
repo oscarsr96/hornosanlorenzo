@@ -1,0 +1,103 @@
+---
+/**
+ * El Sello — marca de origen circular.
+ * Brand guidelines Nº 11: completo ≥20 mm, reducido ≥10 mm.
+ * Dos versiones: "positivo" (disco teja sobre fondo claro) y
+ * "teja" (calado en leche, para usar sobre fondo rojo teja).
+ */
+interface Props {
+  variant?: "positivo" | "teja";
+  reducido?: boolean; // versión ≥10 mm: sin textos de anillo
+  class?: string;
+  title?: string;
+}
+const {
+  variant = "positivo",
+  reducido = false,
+  class: className = "",
+  title = "Horno San Lorenzo — obrador artesano, Madrid, desde 1986",
+} = Astro.props;
+
+const positivo = variant === "positivo";
+const banda = positivo ? "var(--color-teja)" : "transparent";
+const tinta = positivo ? "var(--color-leche)" : "var(--color-leche)";
+const disco = "var(--color-leche)";
+const interior = "var(--color-teja)";
+const uid = `sello-${Math.random().toString(36).slice(2, 8)}`;
+---
+<svg
+  viewBox="0 0 200 200"
+  class={className}
+  role="img"
+  aria-label={title}
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <path id={`${uid}-top`} d="M 22,100 A 78,78 0 0 1 178,100" fill="none" />
+    <path id={`${uid}-bot`} d="M 12,100 A 88,88 0 0 0 188,100" fill="none" />
+  </defs>
+
+  <!-- Banda exterior -->
+  <circle cx="100" cy="100" r="98" fill={banda} />
+  <circle cx="100" cy="100" r="98" fill="none" stroke={tinta} stroke-width="1.25" />
+  <circle cx="100" cy="100" r="93" fill="none" stroke={tinta} stroke-width="0.75" />
+
+  <!-- Disco interior -->
+  <circle cx="100" cy="100" r="69" fill={disco} />
+  <circle cx="100" cy="100" r="69" fill="none" stroke={tinta} stroke-width="1.25" />
+
+  {!reducido && (
+    <>
+      <!-- Wordmark en arco superior -->
+      <text
+        fill={tinta}
+        style="font-family:var(--font-display);font-size:18px;letter-spacing:2.2px"
+      >
+        <textPath href={`#${uid}-top`} startOffset="50%" text-anchor="middle">
+          San Lorenzo
+        </textPath>
+      </text>
+
+      <!-- Descriptor en arco inferior -->
+      <text
+        fill={tinta}
+        style="font-family:var(--font-body);font-weight:500;font-size:8.5px;letter-spacing:2.4px"
+      >
+        <textPath href={`#${uid}-bot`} startOffset="50%" text-anchor="middle">
+          OBRADOR ARTESANO · MADRID
+        </textPath>
+      </text>
+
+      <!-- Los puntos del sello -->
+      <circle cx="20" cy="100" r="2.4" fill={tinta} />
+      <circle cx="180" cy="100" r="2.4" fill={tinta} />
+    </>
+  )}
+
+  <!-- El arco del horno -->
+  <circle cx="100" cy="50" r="2.6" fill={interior} />
+  <path
+    d="M 82,110 L 82,80 A 18,18 0 0 1 118,80 L 118,110"
+    fill="none"
+    stroke={interior}
+    stroke-width="2.25"
+    stroke-linecap="square"
+  />
+  <path d="M 76,110 L 124,110" stroke={interior} stroke-width="2.25" stroke-linecap="square" />
+
+  <!-- desde 1986 -->
+  <text
+    x="100"
+    y="130"
+    text-anchor="middle"
+    fill={interior}
+    style="font-family:var(--font-display);font-style:italic;font-size:12px"
+  >desde</text>
+  <text
+    x="100"
+    y="156"
+    text-anchor="middle"
+    fill={interior}
+    style="font-family:var(--font-display);font-size:30px;letter-spacing:0.5px"
+  >1986</text>
+</svg>

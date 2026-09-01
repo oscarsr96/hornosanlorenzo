@@ -2,12 +2,14 @@
 import { site } from "~/data/site";
 import { stores } from "~/data/stores";
 import SocialLinks from "~/components/SocialLinks.astro";
+import Sello from "~/components/Sello.astro";
 const year = new Date().getFullYear();
 ---
 <footer class="bg-[color:var(--color-cream)] border-t border-[color:var(--color-line)] mt-24" transition:persist>
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-12 grid gap-8 md:grid-cols-4 text-sm">
     <div>
-      <p class="font-[family-name:var(--font-display)] italic text-lg text-[color:var(--color-ink)]">{site.name}</p>
+      <Sello class="w-20 h-20" />
+      <p class="mt-4 font-[family-name:var(--font-display)] italic text-lg text-[color:var(--color-ink)]">{site.name}</p>
       <p class="mt-2 text-[color:var(--color-ink-muted)] max-w-xs">{site.tagline}</p>
       <p class="mt-4 text-xs text-[color:var(--color-ink-muted)]">{site.noteForDemo}</p>
     </div>

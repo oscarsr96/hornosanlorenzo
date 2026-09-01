@@ -27,7 +27,7 @@ export default function ContactForm() {
     width: "100%",
     padding: "0.75rem 1rem",
     border: "1px solid var(--color-line)",
-    borderRadius: 12,
+    borderRadius: 0,
     fontSize: 14,
     fontFamily: "inherit",
     marginTop: 6,
@@ -90,7 +90,7 @@ export default function ContactForm() {
           minLength={10}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          style={{ ...inputStyle, borderRadius: 12 }}
+          style={{ ...inputStyle, borderRadius: 0 }}
         />
       </div>
       <label
@@ -121,11 +121,11 @@ export default function ContactForm() {
         type="submit"
         disabled={!canSend}
         style={{
-          background: canSend ? "var(--color-ink)" : "var(--color-ink-muted)",
-          color: "white",
+          background: canSend ? "var(--color-caramelo)" : "var(--color-ink-muted)",
+          color: "var(--color-leche)",
           border: "none",
           padding: "0.875rem 1.5rem",
-          borderRadius: 9999,
+          borderRadius: 0,
           fontSize: 15,
           fontWeight: 700,
           cursor: canSend ? "pointer" : "not-allowed",

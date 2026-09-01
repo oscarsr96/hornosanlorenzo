@@ -1,0 +1,72 @@
+---
+/**
+ * La Firma — marca principal (cabeceras, documentos, web y rótulos).
+ * Brand guidelines Nº 11:
+ *   wordmark   «San Lorenzo» en Lora Italic — el único elemento irrenunciable
+ *   swoosh     trazo curvo en avellana
+ *   descriptor «OBRADOR ARTESANO · MADRID» en Poppins con tracking amplio
+ *   origen     «— desde 1986 —»
+ * Responsive: ≥1024 lockup · 768–1023 compacta · <768 wordmark.
+ */
+interface Props {
+  /** "auto" aplica las tres versiones responsive del manual. */
+  size?: "auto" | "lockup" | "compacta" | "wordmark";
+  /** "moka" sobre fondos claros; "leche" sobre moka o teja. */
+  tono?: "moka" | "leche";
+  class?: string;
+}
+const { size = "auto", tono = "moka", class: className = "" } = Astro.props;
+
+const tinta = tono === "leche" ? "var(--color-leche)" : "var(--color-moka)";
+const secundaria =
+  tono === "leche" ? "color-mix(in srgb, var(--color-leche) 78%, transparent)" : "var(--color-caramelo)";
+const swoosh = tono === "leche" ? "var(--color-avellana)" : "var(--color-avellana)";
+
+// Visibilidad por versión
+const descriptorClass =
+  size === "auto" ? "hidden md:block" : size === "wordmark" ? "hidden" : "block";
+const origenClass =
+  size === "auto" ? "hidden lg:flex" : size === "lockup" ? "flex" : "hidden";
+---
+<span class:list={["inline-flex flex-col items-center leading-none", className]}>
+  <!-- Wordmark -->
+  <span
+    class="font-[family-name:var(--font-display)] italic font-medium tracking-[0.005em] text-[1.75rem] sm:text-[2.25rem] lg:text-[2.75rem]"
+    style={`color:${tinta}`}
+  >San Lorenzo</span>
+
+  <!-- Swoosh artesano -->
+  <svg
+    viewBox="0 0 300 20"
+    aria-hidden="true"
+    class="w-[86%] h-auto -mt-[0.15em]"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M 4,13 C 80,3 220,3 296,7 C 220,12.5 80,18.5 4,13 Z"
+      fill={swoosh}
+    />
+  </svg>
+
+  <!-- Descriptor -->
+  <span
+    class:list={[
+      descriptorClass,
+      "mt-[0.5em] text-[0.5rem] sm:text-[0.625rem] font-medium uppercase tracking-[0.34em] indent-[0.34em]",
+    ]}
+    style={`color:${secundaria}`}
+  >Obrador artesano · Madrid</span>
+
+  <!-- Sello de origen -->
+  <span
+    class:list={[origenClass, "mt-[0.55em] items-center gap-2"]}
+    aria-hidden="true"
+  >
+    <span class="block w-5 h-px" style={`background:${secundaria}`}></span>
+    <span
+      class="font-[family-name:var(--font-display)] italic text-[0.8125rem]"
+      style="color:var(--color-teja)"
+    >desde 1986</span>
+    <span class="block w-5 h-px" style={`background:${secundaria}`}></span>
+  </span>
+</span>

@@ -10,3 +10,7 @@ dist/
 *.log
 .playwright-mcp/
 .vercel
+
+# Documentos fuente de marca (no versionados)
+*.pptx.pdf
+p02_avellana.pdf

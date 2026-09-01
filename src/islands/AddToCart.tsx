@@ -48,11 +48,11 @@ export default function AddToCart({
       <button
         onClick={onAdd}
         style={{
-          background: "var(--color-ink)",
-          color: "white",
+          background: "var(--color-caramelo)",
+          color: "var(--color-leche)",
           border: "none",
           padding: "0.5rem 1rem",
-          borderRadius: 9999,
+          borderRadius: 0,
           fontWeight: 600,
           fontSize: 13,
           cursor: "pointer",
@@ -113,7 +113,7 @@ export default function AddToCart({
                     variantId === v.id
                       ? "2px solid var(--color-ink)"
                       : "1px solid var(--color-line)",
-                  borderRadius: 9999,
+                  borderRadius: 0,
                   background:
                     variantId === v.id ? "var(--color-cream)" : "white",
                   fontSize: 14,
@@ -156,7 +156,7 @@ export default function AddToCart({
             display: "inline-flex",
             alignItems: "center",
             border: "1px solid var(--color-line)",
-            borderRadius: 9999,
+            borderRadius: 0,
           }}
         >
           <button
@@ -201,11 +201,11 @@ export default function AddToCart({
       <button
         onClick={onAdd}
         style={{
-          background: "var(--color-ink)",
-          color: "white",
+          background: "var(--color-caramelo)",
+          color: "var(--color-leche)",
           border: "none",
           padding: "0.875rem 1.5rem",
-          borderRadius: 9999,
+          borderRadius: 0,
           fontSize: 15,
           fontWeight: 700,
           cursor: "pointer",

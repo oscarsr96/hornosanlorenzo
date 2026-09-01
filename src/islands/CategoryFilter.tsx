@@ -39,10 +39,10 @@ export default function CategoryFilter({ current }: Props) {
             onClick={() => setActive(c.id)}
             style={{
               padding: "0.5rem 1rem",
-              borderRadius: 9999,
+              borderRadius: 0,
               border: isActive ? "none" : "1px solid var(--color-line)",
-              background: isActive ? "var(--color-ink)" : "transparent",
-              color: isActive ? "var(--color-cream)" : "var(--color-ink)",
+              background: isActive ? "var(--color-caramelo)" : "transparent",
+              color: isActive ? "var(--color-leche)" : "var(--color-ink)",
               fontSize: 14,
               fontWeight: 600,
               cursor: "pointer",

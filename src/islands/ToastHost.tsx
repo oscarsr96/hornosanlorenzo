@@ -51,7 +51,7 @@ export default function ToastHost() {
             background: "var(--color-ink)",
             color: "var(--color-cream)",
             padding: "0.75rem 1.25rem",
-            borderRadius: 10,
+            borderRadius: 0,
             boxShadow: "var(--shadow-toast)",
             display: "inline-flex",
             alignItems: "center",

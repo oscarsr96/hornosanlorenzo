@@ -1,6 +1,7 @@
 ---
 import CartBadge from "~/islands/CartBadge.tsx";
 import SocialLinks from "~/components/SocialLinks.astro";
+import Firma from "~/components/Firma.astro";
 import { site } from "~/data/site";
 
 const links = [
@@ -15,53 +16,46 @@ const links = [
 const here = Astro.url.pathname;
 ---
 <header
-  class="border-b border-[color:var(--color-line)] sticky top-0 z-50 backdrop-blur"
+  class="sticky top-0 z-50 bg-[color:var(--color-leche)]/95 backdrop-blur border-b border-[color:var(--color-avellana)]"
   transition:persist
 >
-  <!-- Top band: logo -->
-  <div class="bg-[color:var(--color-cream)]">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-      <SocialLinks class="hidden md:flex" />
+  <!-- La cinta cromática: la paleta en proporción, una por pieza -->
+  <div class="cinta" aria-hidden="true">
+    <span style="flex:70;background:var(--color-leche)"></span>
+    <span style="flex:14;background:var(--color-latte)"></span>
+    <span style="flex:8;background:var(--color-avellana)"></span>
+    <span style="flex:4;background:var(--color-caramelo)"></span>
+    <span style="flex:3;background:var(--color-moka)"></span>
+    <span style="flex:1;background:var(--color-teja)"></span>
+  </div>
 
-      <a
-        href="/"
-        class="flex flex-col items-center leading-none"
-        aria-label={`${site.name} — inicio`}
+  <!-- Banda superior: La Firma -->
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+    <SocialLinks class="hidden md:flex" />
+
+    <a href="/" aria-label={`${site.name} — inicio`} class="justify-self-center">
+      <Firma />
+    </a>
+
+    <div class="flex items-center justify-end gap-2">
+      <CartBadge client:only="react" />
+      <button
+        class="md:hidden inline-flex items-center justify-center w-12 h-12 border border-[color:var(--color-avellana)] text-[color:var(--color-moka)]"
+        aria-label="Abrir menú"
+        onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+        type="button"
       >
-        <img
-          src="/logo.png"
-          alt="Horno San Lorenzo"
-          width="1336"
-          height="552"
-          class="h-12 sm:h-16 w-auto"
-          decoding="async"
-          fetchpriority="high"
-        />
-        <span class="mt-1 text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">
-          desde 1986
-        </span>
-      </a>
-
-      <div class="flex items-center justify-end gap-3">
-        <CartBadge client:only="react" />
-        <button
-          class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full border border-[color:var(--color-line)] text-[color:var(--color-ink)]"
-          aria-label="Abrir menú"
-          onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
-          type="button"
-        >
-          ☰
-        </button>
-      </div>
+        ☰
+      </button>
     </div>
   </div>
 
-  <!-- Bottom band: red nav -->
+  <!-- Banda de navegación -->
   <nav
     aria-label="Principal"
-    class="hidden md:block bg-[color:var(--color-hot)] text-white"
+    class="hidden md:block bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
   >
-    <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-center gap-8 text-sm font-semibold uppercase tracking-[0.12em]">
+    <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-center gap-9 text-[11px] font-medium uppercase tracking-[0.18em]">
       {links.map((l) => {
         const active = l.href === "/" ? here === "/" : here.startsWith(l.href);
         return (
@@ -70,8 +64,10 @@ const here = Astro.url.pathname;
               href={l.href}
               aria-current={active ? "page" : undefined}
               class:list={[
-                "block py-3 text-white/90 hover:text-white border-b-2 border-transparent hover:border-white/60 transition-colors",
-                active && "text-white border-white",
+                "block py-4 border-b-2 border-transparent transition-colors",
+                active
+                  ? "text-[color:var(--color-caramelo)] border-[color:var(--color-caramelo)]"
+                  : "text-[color:var(--color-moka)] hover:text-[color:var(--color-caramelo)]",
               ]}
             >
               {l.label}
@@ -82,17 +78,21 @@ const here = Astro.url.pathname;
     </ul>
   </nav>
 
-  <!-- Mobile menu (collapsed) -->
+  <!-- Menú móvil (plegado) -->
   <nav
     id="mobile-nav"
     aria-label="Móvil"
-    class="md:hidden hidden bg-[color:var(--color-hot)] text-white"
+    class="md:hidden hidden bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
   >
-    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 text-sm font-semibold uppercase tracking-[0.12em]">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col text-[11px] font-medium uppercase tracking-[0.18em]">
       {links.map((l) => (
-        <a href={l.href} data-mobile-nav-link class="py-2 text-white/95">{l.label}</a>
+        <a
+          href={l.href}
+          data-mobile-nav-link
+          class="py-3 text-[color:var(--color-moka)] border-b border-[color:var(--color-avellana)]/60"
+        >{l.label}</a>
       ))}
-      <SocialLinks class="mt-2 pt-3 border-t border-white/20" />
+      <SocialLinks class="mt-4" />
     </div>
   </nav>
 </header>

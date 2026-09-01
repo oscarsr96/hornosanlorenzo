@@ -26,18 +26,18 @@ const { eyebrow, title, italicTail, body, image, imageAlt, primaryCta, secondary
       {body && <p class="mt-5 max-w-md text-[color:var(--color-ink-muted)] text-lg">{body}</p>}
       <div class="mt-7 flex flex-wrap gap-3">
         {primaryCta && (
-          <a href={primaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full bg-[color:var(--color-ink)] text-white font-semibold hover:scale-[1.02] transition-transform">
+          <a href={primaryCta.href} class="btn btn-primario">
             {primaryCta.label} →
           </a>
         )}
         {secondaryCta && (
-          <a href={secondaryCta.href} class="inline-flex items-center px-5 py-3 rounded-full border-2 border-[color:var(--color-hot)] text-[color:var(--color-hot)] font-semibold">
+          <a href={secondaryCta.href} class="btn btn-secundario">
             {secondaryCta.label}
           </a>
         )}
       </div>
     </div>
-    <div class="relative aspect-[4/3] md:aspect-[5/4] rounded-2xl overflow-hidden shadow-[var(--shadow-card)]">
+    <div class="relative aspect-[4/3] md:aspect-[5/4] overflow-hidden border border-[color:var(--color-avellana)]">
       {typeof image === "string"
         ? <img src={image} alt={imageAlt} width="900" height="700" class="w-full h-full object-cover" />
         : <Image src={image} alt={imageAlt} widths={[480, 800, 1200]} sizes="(min-width:768px) 600px, 100vw" class="w-full h-full object-cover" />

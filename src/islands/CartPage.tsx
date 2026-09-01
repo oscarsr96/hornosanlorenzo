@@ -82,10 +82,10 @@ export default function CartPage() {
           href="/catalogo"
           style={{
             display: "inline-block",
-            background: "var(--color-ink)",
-            color: "white",
+            background: "var(--color-caramelo)",
+            color: "var(--color-leche)",
             padding: "0.875rem 1.5rem",
-            borderRadius: 9999,
+            borderRadius: 0,
             fontWeight: 700,
           }}
         >
@@ -128,7 +128,7 @@ export default function CartPage() {
               gap: 16,
               padding: 16,
               border: "1px solid var(--color-line)",
-              borderRadius: 12,
+              borderRadius: 0,
               background: "var(--color-paper)",
             }}
           >
@@ -164,7 +164,7 @@ export default function CartPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   border: "1px solid var(--color-line)",
-                  borderRadius: 9999,
+                  borderRadius: 0,
                 }}
               >
                 <button
@@ -286,7 +286,7 @@ export default function CartPage() {
                   storeId === s.id
                     ? "2px solid var(--color-ink)"
                     : "1px solid var(--color-line)",
-                borderRadius: 12,
+                borderRadius: 0,
                 cursor: "pointer",
                 background: storeId === s.id ? "var(--color-cream)" : "white",
               }}
@@ -333,7 +333,7 @@ export default function CartPage() {
             marginTop: 8,
             padding: "0.75rem 1rem",
             border: "1px solid var(--color-line)",
-            borderRadius: 9999,
+            borderRadius: 0,
             background: "white",
             fontSize: 14,
             width: "100%",
@@ -378,7 +378,7 @@ export default function CartPage() {
                   slot === s.id
                     ? "2px solid var(--color-ink)"
                     : "1px solid var(--color-line)",
-                borderRadius: 9999,
+                borderRadius: 0,
                 cursor: "pointer",
                 background: slot === s.id ? "var(--color-cream)" : "white",
                 fontSize: 14,
@@ -421,7 +421,7 @@ export default function CartPage() {
             marginTop: 8,
             padding: "0.75rem 1rem",
             border: "1px solid var(--color-line)",
-            borderRadius: 9999,
+            borderRadius: 0,
             width: "100%",
             maxWidth: 320,
             fontSize: 14,
@@ -453,7 +453,7 @@ export default function CartPage() {
             marginTop: 8,
             padding: "0.75rem 1rem",
             border: "1px solid var(--color-line)",
-            borderRadius: 12,
+            borderRadius: 0,
             width: "100%",
             maxWidth: 480,
             fontSize: 14,
@@ -470,7 +470,7 @@ export default function CartPage() {
           background: "var(--color-paper)",
           padding: 16,
           border: "1px solid var(--color-line)",
-          borderRadius: 16,
+          borderRadius: 0,
         }}
       >
         <button
@@ -481,10 +481,10 @@ export default function CartPage() {
             background: canSubmit
               ? "var(--color-wa)"
               : "var(--color-ink-muted)",
-            color: "white",
+            color: "var(--color-leche)",
             border: "none",
             padding: "1rem 1.5rem",
-            borderRadius: 9999,
+            borderRadius: 0,
             fontSize: 16,
             fontWeight: 700,
             cursor: canSubmit ? "pointer" : "not-allowed",

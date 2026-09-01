@@ -1,31 +1,48 @@
 @import "tailwindcss";
 
-@import "@fontsource-variable/fraunces/index.css";
-@import "@fontsource-variable/fraunces/wght-italic.css";
-@import "@fontsource-variable/inter/index.css";
+/* Tipografía de marca — Lora (editorial) + Poppins (funcional). */
+@import "@fontsource-variable/lora/wght.css";
+@import "@fontsource-variable/lora/wght-italic.css";
+@import "@fontsource/poppins/latin-300.css";
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-500.css";
+@import "@fontsource/poppins/latin-600.css";
+@import "@fontsource/poppins/latin-700.css";
 
 @theme {
-  --color-cream: #f4ecdf;
-  --color-paper: #fffdf8;
-  --color-ink: #2b1d12;
-  --color-ink-muted: #6b4f3a;
-  --color-accent: #a07551;
-  --color-accent-dark: #7a5a3e;
-  --color-hot: #c9242a;
-  --color-line: #e6dccb;
+  /* Paleta Avellana — proporción de uso 70/14/8/4/3/1 */
+  --color-leche: #fefcf8; /* 70% · fondo dominante */
+  --color-latte: #f4ece0; /* 14% · secciones y bloques */
+  --color-avellana: #d8c2a6; /* 8%  · paneles y filetes */
+  --color-caramelo: #8c6845; /* 4%  · CTA y activos */
+  --color-moka: #322820; /* 3%  · tipografía principal */
+  --color-teja: #8e241d; /* 1%  · sello y acentos */
+
+  /* Alias semánticos (compatibilidad con el resto del sistema) */
+  --color-paper: var(--color-leche);
+  --color-cream: var(--color-latte);
+  --color-ink: var(--color-moka);
+  --color-ink-muted: #6f5c4a;
+  --color-accent: var(--color-caramelo);
+  --color-accent-dark: #6f5237;
+  --color-hot: var(--color-teja);
+  --color-line: var(--color-avellana);
   --color-wa: #25d366;
   --color-success: #5a7d3c;
 
-  --font-display: "Fraunces Variable", Georgia, serif;
-  --font-body:
-    "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Lora Variable", Lora, Georgia, "Times New Roman", serif;
+  --font-body: Poppins, Arial, system-ui, -apple-system, sans-serif;
 
-  --radius-card: 12px;
-  --radius-pill: 9999px;
+  /* Sin esquinas redondeadas: el sistema es de ángulo recto y filete fino. */
+  --radius-card: 0px;
+  --radius-pill: 0px;
 
-  --shadow-card:
-    0 1px 2px rgba(43, 29, 18, 0.04), 0 8px 24px rgba(43, 29, 18, 0.06);
-  --shadow-toast: 0 10px 30px rgba(43, 29, 18, 0.18);
+  /* Sin sombras: separa el filete, no la sombra. */
+  --shadow-card: none;
+  --shadow-toast: 0 2px 0 var(--color-avellana);
+
+  /* Base 8 */
+  --spacing-control: 48px;
 }
 
 :root {
@@ -35,8 +52,8 @@
 @layer base {
   html {
     font-family: var(--font-body);
-    color: var(--color-ink);
-    background: var(--color-paper);
+    color: var(--color-moka);
+    background: var(--color-leche);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -51,7 +68,8 @@
   h3,
   .display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    font-weight: 400;
+    letter-spacing: -0.005em;
   }
 
   a {
@@ -75,13 +93,39 @@
   }
 }
 
+/* El filete: 0,5–1,5 pt en avellana. Separa, no enmarca. */
+.filete {
+  border-block-end: 1px solid var(--color-avellana);
+}
+
+/* La numeración: «Nº 01 —» con tracking amplio. */
+.numeracion {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.5625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-caramelo);
+}
+
+/* La cinta cromática: la paleta en proporción, una por pieza. */
+.cinta {
+  display: flex;
+  height: 4px;
+  width: 100%;
+  border-block-end: 1px solid var(--color-avellana);
+}
+.cinta > * {
+  height: 100%;
+}
+
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--color-ink);
-  color: var(--color-cream);
-  padding: 10px 16px;
+  background: var(--color-moka);
+  color: var(--color-leche);
+  padding: 12px 16px;
   z-index: 100;
 }
 .skip-link:focus {
@@ -103,4 +147,44 @@
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.25s;
+}
+
+/* Botones — base 8, altura 48 px, sin radios (guidelines Nº 15). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--spacing-control);
+  padding-inline: 24px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.btn-primario {
+  background: var(--color-caramelo);
+  color: var(--color-leche);
+}
+.btn-primario:hover {
+  background: var(--color-moka);
+}
+.btn-secundario {
+  color: var(--color-moka);
+  border-color: var(--color-avellana);
+}
+.btn-secundario:hover {
+  border-color: var(--color-moka);
+}
+.btn-claro {
+  background: var(--color-leche);
+  color: var(--color-moka);
+}
+.btn-claro:hover {
+  background: var(--color-latte);
 }

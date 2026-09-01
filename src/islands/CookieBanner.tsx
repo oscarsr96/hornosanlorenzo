@@ -72,7 +72,7 @@ export default function CookieBanner() {
               background: "transparent",
               color: "var(--color-cream)",
               padding: "0.5rem 1rem",
-              borderRadius: 9999,
+              borderRadius: 0,
               cursor: "pointer",
               fontWeight: 600,
             }}
@@ -86,7 +86,7 @@ export default function CookieBanner() {
               background: "var(--color-cream)",
               color: "var(--color-hot)",
               padding: "0.5rem 1rem",
-              borderRadius: 9999,
+              borderRadius: 0,
               cursor: "pointer",
               fontWeight: 700,
             }}

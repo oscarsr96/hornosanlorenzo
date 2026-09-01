@@ -3,11 +3,14 @@ import { site } from "~/data/site";
 
 interface Props {
   class?: string;
+  tono?: "moka" | "leche";
 }
-const { class: className } = Astro.props;
+const { class: className, tono = "moka" } = Astro.props;
 
 const btn =
-  "inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-ink)] text-white transition-transform hover:scale-[1.08] hover:bg-[color:var(--color-hot)]";
+  tono === "leche"
+    ? "inline-flex h-10 w-10 items-center justify-center border border-[color:var(--color-leche)]/45 text-[color:var(--color-leche)] transition-colors hover:bg-[color:var(--color-leche)] hover:text-[color:var(--color-moka)]"
+    : "inline-flex h-10 w-10 items-center justify-center border border-[color:var(--color-avellana)] text-[color:var(--color-moka)] transition-colors hover:bg-[color:var(--color-moka)] hover:text-[color:var(--color-leche)]";
 ---
 <div class:list={["flex gap-3", className]}>
   <a href={site.social.instagram} rel="noopener" target="_blank" aria-label="Instagram de Horno San Lorenzo" class={btn}>
