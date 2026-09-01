@@ -1,26 +1,64 @@
 export const tradicion = {
   intro:
-    "Desde 1986 horneamos en Madrid la misma pastelería que aprendimos a hacer en casa: mantequilla de verdad, hojaldres laminados a mano y recetas que no cambian con las modas.",
-  pillars: [
+    "Horno San Lorenzo es un obrador artesano fundado en 1986 en Alcobendas. Cada día, en horno propio y con método tradicional, hacemos comida casera de verdad —tartas y empanadas, nuestra especialidad— con ingredientes de siempre.",
+  intro2:
+    "No es una pastelería de diseño: es el horno de barrio que sabe lo que hace desde siempre. Cuatro décadas creciendo sin publicidad, gracias a la confianza de quien vuelve: personas que repiten, familias que recomiendan, hostelería que renueva y empresas que buscan una solución fiable, sencilla y de calidad.",
+
+  /** Brand promise. */
+  promesa: "Lo que sale hoy del obrador sabe igual que hace cuarenta años.",
+  promesaBody:
+    "Misma receta, mismo método y mismo precio justo, cada día, para la mesa de casa y la mesa de la empresa.",
+
+  cifras: [
+    { figure: "40", label: "años de trayectoria", body: "Fundado en 1986: mismo oficio, mismas recetas de base." },
+    { figure: "2", label: "obradores en Madrid", body: "Alcobendas (sede) y Pozuelo de Alarcón, con horno propio." },
+    { figure: "3", label: "canales de negocio", body: "Empresas y oficinas, hostelería y particulares." },
+    { figure: "L–S", label: "reparto propio", body: "Entrega diaria con furgoneta y repartidor de la casa." },
+  ],
+
+  /** Los cinco valores del sistema de marca. Cada uno se cumple en algo concreto. */
+  valores: [
     {
-      title: "Mantequilla, nunca margarina",
-      body: "Hojaldres y bollería con mantequilla de verdad. Laminamos en frío, capa a capa, para que cada bocado sea ligero y crujiente.",
+      number: "01",
+      title: "Oficio",
+      body: "El producto se hace en obrador propio. Nada se externaliza y nada se descongela para vender como recién hecho.",
     },
     {
-      title: "Ingredientes que reconoces",
-      body: "Huevo fresco, chocolate de cobertura, fruta de temporada. Sabemos qué entra en cada pieza. Sin mezclas anónimas.",
+      number: "02",
+      title: "Constancia",
+      body: "La tarta de hoy sabe igual que la de hace veinte años. La receta no cambia por moda ni por coste.",
     },
     {
-      title: "Sin atajos químicos",
-      body: "Cero mejorantes, cero conservantes, cero colorantes. La calidad no viene de un sobre; viene del tiempo y de las manos.",
+      number: "03",
+      title: "Honestidad",
+      body: "Se dice lo que lleva, lo que cuesta y cuándo estará. Sin letra pequeña y sin promesas de salud.",
     },
     {
-      title: "El equipo que sigue",
-      body: "Tres generaciones de pasteleros. El obrador no para de noche para que la bollería de la mañana esté recién hecha cuando abren las puertas.",
+      number: "04",
+      title: "Cercanía",
+      body: "Reparto propio de lunes a sábado. Al cliente se le conoce por su nombre, no por su número de pedido.",
+    },
+    {
+      number: "05",
+      title: "Generosidad",
+      body: "Raciones honestas y precio justo. La accesibilidad forma parte de la calidad, no la contradice.",
     },
   ],
+
+  /** Las tres pruebas que sostienen la propuesta. */
+  pruebas: [
+    "40 años creciendo solo por recomendación, sin pagar publicidad.",
+    "Reparto propio de lunes a sábado, con furgoneta y repartidor de la casa.",
+    "El mismo producto para la mesa de casa y la de la empresa.",
+  ],
+
+  especialidad: {
+    title: "La especialidad de la casa",
+    body: "Tartas y empanadas: lo que se pone en el centro de la mesa, se corta y se comparte.",
+  },
+
   certifications: [
-    "Pastelería y bollería 100 % artesana",
+    "Elaboración íntegra en obrador propio, sin externalizar",
     "Inscritos en el registro sanitario de Madrid desde 1986",
   ],
 } as const;

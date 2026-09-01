@@ -11,7 +11,7 @@ const items = (await getCollection("noticias", ({ data }) => !data.draft))
   description="Roscón de Reyes, San Valentín, Día del Padre, fiestas patronales y más."
 >
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Noticias</p>
+    <p class="numeracion">Noticias</p>
     <h1 class="text-4xl sm:text-5xl mt-2">Lo que tenemos esta temporada.</h1>
     <div class="mt-10">
       <NewsCarousel items={items} />

@@ -10,6 +10,7 @@ import { getCollection } from "astro:content";
 import { services } from "~/data/services";
 import { stores } from "~/data/stores";
 import { site } from "~/data/site";
+import { tradicion } from "~/data/tradicion";
 
 const productsAll = await getCollection("products");
 const featured = productsAll
@@ -37,34 +38,42 @@ const localBizJsonLd = stores.map((s) => ({
 ---
 <MarketingLayout
   title={site.name}
-  description={site.tagline}
+  description="Obrador artesano en Alcobendas y Pozuelo desde 1986. Comida casera para hogares y empresas: tartas y empanadas hechas cada mañana en horno propio."
   jsonLd={localBizJsonLd}
 >
   <Hero
-    eyebrow="Desde 1986"
-    title="Pastelería artesana,"
-    italicTail="hecha cada día."
-    body="Bollería, tartas y dulces de obrador. Mantequilla de verdad, recetas de siempre y horno cada mañana."
+    eyebrow="Desde 1986 · Obrador artesano · Madrid"
+    title="Más de 40 años"
+    italicTail="haciéndolo bien."
+    body="Comida casera para hogares y empresas. Tartas y empanadas hechas cada mañana en obrador propio, con método tradicional e ingredientes de siempre."
     image={heroImage}
-    imageAlt="Croissants de mantequilla recién horneados"
-    primaryCta={{ href: "/catalogo", label: "Ver catálogo" }}
-    secondaryCta={{ href: "/tiendas", label: "Nuestras tiendas" }}
+    imageAlt="Bollería de obrador recién horneada"
+    primaryCta={{ href: "/catalogo", label: "Ver el catálogo" }}
+    secondaryCta={{ href: "/hosteleria-y-empresas", label: "Hostelería y empresas" }}
   />
 
-  <PromoBanner
-    label="Temporada · diciembre"
-    title="Roscón de Reyes — reservas abiertas"
-    ctaHref="/catalogo/roscon-de-reyes"
-    ctaLabel="Reservar"
-  />
+  <!-- Claim de campaña: abre manifiesto y web -->
+  <section class="bg-[color:var(--color-moka)] text-[color:var(--color-leche)]">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-end">
+      <p class="font-[family-name:var(--font-display)] italic text-3xl sm:text-4xl lg:text-5xl leading-[1.1]">
+        «{site.claim}»
+      </p>
+      <div>
+        <p class="text-[color:var(--color-avellana)]">
+          Métodos tradicionales. Ingredientes de siempre. Comida casera hecha para la vida de hoy.
+        </p>
+        <a href="/tradicion-y-calidad" class="btn btn-claro mt-6">Cómo lo hacemos</a>
+      </div>
+    </div>
+  </section>
 
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
     <div class="flex items-end justify-between gap-4 mb-8">
       <div>
-        <SectionLabel number="01" label="Lo que más se vende" />
-        <h2 class="text-3xl sm:text-4xl mt-2">Nuestros imprescindibles</h2>
+        <SectionLabel number="01" label="Lo que se comparte" />
+        <h2 class="text-3xl sm:text-4xl mt-2">Lo que se pone en el centro de la mesa.</h2>
       </div>
-      <a href="/catalogo" class="text-sm font-semibold underline">Ver todo el catálogo →</a>
+      <a href="/catalogo" class="text-sm font-semibold underline whitespace-nowrap">Ver todo el catálogo →</a>
     </div>
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {featured.map((p) => (
@@ -83,20 +92,42 @@ const localBizJsonLd = stores.map((s) => ({
     </div>
   </section>
 
-  <section class="bg-[color:var(--color-cream)]">
+  <PromoBanner
+    label="Temporada · diciembre"
+    title="Roscón de Reyes — reservas abiertas"
+    ctaHref="/catalogo/roscon-de-reyes"
+    ctaLabel="Reservar"
+  />
+
+  <section class="bg-[color:var(--color-latte)] border-y border-[color:var(--color-avellana)]">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-      <SectionLabel number="02" label="Lo que hacemos" />
-      <h2 class="text-3xl sm:text-4xl mt-2">Servicios</h2>
-      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">No solo vendemos en tienda — también llevamos nuestros dulces a casa, atendemos eventos y servimos a otros restaurantes.</p>
+      <SectionLabel number="02" label="Tres canales, una misma cocina" />
+      <h2 class="text-3xl sm:text-4xl mt-2">A quién servimos cada día.</h2>
+      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">{site.usp}</p>
       <div class="mt-8 grid gap-5 md:grid-cols-3">
         {services.map((s) => <ServiceCard service={s} />)}
       </div>
+      <a href="/hosteleria-y-empresas" class="btn btn-primario mt-8">Dar de alta mi empresa</a>
     </div>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-    <SectionLabel number="03" label="Dónde estamos" />
-    <h2 class="text-3xl sm:text-4xl mt-2">Dos tiendas en Madrid</h2>
+    <SectionLabel number="03" label="Las pruebas" />
+    <h2 class="text-3xl sm:text-4xl mt-2">{tradicion.promesa}</h2>
+    <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">{tradicion.promesaBody}</p>
+    <ul class="mt-10 grid gap-x-10 gap-y-6 md:grid-cols-3">
+      {tradicion.pruebas.map((prueba, i) => (
+        <li class="border-t border-[color:var(--color-avellana)] pt-4">
+          <p class="numeracion">Nº 0{i + 1} —</p>
+          <p class="mt-2 text-[color:var(--color-ink-muted)]">{prueba}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24">
+    <SectionLabel number="04" label="Dónde estamos" />
+    <h2 class="text-3xl sm:text-4xl mt-2">Dos obradores en Madrid.</h2>
     <div class="mt-8 grid gap-8">
       {stores.map((s) => <StoreCard store={s} />)}
     </div>

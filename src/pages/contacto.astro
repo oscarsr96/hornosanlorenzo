@@ -10,9 +10,10 @@ import { stores } from "~/data/stores";
 >
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 grid gap-12 md:grid-cols-2">
     <div>
-      <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Contacto</p>
+      <p class="numeracion">Contacto</p>
       <h1 class="text-4xl sm:text-5xl mt-2">Hablamos.</h1>
-      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-md">Para pedidos pequeños usa WhatsApp en cada tienda. Para catering, eventos o consultas largas, este formulario.</p>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-md">Para un pedido del día, llama o escribe por WhatsApp a la tienda. Para eventos, encargos grandes o consultas largas, este formulario.</p>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-md text-sm">¿Eres empresa u hostelería? <a href="/hosteleria-y-empresas#alta" class="underline font-semibold">Da de alta tu CIF</a> y te asignamos tus condiciones.</p>
 
       <ul class="mt-8 space-y-5 text-sm">
         {stores.map((s) => (
@@ -23,7 +24,7 @@ import { stores } from "~/data/stores";
           </li>
         ))}
         <li>
-          <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Redes</p>
+          <p class="numeracion">Redes</p>
           <SocialLinks class="mt-2" />
         </li>
       </ul>

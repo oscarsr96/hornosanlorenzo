@@ -22,12 +22,13 @@ const jsonLd = stores.map((s) => ({
 ---
 <MarketingLayout
   title="Tiendas"
-  description="Dos tiendas en Madrid: Alcobendas (central) y Pozuelo de Alarcón."
+  description="Dos obradores con horno propio en Madrid: Alcobendas (sede) y Pozuelo de Alarcón. Reparto propio de lunes a sábado."
   jsonLd={jsonLd}
 >
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Tiendas</p>
-    <h1 class="text-4xl sm:text-5xl mt-2">Dos sitios donde encontrarnos.</h1>
+    <p class="numeracion">Nuestras tiendas</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Dos obradores en Madrid.</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">Alcobendas es la sede desde 1986; Pozuelo de Alarcón, el segundo horno. En los dos se elabora, y de los dos sale el reparto propio de lunes a sábado.</p>
     <div class="mt-10 grid gap-8">
       {stores.map((s) => <StoreCard store={s} />)}
     </div>

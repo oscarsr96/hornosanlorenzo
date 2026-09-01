@@ -37,7 +37,7 @@ const jsonLd = {
       <a href="/">Inicio</a> · <a href="/noticias">Noticias</a> · <span>{item.data.title}</span>
     </nav>
 
-    <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">{formatDate(item.data.date)}</p>
+    <p class="numeracion">{formatDate(item.data.date)}</p>
     <h1 class="text-4xl sm:text-5xl mt-2">{item.data.title}</h1>
     <p class="text-lg text-[color:var(--color-ink-muted)] mt-4">{item.data.excerpt}</p>
 

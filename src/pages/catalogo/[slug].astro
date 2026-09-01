@@ -72,7 +72,7 @@ const breadcrumbs = {
       </div>
 
       <div>
-        <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-accent-dark)] font-semibold">{cat.label}</p>
+        <p class="numeracion">{cat.label}</p>
         <h1 class="text-4xl sm:text-5xl mt-2">{product.data.name}</h1>
         <p class="text-lg text-[color:var(--color-ink-muted)] mt-3">{product.data.shortDescription}</p>
 
@@ -89,7 +89,7 @@ const breadcrumbs = {
 
         {product.data.allergens.length > 0 && (
           <div class="mt-8">
-            <p class="text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Alérgenos</p>
+            <p class="numeracion">Alérgenos</p>
             <p class="mt-1 text-sm">Contiene: {product.data.allergens.map((a) => allergensLabel[a]).join(", ")}.</p>
           </div>
         )}

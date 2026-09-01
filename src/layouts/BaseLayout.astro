@@ -24,6 +24,9 @@ const orgJsonLd = {
   url: site.url,
   logo: new URL("/logo.png", Astro.site ?? site.url).toString(),
   foundingDate: String(site.founded),
+  slogan: site.tagline,
+  description: site.descriptor,
+  email: site.email,
   sameAs: [site.social.instagram, site.social.facebook],
 };
 const jsonLd = props.jsonLd

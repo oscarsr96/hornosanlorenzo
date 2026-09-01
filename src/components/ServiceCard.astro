@@ -3,15 +3,10 @@ import type { Service } from "~/data/services";
 
 interface Props { service: Service; }
 const { service } = Astro.props;
-const ICONS: Record<Service["icon"], string> = {
-  truck: "🚚",
-  party: "🎂",
-  store: "🥖",
-};
 ---
-<article class="bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)]">
-  <p class="text-3xl" aria-hidden="true">{ICONS[service.icon]}</p>
+<article class="bg-[color:var(--color-leche)] border border-[color:var(--color-avellana)] p-6 flex flex-col">
+  <p class="numeracion">Nº {service.number} —</p>
   <h3 class="font-[family-name:var(--font-display)] text-2xl mt-3">{service.title}</h3>
   <p class="text-[color:var(--color-ink-muted)] mt-2">{service.short}</p>
-  <p class="text-sm mt-4">{service.body}</p>
+  <p class="text-sm mt-4 pt-4 border-t border-[color:var(--color-avellana)] leading-relaxed text-[color:var(--color-ink-muted)]">{service.body}</p>
 </article>
