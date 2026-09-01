@@ -1,46 +1,14 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
-import ProductCard from "~/components/ProductCard.astro";
-import CategoryFilter from "~/islands/CategoryFilter.tsx";
-import { getCollection } from "astro:content";
-import { categoryIds, type CategoryId } from "~/data/categories";
-
-const url = Astro.url;
-const catParam = url.searchParams.get("cat") as CategoryId | null;
-const initial: CategoryId | "all" = catParam && (categoryIds as readonly string[]).includes(catParam) ? catParam : "all";
-
-const products = (await getCollection("products"))
-  .sort((a, b) => a.data.order - b.data.order);
+import CatalogoGrid from "~/components/CatalogoGrid.astro";
 ---
 <MarketingLayout
   title="Catálogo"
-  description="Bollería, tartas, salado y temporada. Elige y pídelo por WhatsApp."
+  description="Dulce, salado y packs de obrador. Elige y pídelo por WhatsApp."
 >
-  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-    <p class="text-[11px] uppercase tracking-[0.25em] text-[color:var(--color-ink-muted)] font-semibold">Catálogo</p>
-    <h1 class="text-4xl sm:text-5xl mt-2">Todo lo que sale del horno.</h1>
-    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">Filtra por categoría, añade al pedido y termínalo por WhatsApp.</p>
-
-    <div class="mt-8">
-      <CategoryFilter client:visible current={initial} />
-    </div>
-
-    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {products.map((p) => (
-        <div data-product data-category={p.data.category}>
-          <ProductCard
-            slug={p.id}
-            name={p.data.name}
-            category={p.data.category}
-            image={p.data.image}
-            imageAlt={p.data.imageAlt}
-            shortDescription={p.data.shortDescription}
-            priceCents={p.data.priceCents}
-            unit={p.data.unit}
-            variants={p.data.variants}
-          />
-        </div>
-      ))}
-    </div>
-  </section>
+  <CatalogoGrid
+    eyebrow="Catálogo"
+    title="Todo lo que sale del horno."
+    intro="Filtra por categoría, añade al pedido y termínalo por WhatsApp."
+  />
 </MarketingLayout>

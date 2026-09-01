@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { site } from "~/data/site";
 
-export default function ContactForm() {
+type Props = {
+  /** "empresa" añade los campos de razón social y CIF del alta B2B. */
+  variant?: "general" | "empresa";
+};
+
+export default function ContactForm({ variant = "general" }: Props) {
+  const isEmpresa = variant === "empresa";
+  const [company, setCompany] = useState("");
+  const [cif, setCif] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -12,13 +20,19 @@ export default function ContactForm() {
     name.trim() &&
     email.includes("@") &&
     message.trim().length >= 10 &&
-    accepted;
+    accepted &&
+    (!isEmpresa || (company.trim() !== "" && cif.trim() !== ""));
 
   function send(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canSend) return;
-    const body = `Nombre: ${name}\nEmail: ${email}\nTeléfono: ${phone}\n\n${message}`;
-    const subject = `Consulta desde la web — ${name}`;
+    const header = isEmpresa
+      ? `Empresa: ${company}\nCIF: ${cif}\n`
+      : "";
+    const body = `${header}Nombre: ${name}\nEmail: ${email}\nTeléfono: ${phone}\n\n${message}`;
+    const subject = isEmpresa
+      ? `Alta de empresa — ${company}`
+      : `Consulta desde la web — ${name}`;
     window.location.href = `mailto:${site.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
@@ -43,9 +57,37 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={send} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
+      {isEmpresa && (
+        <>
+          <div>
+            <label style={labelStyle} htmlFor="cn-company">
+              Razón social *
+            </label>
+            <input
+              id="cn-company"
+              required
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle} htmlFor="cn-cif">
+              CIF *
+            </label>
+            <input
+              id="cn-cif"
+              required
+              value={cif}
+              onChange={(e) => setCif(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        </>
+      )}
       <div>
         <label style={labelStyle} htmlFor="cn-name">
-          Nombre *
+          {isEmpresa ? "Persona de contacto *" : "Nombre *"}
         </label>
         <input
           id="cn-name"
@@ -81,7 +123,7 @@ export default function ContactForm() {
       </div>
       <div>
         <label style={labelStyle} htmlFor="cn-msg">
-          Mensaje *
+          {isEmpresa ? "Cuéntanos qué necesitáis *" : "Mensaje *"}
         </label>
         <textarea
           id="cn-msg"
@@ -131,7 +173,7 @@ export default function ContactForm() {
           cursor: canSend ? "pointer" : "not-allowed",
         }}
       >
-        Enviar
+        {isEmpresa ? "Solicitar alta" : "Enviar"}
       </button>
       <p
         style={{

@@ -1,0 +1,153 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import SectionLabel from "~/components/SectionLabel.astro";
+import ContactForm from "~/islands/ContactForm.tsx";
+import { site } from "~/data/site";
+import { stores } from "~/data/stores";
+
+const central = stores[0];
+const whatsappUrl = `https://wa.me/${String(site.whatsapp ?? "").replace(/\D/g, "")}`;
+
+const canales = [
+  {
+    number: "01",
+    tag: "Canal prioritario",
+    title: "Empresas y oficinas",
+    body: "Desayunos de equipo, coffee breaks, catering de reuniones y regalos corporativos.",
+    key: "Comida de verdad servida cada día, con el precio y la fiabilidad que una empresa necesita.",
+    foot: "Propuesta B2B · factura mensual",
+  },
+  {
+    number: "02",
+    tag: "Base B2B consolidada",
+    title: "Hostelería",
+    body: "Suministro recurrente de tartas, empanadas, bollería y panes en la zona norte de Madrid.",
+    key: "Producto de obrador, entrega diaria y constancia: más de 40 años haciéndolo bien.",
+    foot: "Entrega diaria L–S · formato mayorista",
+  },
+];
+
+const ventajas = [
+  {
+    title: "El mismo catálogo",
+    body: "Nada distinto para empresa: el mismo producto que sale cada mañana del obrador, con las mismas recetas.",
+  },
+  {
+    title: "Packs XL con descuento",
+    body: "Los formatos grandes llevan descuento por volumen aplicado automáticamente a tu cuenta.",
+  },
+  {
+    title: "Packs empresa: básica y premium",
+    body: "Dos niveles de selección para desayunos y reuniones, según lo que quieras poner en la mesa.",
+  },
+  {
+    title: "Reparto propio",
+    body: "Furgoneta y repartidor de la casa, de lunes a sábado. Dos obradores: Alcobendas y Pozuelo de Alarcón.",
+  },
+];
+---
+<MarketingLayout
+  title="Hostelería y empresas"
+  description="Desayunos de equipo, coffee breaks y suministro diario a hostelería. Alta con CIF, packs XL con descuento y factura mensual."
+>
+  <section class="bg-[color:var(--color-latte)] border-b border-[color:var(--color-avellana)]">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 grid gap-10 md:grid-cols-[1.15fr_1fr] items-center">
+      <div>
+        <p class="numeracion">Hostelería y empresas</p>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl leading-[1.02] mt-3">
+          Comida de verdad
+          <em class="italic text-[color:var(--color-caramelo)] font-normal block">servida cada día.</em>
+        </h1>
+        <p class="mt-5 max-w-lg text-lg text-[color:var(--color-ink-muted)]">
+          Con el precio y la fiabilidad que una empresa necesita. Dos obradores y reparto
+          propio: la misma calidad para un cumpleaños que para cien desayunos de oficina.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href="#alta" class="btn btn-primario">Dar de alta mi empresa</a>
+          <a href="/catalogo" class="btn btn-secundario">Ver el catálogo</a>
+        </div>
+      </div>
+      <dl class="grid grid-cols-2 gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)]">
+        {[
+          ["40", "años de trayectoria"],
+          ["2", "obradores en Madrid"],
+          ["L–S", "reparto propio"],
+          ["3", "canales de negocio"],
+        ].map(([figure, label]) => (
+          <div class="bg-[color:var(--color-leche)] p-5 sm:p-6">
+            <dt class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">{figure}</dt>
+            <dd class="numeracion mt-2">{label}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
+    <SectionLabel number="01" label="Dos canales, una misma cocina" />
+    <h2 class="text-3xl sm:text-4xl mt-2">A quién servimos cada día.</h2>
+    <div class="mt-10 grid gap-6 md:grid-cols-2">
+      {canales.map((c) => (
+        <article class="border border-[color:var(--color-avellana)] p-6 sm:p-8 flex flex-col">
+          <p class="numeracion">{c.tag}</p>
+          <h3 class="font-[family-name:var(--font-display)] text-2xl mt-3">{c.title}</h3>
+          <p class="mt-3 text-[color:var(--color-ink-muted)]">{c.body}</p>
+          <blockquote class="mt-6 pt-5 border-t border-[color:var(--color-avellana)] font-[family-name:var(--font-display)] italic text-lg">
+            «{c.key}»
+          </blockquote>
+          <p class="numeracion mt-auto pt-6">{c.foot}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="bg-[color:var(--color-latte)] border-y border-[color:var(--color-avellana)]">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
+      <SectionLabel number="02" label="Cómo funciona" />
+      <h2 class="text-3xl sm:text-4xl mt-2">Te damos de alta y ya pides con tu precio.</h2>
+      <div class="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+        {ventajas.map((v) => (
+          <div class="border-t border-[color:var(--color-avellana)] pt-5">
+            <h3 class="font-[family-name:var(--font-display)] text-xl">{v.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-[color:var(--color-ink-muted)]">{v.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="alta" class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 scroll-mt-40">
+    <div class="grid gap-12 md:grid-cols-[1fr_1.1fr] items-start">
+      <div>
+        <SectionLabel number="03" label="Alta de empresa" />
+        <h2 class="text-3xl sm:text-4xl mt-2">Alta con CIF.</h2>
+        <p class="mt-4 text-[color:var(--color-ink-muted)]">
+          Danos de alta tu empresa y te asignamos tu código de descuento y tus
+          condiciones. A partir de ahí pides del mismo catálogo con tu precio, y
+          facturamos a mes vencido.
+        </p>
+        <ul class="mt-6 space-y-3 text-sm text-[color:var(--color-ink-muted)]">
+          {[
+            "Razón social y CIF para emitir factura.",
+            "Código de descuento asociado a tu cuenta.",
+            "Packs XL y packs empresa básica y premium.",
+            "Entrega con reparto propio de lunes a sábado.",
+          ].map((item) => (
+            <li class="flex gap-3">
+              <span class="mt-2 h-1.5 w-1.5 shrink-0 bg-[color:var(--color-avellana)]" aria-hidden="true"></span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-6 text-sm text-[color:var(--color-ink-muted)]">
+          ¿Prefieres hablarlo?
+          <a href={whatsappUrl} rel="noopener" target="_blank" class="underline font-semibold">Escríbenos por WhatsApp</a>
+          o llama al <a href={`tel:${central.phone}`} class="underline font-semibold">{central.phoneDisplay}</a>.
+        </p>
+      </div>
+      <div class="border border-[color:var(--color-avellana)] p-6 sm:p-8 bg-[color:var(--color-latte)]">
+        <ContactForm client:visible variant="empresa" />
+      </div>
+    </div>
+  </section>
+</MarketingLayout>

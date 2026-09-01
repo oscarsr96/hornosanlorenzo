@@ -1,19 +1,31 @@
 ---
+import { Image } from "astro:assets";
 import CartBadge from "~/islands/CartBadge.tsx";
-import SocialLinks from "~/components/SocialLinks.astro";
 import Firma from "~/components/Firma.astro";
+import SocialLinks from "~/components/SocialLinks.astro";
 import { site } from "~/data/site";
+import { mainNav } from "~/data/navigation";
 
-const links = [
-  { href: "/catalogo",            label: "Catálogo" },
-  { href: "/servicios",           label: "Servicios" },
-  { href: "/noticias",            label: "Noticias" },
-  { href: "/tradicion-y-calidad", label: "Tradición" },
-  { href: "/tiendas",             label: "Tiendas" },
-  { href: "/contacto",            label: "Contacto" },
-];
+import imgDulce from "../../public/images/productos/tarta-tres-chocolates.jpg";
+import imgSalado from "../../public/images/productos/quiche-lorraine.jpg";
+import imgPacks from "../../public/images/productos/bolleria.jpeg";
 
+// Fotos del submenú de «Nuestros Productos» (brief: «Aquí 3 fotos con submenú 3»).
+const submenuImages: Record<string, { src: ImageMetadata; alt: string }> = {
+  Dulce: { src: imgDulce, alt: "Tarta de tres chocolates cortada" },
+  Salado: { src: imgSalado, alt: "Quiche lorraine dorada, recién horneada" },
+  "Packs y promos del mes": {
+    src: imgPacks,
+    alt: "Surtido de bollería de obrador",
+  },
+};
+
+const whatsappUrl = `https://wa.me/${String(site.whatsapp ?? "").replace(/\D/g, "")}`;
 const here = Astro.url.pathname;
+const isActive = (href: string) => {
+  const path = href.split("?")[0];
+  return path === "/" ? here === "/" : here.startsWith(path);
+};
 ---
 <header
   class="sticky top-0 z-50 bg-[color:var(--color-leche)]/95 backdrop-blur border-b border-[color:var(--color-avellana)]"
@@ -29,20 +41,66 @@ const here = Astro.url.pathname;
     <span style="flex:1;background:var(--color-teja)"></span>
   </div>
 
-  <!-- Banda superior: La Firma -->
+  <!-- Banda superior: contacto · La Firma · buscador y acceso -->
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-    <SocialLinks class="hidden md:flex" />
+    <div class="flex items-center gap-3">
+      <a
+        href={whatsappUrl}
+        rel="noopener"
+        target="_blank"
+        class="hidden md:inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-moka)] hover:text-[color:var(--color-caramelo)] transition-colors"
+      >
+        <span class="inline-flex h-10 w-10 items-center justify-center border border-[color:var(--color-avellana)]" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.67c2.2 0 4.27.86 5.83 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24Zm-2.4 4.3c-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.02s.87 2.35.99 2.51c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.52.1.46-.07 1.42-.58 1.63-1.15.2-.56.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.93-1.19-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.53-1.29-.73-1.76-.19-.46-.38-.4-.53-.4Z"/>
+          </svg>
+        </span>
+        Contáctanos
+      </a>
+    </div>
 
     <a href="/" aria-label={`${site.name} — inicio`} class="justify-self-center">
       <Firma />
     </a>
 
     <div class="flex items-center justify-end gap-2">
+      <form
+        action="/catalogo"
+        method="get"
+        role="search"
+        class="hidden lg:flex items-center border-b border-[color:var(--color-avellana)] focus-within:border-[color:var(--color-moka)] transition-colors"
+      >
+        <label for="buscar" class="sr-only">Buscar en el catálogo</label>
+        <input
+          id="buscar"
+          type="search"
+          name="q"
+          placeholder="Buscar"
+          class="w-32 xl:w-40 bg-transparent py-2 text-sm text-[color:var(--color-moka)] placeholder:text-[color:var(--color-ink-muted)] focus:outline-none"
+        />
+        <button type="submit" class="p-2 text-[color:var(--color-moka)] hover:text-[color:var(--color-caramelo)]" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
+      </form>
+
+      <a
+        href="/hosteleria-y-empresas#alta"
+        class="hidden lg:inline-flex items-center h-10 px-4 whitespace-nowrap border border-[color:var(--color-avellana)] text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-moka)] hover:border-[color:var(--color-moka)] transition-colors"
+      >
+        Acceso clientes
+      </a>
+
       <CartBadge client:only="react" />
+
       <button
         class="md:hidden inline-flex items-center justify-center w-12 h-12 border border-[color:var(--color-avellana)] text-[color:var(--color-moka)]"
         aria-label="Abrir menú"
-        onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+        aria-expanded="false"
+        aria-controls="mobile-nav"
+        data-mobile-nav-toggle
         type="button"
       >
         ☰
@@ -50,28 +108,75 @@ const here = Astro.url.pathname;
     </div>
   </div>
 
-  <!-- Banda de navegación -->
+  <!-- Banda de navegación: las cuatro secciones -->
   <nav
     aria-label="Principal"
     class="hidden md:block bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
   >
-    <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-center gap-9 text-[11px] font-medium uppercase tracking-[0.18em]">
-      {links.map((l) => {
-        const active = l.href === "/" ? here === "/" : here.startsWith(l.href);
+    <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-stretch justify-center gap-8 lg:gap-12 text-[11px] font-medium uppercase tracking-[0.16em]">
+      {mainNav.map((item) => {
+        const active = isActive(item.href);
+        const linkClass = [
+          "flex items-center h-full py-4 border-b-2 transition-colors",
+          active
+            ? "text-[color:var(--color-caramelo)] border-[color:var(--color-caramelo)]"
+            : "text-[color:var(--color-moka)] border-transparent hover:text-[color:var(--color-caramelo)]",
+        ];
+
+        if (!item.children) {
+          return (
+            <li>
+              <a href={item.href} aria-current={active ? "page" : undefined} class:list={linkClass}>
+                {item.label}
+              </a>
+            </li>
+          );
+        }
+
         return (
-          <li>
+          <li class="relative group">
             <a
-              href={l.href}
+              href={item.href}
               aria-current={active ? "page" : undefined}
-              class:list={[
-                "block py-4 border-b-2 border-transparent transition-colors",
-                active
-                  ? "text-[color:var(--color-caramelo)] border-[color:var(--color-caramelo)]"
-                  : "text-[color:var(--color-moka)] hover:text-[color:var(--color-caramelo)]",
-              ]}
+              aria-haspopup="true"
+              class:list={[...linkClass, "gap-1.5"]}
             >
-              {l.label}
+              {item.label}
+              <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path d="m2 4.5 4 3.5 4-3.5" />
+              </svg>
             </a>
+
+            <div
+              class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 top-full z-50 pt-px"
+            >
+              <div class="w-[41rem] bg-[color:var(--color-leche)] border border-[color:var(--color-avellana)] p-6 grid grid-cols-3 gap-5">
+                {item.children.map((child) => {
+                  const photo = submenuImages[child.label];
+                  return (
+                    <a href={child.href} class="group/card block">
+                      {photo && (
+                        <div class="aspect-[4/3] overflow-hidden border border-[color:var(--color-avellana)]">
+                          <Image
+                            src={photo.src}
+                            alt={photo.alt}
+                            widths={[200, 400]}
+                            sizes="200px"
+                            class="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-[1.04]"
+                          />
+                        </div>
+                      )}
+                      <p class="mt-3 font-[family-name:var(--font-display)] text-base normal-case tracking-normal text-[color:var(--color-moka)] group-hover/card:text-[color:var(--color-caramelo)] transition-colors">
+                        {child.label}
+                      </p>
+                      <p class="mt-1 text-[11px] leading-snug normal-case tracking-normal font-normal text-[color:var(--color-ink-muted)]">
+                        {child.short}
+                      </p>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
           </li>
         );
       })}
@@ -84,27 +189,90 @@ const here = Astro.url.pathname;
     aria-label="Móvil"
     class="md:hidden hidden bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
   >
-    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col text-[11px] font-medium uppercase tracking-[0.18em]">
-      {links.map((l) => (
-        <a
-          href={l.href}
-          data-mobile-nav-link
-          class="py-3 text-[color:var(--color-moka)] border-b border-[color:var(--color-avellana)]/60"
-        >{l.label}</a>
-      ))}
-      <SocialLinks class="mt-4" />
+    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col">
+      <form action="/catalogo" method="get" role="search" class="flex items-center border border-[color:var(--color-avellana)] mb-3 bg-[color:var(--color-leche)]">
+        <label for="buscar-movil" class="sr-only">Buscar en el catálogo</label>
+        <input
+          id="buscar-movil"
+          type="search"
+          name="q"
+          placeholder="Buscar"
+          class="flex-1 bg-transparent px-3 py-3 text-sm text-[color:var(--color-moka)] placeholder:text-[color:var(--color-ink-muted)] focus:outline-none"
+        />
+        <button type="submit" class="px-3 py-3 text-[color:var(--color-moka)]" aria-label="Buscar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
+      </form>
+
+      <ul class="flex flex-col text-[11px] font-medium uppercase tracking-[0.16em]">
+        {mainNav.map((item) => (
+          <li class="border-b border-[color:var(--color-avellana)]/60">
+            <a href={item.href} data-mobile-nav-link class="block py-3 text-[color:var(--color-moka)]">
+              {item.label}
+            </a>
+            {item.children && (
+              <ul class="pb-2 pl-4 flex flex-col">
+                {item.children.map((child) => (
+                  <li>
+                    <a
+                      href={child.href}
+                      data-mobile-nav-link
+                      class="block py-2 text-[color:var(--color-ink-muted)] normal-case tracking-normal text-xs"
+                    >
+                      {child.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <a
+        href="/hosteleria-y-empresas#alta"
+        data-mobile-nav-link
+        class="btn btn-secundario mt-4"
+      >
+        Acceso clientes
+      </a>
+      <a
+        href={whatsappUrl}
+        rel="noopener"
+        target="_blank"
+        class="btn btn-primario mt-2"
+      >
+        Contáctanos por WhatsApp
+      </a>
+      <SocialLinks class="mt-4 pt-4 border-t border-[color:var(--color-avellana)]/60" />
     </div>
   </nav>
 </header>
 
 <script>
+  const nav = () => document.getElementById("mobile-nav");
+  const toggle = () =>
+    document.querySelector<HTMLButtonElement>("[data-mobile-nav-toggle]");
+
   const closeMobileNav = () => {
-    document.getElementById("mobile-nav")?.classList.add("hidden");
+    nav()?.classList.add("hidden");
+    toggle()?.setAttribute("aria-expanded", "false");
   };
 
-  // Close immediately on tap (before navigation finishes)
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement | null;
+
+    if (target?.closest("[data-mobile-nav-toggle]")) {
+      const el = nav();
+      const open = el?.classList.toggle("hidden") === false;
+      toggle()?.setAttribute("aria-expanded", String(open));
+      return;
+    }
+
+    // Close immediately on tap (before navigation finishes)
     if (target?.closest("[data-mobile-nav-link]")) closeMobileNav();
   });
 

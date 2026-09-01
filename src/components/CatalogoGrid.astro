@@ -1,0 +1,51 @@
+---
+import ProductCard from "~/components/ProductCard.astro";
+import CategoryFilter from "~/islands/CategoryFilter.tsx";
+import { getCollection } from "astro:content";
+import { grupoCategories, type GrupoId } from "~/data/categories";
+
+interface Props {
+  grupo?: GrupoId | null;
+  eyebrow: string;
+  title: string;
+  intro: string;
+}
+const { grupo = null, eyebrow, title, intro } = Astro.props;
+
+const allowed = grupo ? grupoCategories[grupo] : null;
+
+const products = (await getCollection("products"))
+  .filter((p) => !allowed || allowed.includes(p.data.category))
+  .sort((a, b) => a.data.order - b.data.order);
+---
+<section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+  <p class="numeracion">{eyebrow}</p>
+  <h1 class="text-4xl sm:text-5xl mt-2">{title}</h1>
+  <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">{intro}</p>
+
+  <div class="mt-8">
+    <CategoryFilter client:load grupo={grupo} />
+  </div>
+
+  <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {products.map((p) => (
+      <div
+        data-product
+        data-category={p.data.category}
+        data-search={`${p.data.name} ${p.data.shortDescription}`}
+      >
+        <ProductCard
+          slug={p.id}
+          name={p.data.name}
+          category={p.data.category}
+          image={p.data.image}
+          imageAlt={p.data.imageAlt}
+          shortDescription={p.data.shortDescription}
+          priceCents={p.data.priceCents}
+          unit={p.data.unit}
+          variants={p.data.variants}
+        />
+      </div>
+    ))}
+  </div>
+</section>
