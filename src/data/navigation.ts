@@ -58,11 +58,8 @@ export const footerNav: readonly { href: string; label: string }[] = [
   { href: "/contacto", label: "Contacto" },
 ] as const;
 
-/** Formas de pago admitidas, para el pie de página. */
-export const paymentMethods: readonly { id: string; label: string }[] = [
-  { id: "visa", label: "Visa" },
-  { id: "mastercard", label: "Mastercard" },
-  { id: "amex", label: "American Express" },
+/** Formas de pago sin marca gráfica disponible: se muestran como etiqueta. */
+export const paymentLabels: readonly { id: string; label: string }[] = [
   { id: "bizum", label: "Bizum" },
   { id: "efectivo", label: "Efectivo en tienda" },
   { id: "transferencia", label: "Transferencia (empresas)" },
