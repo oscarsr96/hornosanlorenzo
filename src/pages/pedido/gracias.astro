@@ -1,0 +1,42 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import { site } from "~/data/site";
+import { stores } from "~/data/stores";
+
+const central = stores[0];
+---
+<MarketingLayout
+  title="Pedido confirmado"
+  description="Hemos recibido tu pedido."
+>
+  <section class="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
+    <p class="numeracion">Pedido confirmado</p>
+    <h1 class="text-4xl sm:text-5xl mt-3">Gracias. Ya está anotado.</h1>
+    <p class="mt-5 text-lg text-[color:var(--color-ink-muted)]">
+      Te hemos enviado un correo con el detalle de tu pedido. El obrador lo prepara
+      para el día y la franja que elegiste.
+    </p>
+
+    <div class="mt-10 border border-[color:var(--color-avellana)] p-6 sm:p-8 bg-[color:var(--color-latte)]">
+      <p class="numeracion">¿Necesitas cambiar algo?</p>
+      <p class="mt-3 text-sm text-[color:var(--color-ink-muted)]">
+        Escríbenos a
+        <a href={`mailto:${site.email}`} class="underline font-semibold">{site.email}</a>
+        o llama al
+        <a href={`tel:${central.phone}`} class="underline font-semibold">{central.phoneDisplay}</a>.
+        Cuanto antes nos lo digas, mejor.
+      </p>
+    </div>
+
+    <div class="mt-10 flex flex-wrap gap-3">
+      <a href="/catalogo" class="btn btn-primario">Seguir en el catálogo</a>
+      <a href="/" class="btn btn-secundario">Volver al inicio</a>
+    </div>
+  </section>
+</MarketingLayout>
+
+<script>
+  // El pedido ya está pagado: el carrito local deja de tener sentido.
+  import { clearCart } from "~/lib/cart";
+  clearCart();
+</script>

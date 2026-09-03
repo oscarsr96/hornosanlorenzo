@@ -71,8 +71,11 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [storeId, setStoreId] = useState<StoreId>("alcobendas");
   const [slot, setSlot] = useState<OrderInfo["slot"]>("morning");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
   const minISO = useMemo(() => earliestSelectableDate(today), [today]);
@@ -126,7 +129,49 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
     go(next === "domicilio" ? "direccion" : "tienda");
   }
 
-  function submit() {
+  const emailOk = /.+@.+\..+/.test(email.trim());
+  const canPay = Boolean(mode && dateISO) && emailOk && !sending;
+
+  /** Solo se mandan referencias y cantidades: el precio lo pone el servidor. */
+  async function pay() {
+    if (!mode || !dateISO || !emailOk || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: cart.items.map((i) => ({
+            slug: i.slug,
+            variantId: i.variantId,
+            qty: i.qty,
+          })),
+          mode,
+          dateISO,
+          slot,
+          storeId: mode === "recogida" ? storeId : undefined,
+          address: mode === "domicilio" ? address.trim() : undefined,
+          name: name.trim() || undefined,
+          notes: notes.trim() || undefined,
+          email: email.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setError(data.error ?? "No hemos podido abrir el pago.");
+        setSending(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("No hemos podido conectar. Comprueba tu conexión.");
+      setSending(false);
+    }
+  }
+
+  /** Vía alternativa: dejar el pedido escrito en WhatsApp sin pagar online. */
+  function sendByWhatsApp() {
     if (!mode || !dateISO) return;
     const order: OrderInfo = {
       mode,
@@ -553,6 +598,21 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
               </div>
 
               <div style={{ marginTop: 16 }}>
+                <label style={label} htmlFor="cf-email">
+                  Tu email *
+                </label>
+                <input
+                  id="cf-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Para enviarte la confirmación"
+                  style={field}
+                />
+              </div>
+
+              <div style={{ marginTop: 16 }}>
                 <label style={label} htmlFor="cf-name">
                   Tu nombre (opcional)
                 </label>
@@ -578,34 +638,76 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 />
               </div>
 
+              {error && (
+                <p
+                  role="alert"
+                  style={{
+                    marginTop: 16,
+                    padding: "0.75rem 1rem",
+                    border: "1px solid var(--color-teja)",
+                    color: "var(--color-teja)",
+                    fontSize: 13,
+                  }}
+                >
+                  {error}
+                </p>
+              )}
+
               <button
                 type="button"
-                onClick={submit}
+                onClick={pay}
+                disabled={!canPay}
                 style={{
                   width: "100%",
                   marginTop: 20,
                   minHeight: 48,
-                  background: "var(--color-wa)",
+                  background: "var(--color-caramelo)",
                   color: "var(--color-leche)",
                   border: "none",
                   fontSize: 15,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: canPay ? "pointer" : "not-allowed",
+                  opacity: canPay ? 1 : 0.55,
                 }}
               >
-                Enviar el pedido por WhatsApp
+                {sending
+                  ? "Abriendo el pago…"
+                  : `Pagar ${formatPriceCents(totalCents)}`}
               </button>
               <p
                 style={{
                   marginTop: 10,
                   fontSize: 12,
                   color: "var(--color-ink-muted)",
-                  fontStyle: "italic",
                   textAlign: "center",
                 }}
               >
-                Se abre WhatsApp con el pedido escrito. El obrador te confirma
-                disponibilidad, precio final y hora exacta. Aún no estás comprando.
+                Pago seguro con tarjeta, Apple Pay o Google Pay. Al pagar aceptas
+                las{" "}
+                <a
+                  href="/legal/condiciones-de-compra"
+                  style={{ textDecoration: "underline" }}
+                >
+                  condiciones de compra
+                </a>
+                .
+              </p>
+              <p style={{ marginTop: 12, textAlign: "center" }}>
+                <button
+                  type="button"
+                  onClick={sendByWhatsApp}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12,
+                    color: "var(--color-ink-muted)",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  Prefiero encargarlo por WhatsApp y pagar en tienda
+                </button>
               </p>
             </>
           )}

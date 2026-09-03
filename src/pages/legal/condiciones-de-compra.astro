@@ -1,0 +1,102 @@
+---
+import LegalLayout from "~/layouts/LegalLayout.astro";
+import { site } from "~/data/site";
+import { stores } from "~/data/stores";
+import { MODE_COPY, CUTOFF_HOUR } from "~/lib/entrega";
+---
+<LegalLayout
+  title="Condiciones de compra"
+  description="Condiciones generales de contratación de los pedidos realizados en la web de Horno San Lorenzo."
+>
+  <p>
+    <em>
+      Borrador pendiente de revisión legal y de completar con la razón social y el
+      CIF del titular antes de activar los cobros.
+    </em>
+  </p>
+
+  <h2>1. Titular y ámbito</h2>
+  <p>
+    Estas condiciones regulan la venta de productos a través de {site.url}, titularidad
+    de Horno San Lorenzo (razón social y CIF pendientes de completar), con domicilio en
+    {stores[0].address}, {stores[0].postal} {stores[0].city}. Al confirmar un pedido, el
+    cliente declara ser mayor de edad y aceptar estas condiciones.
+  </p>
+
+  <h2>2. Productos</h2>
+  <p>
+    Todos los productos se elaboran en obrador propio. Las fotografías son orientativas:
+    al tratarse de elaboración artesanal, puede haber variaciones de aspecto entre
+    unidades. La información de alérgenos figura en cada ficha de producto; si existe
+    una alergia o intolerancia, debe indicarse en las notas del pedido y confirmarse
+    con el obrador antes de consumir.
+  </p>
+
+  <h2>3. Precios e impuestos</h2>
+  <p>
+    Los precios se muestran en euros e incluyen el IVA aplicable. El importe se calcula
+    en el momento de la compra a partir del catálogo vigente. Los gastos de reparto, si
+    los hubiera, se detallan antes de completar el pago.
+  </p>
+
+  <h2>4. Pedidos, entrega y recogida</h2>
+  <ul>
+    <li>
+      <strong>{MODE_COPY.domicilio.label}.</strong> {MODE_COPY.domicilio.body} La hora
+      límite para los pedidos del día siguiente son las {CUTOFF_HOUR}:00.
+    </li>
+    <li>
+      <strong>{MODE_COPY.recogida.label}.</strong> {MODE_COPY.recogida.body}
+    </li>
+  </ul>
+  <p>
+    El obrador y el reparto propio operan de lunes a sábado. Los domingos no hay
+    servicio. La franja horaria seleccionada es orientativa y puede ajustarse avisando
+    al cliente.
+  </p>
+
+  <h2>5. Pago</h2>
+  <p>
+    El pago se realiza en el momento de formalizar el pedido mediante la pasarela segura
+    de Stripe Payments Europe, Ltd., que admite tarjeta, Apple Pay y Google Pay. Horno
+    San Lorenzo no almacena ni tiene acceso a los datos de la tarjeta. Los pedidos de
+    hostelería y empresas se rigen por sus condiciones específicas y se facturan
+    mensualmente, sin pasar por esta pasarela.
+  </p>
+
+  <h2>6. Desistimiento y cancelaciones</h2>
+  <p>
+    De acuerdo con el artículo 103, apartados d) y c), del Real Decreto Legislativo
+    1/2007, <strong>no procede el derecho de desistimiento</strong> en el suministro de
+    bienes que puedan deteriorarse o caducar con rapidez, ni en los productos
+    confeccionados conforme a las especificaciones del consumidor o claramente
+    personalizados. Al tratarse de alimentación fresca elaborada por encargo, los
+    pedidos no admiten devolución una vez elaborados.
+  </p>
+  <p>
+    Sí es posible <strong>cancelar o modificar un pedido</strong> siempre que se comunique
+    antes de su elaboración, escribiendo a
+    <a href={`mailto:${site.email}`}>{site.email}</a> o llamando al
+    {stores[0].phoneDisplay}. En ese caso se reintegra el importe por el mismo medio de
+    pago.
+  </p>
+
+  <h2>7. Incidencias</h2>
+  <p>
+    Si el producto llega en mal estado o no corresponde con lo pedido, debe comunicarse
+    el mismo día de la entrega o recogida, aportando fotografía cuando sea posible. Se
+    ofrecerá la reposición del producto o la devolución del importe.
+  </p>
+
+  <h2>8. Protección de datos</h2>
+  <p>
+    Los datos facilitados se tratan para gestionar el pedido y su entrega, conforme a la
+    <a href="/legal/privacidad">política de privacidad</a>.
+  </p>
+
+  <h2>9. Legislación y reclamaciones</h2>
+  <p>
+    Estas condiciones se rigen por la legislación española. Existen hojas de reclamación
+    a disposición del consumidor en ambos establecimientos.
+  </p>
+</LegalLayout>
