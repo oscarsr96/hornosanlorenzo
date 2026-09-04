@@ -47,5 +47,9 @@ export const grupoLabel: Record<GrupoId, string> = {
   packs: "Packs",
 };
 
+/** El grupo comercial al que pertenece una categoría del catálogo. */
+export const grupoOfCategory = (cat: CategoryId): GrupoId | null =>
+  (grupoIds.find((g) => grupoCategories[g].includes(cat)) as GrupoId) ?? null;
+
 export const isGrupoId = (value: string | null): value is GrupoId =>
   value !== null && (grupoIds as readonly string[]).includes(value);

@@ -59,6 +59,10 @@ export const mainNav: readonly NavItem[] = [
   { href: "/hosteleria-y-empresas", label: "Hostelería y Empresas" },
 ] as const;
 
+/** Las entradas del submenú de Tienda Online, reutilizadas en /catalogo. */
+export const tiendaOnlineNav: readonly NavChild[] =
+  mainNav.find((i) => i.href === "/catalogo")?.children ?? [];
+
 export const footerNav: readonly { href: string; label: string }[] = [
   { href: "/catalogo", label: "Nuestros productos" },
   { href: "/catalogo/packs", label: "Packs y promos" },

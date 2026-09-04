@@ -8,12 +8,14 @@ import {
   type GrupoId,
 } from "~/data/categories";
 
-type Seccion = { id: string; label: string };
+type Chip = { id: string; label: string };
 
 type Props = {
   grupo?: GrupoId | null;
   /** Si se pasan, el filtro trabaja por sección de la carta, no por categoría. */
-  secciones?: Seccion[];
+  secciones?: Chip[];
+  /** Si se pasan, el filtro trabaja por grupo comercial (Dulce / Salado). */
+  grupos?: Chip[];
 };
 
 const normalize = (value: string) =>
@@ -22,8 +24,19 @@ const normalize = (value: string) =>
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");
 
-export default function CategoryFilter({ grupo = null, secciones }: Props) {
+export default function CategoryFilter({
+  grupo = null,
+  secciones,
+  grupos,
+}: Props) {
   const porSeccion = Boolean(secciones && secciones.length > 0);
+  const porGrupo = !porSeccion && Boolean(grupos && grupos.length > 0);
+  // Cada modo usa su atributo y su parámetro de URL.
+  const modo = porSeccion
+    ? { attr: "seccion" as const, param: "sec", opciones: secciones! }
+    : porGrupo
+      ? { attr: "grupo" as const, param: "g", opciones: grupos! }
+      : null;
   // El sitio es estático: los parámetros de la URL solo existen en el cliente.
   const [active, setActive] = useState<CategoryId | string>("all");
   const [search, setSearch] = useState("");
@@ -32,9 +45,9 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (porSeccion) {
-      const sec = params.get("sec");
-      if (sec && secciones!.some((s) => s.id === sec)) setActive(sec);
+    if (modo) {
+      const value = params.get(modo.param);
+      if (value && modo.opciones.some((o) => o.id === value)) setActive(value);
     } else {
       const cat = params.get("cat");
       if (cat && (categoryIds as readonly string[]).includes(cat)) {
@@ -43,7 +56,8 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
     }
     setSearch(params.get("q") ?? "");
     setReady(true);
-  }, [porSeccion, secciones]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allowed = useMemo<readonly CategoryId[]>(
     () => (grupo ? grupoCategories[grupo] : categoryIds),
@@ -53,7 +67,7 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
   useEffect(() => {
     if (!ready) return;
     const url = new URL(window.location.href);
-    const key = porSeccion ? "sec" : "cat";
+    const key = modo?.param ?? "cat";
     if (active === "all") url.searchParams.delete(key);
     else url.searchParams.set(key, active);
     if (search) url.searchParams.set("q", search);
@@ -68,7 +82,7 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
       const inGroup = allowed.includes(cat);
       const matches =
         active === "all" ||
-        (porSeccion ? el.dataset.seccion === active : cat === active);
+        (modo ? el.dataset[modo.attr] === active : cat === active);
       const inSearch =
         needle === "" || normalize(el.dataset.search ?? "").includes(needle);
       const show = inGroup && matches && inSearch;
@@ -87,12 +101,13 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
       });
 
     setVisible(shown);
-  }, [active, search, allowed, ready, porSeccion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, search, allowed, ready]);
 
   const chips: Array<{ id: string; label: string }> = [
     { id: "all", label: grupo ? `Todo ${grupoLabel[grupo].toLowerCase()}` : "Todo" },
-    ...(porSeccion
-      ? secciones!.map((s) => ({ id: s.id, label: s.label }))
+    ...(modo
+      ? modo.opciones.map((o) => ({ id: o.id, label: o.label }))
       : categories
           .filter((c) => allowed.includes(c.id))
           .map((c) => ({ id: c.id, label: c.label }))),
@@ -126,7 +141,7 @@ export default function CategoryFilter({ grupo = null, secciones }: Props) {
       {chips.length > 2 && (
       <div
         role="tablist"
-        aria-label={porSeccion ? "Filtrar por sección de la carta" : "Filtrar por categoría"}
+        aria-label={porSeccion ? "Filtrar por sección de la carta" : porGrupo ? "Filtrar por gama" : "Filtrar por categoría"}
         style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
       >
         {chips.map((c) => {

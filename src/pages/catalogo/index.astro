@@ -1,14 +1,46 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import CatalogoGrid from "~/components/CatalogoGrid.astro";
+import { tiendaOnlineNav } from "~/data/navigation";
 ---
 <MarketingLayout
-  title="Catálogo"
-  description="Dulce, salado y packs de obrador. Elige y pídelo por WhatsApp."
+  title="Tienda Online"
+  description="Dulce, salado, packs y lo que más sale del obrador. Elige y haz tu pedido."
 >
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pt-12">
+    <p class="numeracion">Tienda Online</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Todo lo que sale del horno.</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+      Cuatro puertas a la misma cocina. Entra por donde quieras.
+    </p>
+
+    <!-- Las mismas entradas que el submenú: una sola fuente en navigation.ts -->
+    <ul class="mt-8 grid gap-px bg-[color:var(--color-avellana)] sm:grid-cols-2 lg:grid-cols-4 border border-[color:var(--color-avellana)]">
+      {tiendaOnlineNav.map((entrada) => (
+        <li class="bg-[color:var(--color-leche)]">
+          <a
+            href={entrada.href}
+            class="group flex h-full flex-col p-5 hover:bg-[color:var(--color-latte)] transition-colors"
+          >
+            <span class="font-[family-name:var(--font-display)] text-xl">
+              {entrada.label}
+            </span>
+            <span class="mt-2 text-sm leading-snug text-[color:var(--color-ink-muted)]">
+              {entrada.short}
+            </span>
+            <span class="numeracion mt-4 group-hover:text-[color:var(--color-moka)] transition-colors">
+              Ver →
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
   <CatalogoGrid
-    eyebrow="Catálogo"
-    title="Todo lo que sale del horno."
-    intro="Filtra por categoría, añade al pedido y termínalo por WhatsApp."
+    porGrupo
+    eyebrow="Todo el catálogo"
+    title="O búscalo aquí."
+    intro="Toda la carta, con sus precios y sus tamaños. Filtra por gama o usa el buscador."
   />
 </MarketingLayout>
