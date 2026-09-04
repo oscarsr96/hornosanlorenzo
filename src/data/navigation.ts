@@ -16,6 +16,8 @@ export type NavItem = {
   href: string;
   label: string;
   children?: readonly NavChild[];
+  /** El enlace descarga un fichero en vez de navegar a una página. */
+  download?: boolean;
 };
 
 export const mainNav: readonly NavItem[] = [
@@ -48,6 +50,11 @@ export const mainNav: readonly NavItem[] = [
         short: "Lo que más sale del obrador.",
       },
     ],
+  },
+  {
+    href: "/carta-horno-san-lorenzo.pdf",
+    label: "Carta",
+    download: true,
   },
   { href: "/hosteleria-y-empresas", label: "Hostelería y Empresas" },
 ] as const;

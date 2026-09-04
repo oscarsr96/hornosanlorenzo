@@ -146,7 +146,12 @@ const isActive = (href: string) => {
         if (!item.children) {
           return (
             <li>
-              <a href={item.href} aria-current={active ? "page" : undefined} class:list={linkClass}>
+              <a
+                href={item.href}
+                download={item.download}
+                aria-current={active ? "page" : undefined}
+                class:list={linkClass}
+              >
                 {item.label}
               </a>
             </li>
@@ -230,7 +235,12 @@ const isActive = (href: string) => {
       <ul class="flex flex-col text-[11px] font-medium uppercase tracking-[0.16em]">
         {mainNav.map((item) => (
           <li class="border-b border-[color:var(--color-leche)]/25">
-            <a href={item.href} data-mobile-nav-link class="block py-3 text-[color:var(--color-leche)]">
+            <a
+              href={item.href}
+              download={item.download}
+              data-mobile-nav-link
+              class="block py-3 text-[color:var(--color-leche)]"
+            >
               {item.label}
             </a>
             {item.children && (
