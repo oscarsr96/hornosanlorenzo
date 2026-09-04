@@ -3,20 +3,36 @@ import ProductCard from "~/components/ProductCard.astro";
 import CategoryFilter from "~/islands/CategoryFilter.tsx";
 import { getCollection } from "astro:content";
 import { grupoCategories, type GrupoId } from "~/data/categories";
+import { secciones, seccionById } from "~/data/secciones";
 
 interface Props {
   grupo?: GrupoId | null;
   eyebrow: string;
   title: string;
   intro: string;
+  /** Agrupa el listado en los bloques de la carta impresa. */
+  porSeccion?: boolean;
 }
-const { grupo = null, eyebrow, title, intro } = Astro.props;
+const { grupo = null, eyebrow, title, intro, porSeccion = false } = Astro.props;
 
 const allowed = grupo ? grupoCategories[grupo] : null;
 
 const products = (await getCollection("products"))
   .filter((p) => !allowed || allowed.includes(p.data.category))
   .sort((a, b) => a.data.order - b.data.order);
+
+/** Solo las secciones que tienen producto, en el orden de la carta. */
+const bloques = porSeccion
+  ? secciones
+      .map((s) => ({
+        seccion: s,
+        items: products.filter((p) => p.data.seccion === s.id),
+      }))
+      .filter((b) => b.items.length > 0)
+  : [];
+
+/** Productos sin sección: en modo carta se listan al final. */
+const sueltos = porSeccion ? products.filter((p) => !p.data.seccion) : products;
 ---
 <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
   <p class="numeracion">{eyebrow}</p>
@@ -24,28 +40,74 @@ const products = (await getCollection("products"))
   <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">{intro}</p>
 
   <div class="mt-8">
-    <CategoryFilter client:load grupo={grupo} />
+    <CategoryFilter
+      client:load
+      grupo={grupo}
+      secciones={porSeccion ? bloques.map((b) => ({ id: b.seccion.id, label: b.seccion.label })) : undefined}
+    />
   </div>
 
-  <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-    {products.map((p) => (
-      <div
-        data-product
-        data-category={p.data.category}
-        data-search={`${p.data.name} ${p.data.shortDescription}`}
-      >
-        <ProductCard
-          slug={p.id}
-          name={p.data.name}
-          category={p.data.category}
-          image={p.data.image}
-          imageAlt={p.data.imageAlt}
-          shortDescription={p.data.shortDescription}
-          priceCents={p.data.priceCents}
-          unit={p.data.unit}
-          variants={p.data.variants}
-        />
-      </div>
-    ))}
-  </div>
+  {porSeccion ? (
+    <div class="mt-10 flex flex-col gap-14">
+      {bloques.map((b) => (
+        <div data-seccion={b.seccion.id}>
+          <div class="filete pb-3">
+            <p class="numeracion">{b.seccion.eyebrow}</p>
+            <h2 class="font-[family-name:var(--font-display)] text-2xl sm:text-3xl mt-1">
+              {b.seccion.label}
+            </h2>
+            {b.seccion.nota && (
+              <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">{b.seccion.nota}</p>
+            )}
+          </div>
+          <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {b.items.map((p) => (
+              <div
+                data-product
+                data-category={p.data.category}
+                data-seccion={p.data.seccion}
+                data-search={`${p.data.name} ${p.data.shortDescription}`}
+              >
+                <ProductCard
+                  slug={p.id}
+                  name={p.data.name}
+                  category={p.data.category}
+                  seccionLabel={seccionById(b.seccion.id).label}
+                  image={p.data.image}
+                  imageAlt={p.data.imageAlt}
+                  shortDescription={p.data.shortDescription}
+                  priceCents={p.data.priceCents}
+                  unit={p.data.unit}
+                  variants={p.data.variants}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {sueltos.map((p) => (
+        <div
+          data-product
+          data-category={p.data.category}
+          data-seccion={p.data.seccion}
+          data-search={`${p.data.name} ${p.data.shortDescription}`}
+        >
+          <ProductCard
+            slug={p.id}
+            name={p.data.name}
+            category={p.data.category}
+            image={p.data.image}
+            imageAlt={p.data.imageAlt}
+            shortDescription={p.data.shortDescription}
+            priceCents={p.data.priceCents}
+            unit={p.data.unit}
+            variants={p.data.variants}
+          />
+        </div>
+      ))}
+    </div>
+  )}
 </section>

@@ -1,6 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { categoryIds } from "~/data/categories";
+import { seccionIds } from "~/data/secciones";
 
 const allergens = z.enum([
   "gluten",
@@ -24,11 +25,14 @@ export const products = defineCollection({
     z.object({
       name: z.string(),
       category: z.enum(categoryIds),
+      /** Sección de la carta impresa. Agrupa la página de Dulce. */
+      seccion: z.enum(seccionIds).optional(),
       priceCents: z.number().int().positive(),
       unit: z.string().optional(),
       variants: z.array(variant).optional(),
-      image: image(),
-      imageAlt: z.string(),
+      /** Pendiente para la carta de 2026: las fotos llegan más adelante. */
+      image: image().optional(),
+      imageAlt: z.string().optional(),
       shortDescription: z.string().max(180),
       allergens: z.array(allergens).default([]),
       featured: z.boolean().default(false),

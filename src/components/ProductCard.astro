@@ -8,38 +8,64 @@ interface Props {
   slug: string;
   name: string;
   category: CategoryId;
-  image: ImageMetadata;
-  imageAlt: string;
+  /** Etiqueta de la sección de la carta; manda sobre la categoría. */
+  seccionLabel?: string;
+  image?: ImageMetadata;
+  imageAlt?: string;
   shortDescription: string;
   priceCents: number;
   unit?: string;
   variants?: { id: string; label: string; priceCents: number }[];
 }
 
-const { slug, name, category, image, imageAlt, shortDescription, priceCents, unit, variants } = Astro.props;
-const cat = categoryById(category);
+const {
+  slug,
+  name,
+  category,
+  seccionLabel,
+  image,
+  imageAlt,
+  shortDescription,
+  priceCents,
+  unit,
+  variants,
+} = Astro.props;
+
+const eyebrow = seccionLabel ?? categoryById(category).label;
+/** Con varios tamaños el precio de la ficha es el de entrada. */
+const desde = Boolean(variants && variants.length > 1);
 ---
 <article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:scale-[1.02] transition-transform duration-200">
   <a href={`/catalogo/${slug}`} class="block">
     <div class="aspect-[4/3] overflow-hidden">
-      <Image
-        src={image}
-        alt={imageAlt}
-        widths={[300, 600, 900]}
-        sizes="(min-width:1024px) 360px, (min-width:640px) 50vw, 100vw"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-      />
+      {image ? (
+        <Image
+          src={image}
+          alt={imageAlt ?? name}
+          widths={[300, 600, 900]}
+          sizes="(min-width:1024px) 360px, (min-width:640px) 50vw, 100vw"
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <div
+          class="w-full h-full flex items-center justify-center bg-[color:var(--color-latte)] border-b border-[color:var(--color-avellana)]"
+          aria-hidden="true"
+        >
+          <span class="numeracion">Foto pendiente</span>
+        </div>
+      )}
     </div>
   </a>
   <div class="p-4 sm:p-5">
-    <p class="numeracion">{cat.label}</p>
+    <p class="numeracion">{eyebrow}</p>
     <h3 class="font-[family-name:var(--font-display)] text-xl mt-1">
       <a href={`/catalogo/${slug}`} class="hover:text-[color:var(--color-accent-dark)]">{name}</a>
     </h3>
     <p class="text-sm text-[color:var(--color-ink-muted)] mt-1 line-clamp-2">{shortDescription}</p>
     <div class="flex items-center justify-between mt-4">
       <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
-        {formatPriceCents(priceCents)}{unit && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal"> / {unit}</span>}
+        {desde && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal">desde </span>}
+        {formatPriceCents(priceCents)}{!desde && unit && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal"> / {unit}</span>}
       </p>
       <AddToCart
         client:visible

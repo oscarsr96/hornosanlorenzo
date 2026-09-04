@@ -4,6 +4,7 @@ import { getCollection, render } from "astro:content";
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import AddToCart from "~/islands/AddToCart.tsx";
 import { categoryById } from "~/data/categories";
+import { seccionById } from "~/data/secciones";
 
 export async function getStaticPaths() {
   const products = await getCollection("products");
@@ -13,6 +14,8 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 const { Content } = await render(product);
 const cat = categoryById(product.data.category);
+const seccion = product.data.seccion ? seccionById(product.data.seccion) : null;
+const eyebrow = seccion?.label ?? cat.label;
 
 const allergensLabel: Record<string, string> = {
   gluten: "gluten",
@@ -29,7 +32,9 @@ const jsonLd = {
   "@type": "Product",
   name: product.data.name,
   description: product.data.shortDescription,
-  image: new URL(product.data.image.src, Astro.site).toString(),
+  ...(product.data.image
+    ? { image: new URL(product.data.image.src, Astro.site).toString() }
+    : {}),
   category: cat.label,
   offers: {
     "@type": "Offer",
@@ -61,19 +66,31 @@ const breadcrumbs = {
     </nav>
 
     <div class="grid gap-10 md:grid-cols-2">
-      <div class="rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
-        <Image
-          src={product.data.image}
-          alt={product.data.imageAlt}
-          widths={[600, 900, 1200]}
-          sizes="(min-width:768px) 600px, 100vw"
-          class="w-full h-auto"
-        />
+      <div class="self-start rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
+        {product.data.image ? (
+          <Image
+            src={product.data.image}
+            alt={product.data.imageAlt ?? product.data.name}
+            widths={[600, 900, 1200]}
+            sizes="(min-width:768px) 600px, 100vw"
+            class="w-full h-auto"
+          />
+        ) : (
+          <div
+            class="aspect-[4/3] flex items-center justify-center bg-[color:var(--color-latte)]"
+            aria-hidden="true"
+          >
+            <span class="numeracion">Foto pendiente</span>
+          </div>
+        )}
       </div>
 
       <div>
-        <p class="numeracion">{cat.label}</p>
+        <p class="numeracion">{eyebrow}</p>
         <h1 class="text-4xl sm:text-5xl mt-2">{product.data.name}</h1>
+        {seccion?.nota && (
+          <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">{seccion.nota}</p>
+        )}
         <p class="text-lg text-[color:var(--color-ink-muted)] mt-3">{product.data.shortDescription}</p>
 
         <div class="mt-6 max-w-md">
