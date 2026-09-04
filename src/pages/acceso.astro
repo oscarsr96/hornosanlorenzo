@@ -1,0 +1,21 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import AccesoClientes from "~/islands/AccesoClientes.tsx";
+---
+<MarketingLayout
+  title="Acceso clientes"
+  description="Date de alta como particular o como empresa y pide con tus condiciones."
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+    <p class="numeracion">Acceso clientes</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">¿Cómo nos compras?</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+      El alta no es la misma para una casa que para una cocina que pide cada
+      semana. Dinos cuál eres.
+    </p>
+
+    <div class="mt-8">
+      <AccesoClientes client:load />
+    </div>
+  </section>
+</MarketingLayout>

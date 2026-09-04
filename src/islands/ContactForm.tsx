@@ -2,12 +2,13 @@ import { useState } from "react";
 import { site } from "~/data/site";
 
 type Props = {
-  /** "empresa" añade los campos de razón social y CIF del alta B2B. */
-  variant?: "general" | "empresa";
+  /** "empresa" añade razón social y CIF; "particular" es el alta de cliente. */
+  variant?: "general" | "empresa" | "particular";
 };
 
 export default function ContactForm({ variant = "general" }: Props) {
   const isEmpresa = variant === "empresa";
+  const isParticular = variant === "particular";
   const [company, setCompany] = useState("");
   const [cif, setCif] = useState("");
   const [name, setName] = useState("");
@@ -19,7 +20,8 @@ export default function ContactForm({ variant = "general" }: Props) {
   const canSend =
     name.trim() &&
     email.includes("@") &&
-    message.trim().length >= 10 &&
+    // El alta de particular no pide mensaje: con el contacto basta.
+    (isParticular ? phone.trim() !== "" : message.trim().length >= 10) &&
     accepted &&
     (!isEmpresa || (company.trim() !== "" && cif.trim() !== ""));
 
@@ -32,7 +34,9 @@ export default function ContactForm({ variant = "general" }: Props) {
     const body = `${header}Nombre: ${name}\nEmail: ${email}\nTeléfono: ${phone}\n\n${message}`;
     const subject = isEmpresa
       ? `Alta de empresa — ${company}`
-      : `Consulta desde la web — ${name}`;
+      : isParticular
+        ? `Alta de particular — ${name}`
+        : `Consulta desde la web — ${name}`;
     window.location.href = `mailto:${site.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
@@ -112,10 +116,12 @@ export default function ContactForm({ variant = "general" }: Props) {
       </div>
       <div>
         <label style={labelStyle} htmlFor="cn-phone">
-          Teléfono
+          Teléfono {isParticular && "*"}
         </label>
         <input
           id="cn-phone"
+          type="tel"
+          required={isParticular}
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           style={inputStyle}
@@ -123,13 +129,17 @@ export default function ContactForm({ variant = "general" }: Props) {
       </div>
       <div>
         <label style={labelStyle} htmlFor="cn-msg">
-          {isEmpresa ? "Cuéntanos qué necesitáis *" : "Mensaje *"}
+          {isEmpresa
+            ? "Cuéntanos qué necesitáis *"
+            : isParticular
+              ? "Algo que debamos saber (opcional)"
+              : "Mensaje *"}
         </label>
         <textarea
           id="cn-msg"
-          required
-          rows={5}
-          minLength={10}
+          required={!isParticular}
+          rows={isParticular ? 3 : 5}
+          minLength={isParticular ? undefined : 10}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           style={{ ...inputStyle, borderRadius: 0 }}
@@ -173,7 +183,7 @@ export default function ContactForm({ variant = "general" }: Props) {
           cursor: canSend ? "pointer" : "not-allowed",
         }}
       >
-        {isEmpresa ? "Solicitar alta" : "Enviar"}
+        {isEmpresa || isParticular ? "Solicitar alta" : "Enviar"}
       </button>
       <p
         style={{
