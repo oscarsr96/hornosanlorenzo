@@ -117,6 +117,17 @@ const isActive = (href: string) => {
     </div>
   </div>
 
+  <!-- Móvil: la barra de secciones se pliega tras el ☰, así que el pedido
+       necesita una puerta propia. Ocupa el hueco que deja esa barra. -->
+  <div class="md:hidden border-t border-[color:var(--color-avellana)] px-4 py-2">
+    <a
+      href="/catalogo"
+      class="btn btn-primario w-full min-h-10 text-[13px] uppercase tracking-[0.12em]"
+    >
+      Haz tu pedido
+    </a>
+  </div>
+
   <!-- Banda de navegación: las cuatro secciones -->
   <nav
     aria-label="Principal"
