@@ -62,7 +62,7 @@ const field: React.CSSProperties = {
 };
 
 export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
-  const [step, setStep] = useState<Step>("dia");
+  const [step, setStep] = useState<Step>("opcion");
   const [history, setHistory] = useState<Step[]>([]);
 
   const [dateISO, setDateISO] = useState("");
@@ -73,16 +73,30 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
-  const minISO = useMemo(() => earliestSelectableDate(today), [today]);
+  /** La modalidad se elige antes que el día, así que el mínimo ya es el suyo. */
+  const minISO = useMemo(
+    () => (mode ? earliestDate(mode, today) : earliestSelectableDate(today)),
+    [mode, today],
+  );
   const [cursor, setCursor] = useState(() => {
-    const d = fromISO(minISO);
+    const d = fromISO(earliestSelectableDate(today));
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+
+  /** Si el mínimo se va al mes siguiente, el calendario lo sigue. */
+  useEffect(() => {
+    const d = fromISO(minISO);
+    setCursor((c) =>
+      c.year < d.getFullYear() ||
+      (c.year === d.getFullYear() && c.month < d.getMonth())
+        ? { year: d.getFullYear(), month: d.getMonth() }
+        : c,
+    );
+  }, [minISO]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +120,6 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   };
 
   const back = () => {
-    setNotice(null);
     setHistory((h) => {
       const prev = h[h.length - 1];
       if (prev) setStep(prev);
@@ -114,19 +127,11 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
     });
   };
 
-  /** El día se elige antes que la modalidad, así que al elegir envío hay que validar. */
+  /** La modalidad manda: si la fecha ya elegida deja de valer, se descarta. */
   function chooseMode(next: DeliveryMode) {
-    const min = earliestDate(next, today);
     setMode(next);
-    if (dateISO < min) {
-      setDateISO(min);
-      setNotice(
-        `Para ${MODE_COPY[next].label.toLowerCase()} la fecha más próxima es el ${formatDateISO(min)}. Hemos ajustado tu pedido.`,
-      );
-    } else {
-      setNotice(null);
-    }
-    go(next === "domicilio" ? "direccion" : "tienda");
+    if (dateISO && dateISO < earliestDate(next, today)) setDateISO("");
+    go("dia");
   }
 
   const emailOk = /.+@.+\..+/.test(email.trim());
@@ -254,23 +259,27 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
         </header>
 
         <div style={{ padding: "1.25rem" }}>
-          {notice && (
-            <p
-              style={{
-                marginBottom: 16,
-                padding: "0.75rem 1rem",
-                border: "1px solid var(--color-avellana)",
-                background: "var(--color-latte)",
-                fontSize: 13,
-                color: "var(--color-ink-muted)",
-              }}
-            >
-              {notice}
-            </p>
-          )}
-
           {step === "dia" && (
             <>
+              {mode && (
+                <p
+                  style={{
+                    marginBottom: 16,
+                    padding: "0.75rem 1rem",
+                    border: "1px solid var(--color-avellana)",
+                    background: "var(--color-latte)",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: "var(--color-ink-muted)",
+                  }}
+                >
+                  <strong style={{ color: "var(--color-moka)" }}>
+                    {MODE_COPY[mode].label}.
+                  </strong>{" "}
+                  {MODE_COPY[mode].body}
+                </p>
+              )}
+
               <div
                 style={{
                   display: "flex",
@@ -387,7 +396,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 type="button"
                 className="btn btn-primario"
                 disabled={!dateISO}
-                onClick={() => go("opcion")}
+                onClick={() => go(mode === "domicilio" ? "direccion" : "tienda")}
                 style={{
                   width: "100%",
                   marginTop: 16,
