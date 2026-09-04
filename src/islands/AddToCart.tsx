@@ -43,23 +43,79 @@ export default function AddToCart({
     emitToast(`Añadido — ${name}${variant ? ` (${variant.label})` : ""}`);
   }
 
+  const compactButton = (
+    <button
+      onClick={onAdd}
+      style={{
+        background: "var(--color-caramelo)",
+        color: "var(--color-leche)",
+        border: "none",
+        padding: "0.5rem 1rem",
+        borderRadius: 0,
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+      }}
+    >
+      Añadir
+    </button>
+  );
+
   if (compact) {
+    // Sin tamaños la tarjeta ya pinta el precio: aquí solo va el botón.
+    if (!variants || variants.length <= 1) return compactButton;
+
     return (
-      <button
-        onClick={onAdd}
-        style={{
-          background: "var(--color-caramelo)",
-          color: "var(--color-leche)",
-          border: "none",
-          padding: "0.5rem 1rem",
-          borderRadius: 0,
-          fontWeight: 600,
-          fontSize: 13,
-          cursor: "pointer",
-        }}
-      >
-        Añadir
-      </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+        <select
+          value={variantId}
+          onChange={(e) => setVariantId(e.target.value)}
+          aria-label={`Tamaño de ${name}`}
+          style={{
+            appearance: "none",
+            WebkitAppearance: "none",
+            width: "100%",
+            minHeight: 40,
+            padding: "0 2rem 0 0.75rem",
+            border: "1px solid var(--color-line)",
+            borderRadius: 0,
+            background:
+              "var(--color-leche) url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='8' viewBox='0 0 12 12' fill='none' stroke='%23322820' stroke-width='1.6'%3E%3Cpath d='m2 4.5 4 3.5 4-3.5'/%3E%3C/svg%3E\") no-repeat right 0.75rem center",
+            color: "var(--color-ink)",
+            font: "inherit",
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          {variants.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.label}
+            </option>
+          ))}
+        </select>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.5rem",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              margin: 0,
+            }}
+          >
+            {formatPriceCents(finalPrice)}
+          </p>
+          {compactButton}
+        </div>
+      </div>
     );
   }
 
