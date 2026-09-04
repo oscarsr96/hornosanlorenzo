@@ -99,6 +99,12 @@ export async function priceOrder(
       throw new OrderError(`El producto «${item.slug}» ya no está disponible.`);
     }
 
+    if (product.data.consultar || product.data.priceCents === undefined) {
+      throw new OrderError(
+        `«${product.data.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
+      );
+    }
+
     let unitPriceCents = product.data.priceCents;
     let variantLabel: string | undefined;
 

@@ -1,0 +1,21 @@
+---
+name: "De Crema de Sobrasada"
+category: salado
+seccion: las-lorenzas-salado
+priceCents: 850
+variants:
+  - id: u6
+    label: "6 unidades"
+    priceCents: 850
+  - id: u12
+    label: "12 unidades"
+    priceCents: 1600
+  - id: u24
+    label: "24 unidades"
+    priceCents: 3000
+shortDescription: "Mini croissants salados, en cajas de 6, 12 y 24 unidades. Pedido con un día de antelación."
+allergens: []
+order: 1703
+---
+
+Mini croissants salados, en cajas de 6, 12 y 24 unidades. Pedido con un día de antelación.

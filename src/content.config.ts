@@ -27,7 +27,10 @@ export const products = defineCollection({
       category: z.enum(categoryIds),
       /** Sección de la carta impresa. Agrupa la página de Dulce. */
       seccion: z.enum(seccionIds).optional(),
-      priceCents: z.number().int().positive(),
+      /** Ausente solo cuando la carta dice «consultar». */
+      priceCents: z.number().int().positive().optional(),
+      /** La carta no da precio: se pide al obrador, no se puede comprar online. */
+      consultar: z.boolean().default(false),
       unit: z.string().optional(),
       variants: z.array(variant).optional(),
       /** Pendiente para la carta de 2026: las fotos llegan más adelante. */
@@ -38,6 +41,11 @@ export const products = defineCollection({
       featured: z.boolean().default(false),
       seasonal: z.boolean().default(false),
       order: z.number().int().default(100),
+    })
+    /** O tiene precio, o está marcado como «consultar»: nunca ninguno de los dos. */
+    .refine((d) => d.consultar || typeof d.priceCents === "number", {
+      message: "Un producto sin priceCents debe llevar consultar: true",
+      path: ["priceCents"],
     }),
 });
 

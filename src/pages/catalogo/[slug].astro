@@ -36,12 +36,16 @@ const jsonLd = {
     ? { image: new URL(product.data.image.src, Astro.site).toString() }
     : {}),
   category: cat.label,
-  offers: {
-    "@type": "Offer",
-    priceCurrency: "EUR",
-    price: (product.data.priceCents / 100).toFixed(2),
-    availability: "https://schema.org/InStock",
-  },
+  ...(product.data.priceCents !== undefined && !product.data.consultar
+    ? {
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "EUR",
+          price: (product.data.priceCents / 100).toFixed(2),
+          availability: "https://schema.org/InStock",
+        },
+      }
+    : {}),
 };
 
 const breadcrumbs = {
@@ -94,14 +98,27 @@ const breadcrumbs = {
         <p class="text-lg text-[color:var(--color-ink-muted)] mt-3">{product.data.shortDescription}</p>
 
         <div class="mt-6 max-w-md">
-          <AddToCart
-            client:load
-            slug={product.id}
-            name={product.data.name}
-            unitPriceCents={product.data.priceCents}
-            unit={product.data.unit}
-            variants={product.data.variants}
-          />
+          {product.data.consultar || product.data.priceCents === undefined ? (
+            <div>
+              <p class="font-[family-name:var(--font-display)] text-3xl text-[color:var(--color-ink-muted)]">
+                Precio a consultar
+              </p>
+              <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+                La carta no fija precio para esta referencia: se ajusta con el
+                obrador según el encargo.
+              </p>
+              <a href="/contacto" class="btn btn-primario mt-4">Preguntar por este producto</a>
+            </div>
+          ) : (
+            <AddToCart
+              client:load
+              slug={product.id}
+              name={product.data.name}
+              unitPriceCents={product.data.priceCents}
+              unit={product.data.unit}
+              variants={product.data.variants}
+            />
+          )}
         </div>
 
         {product.data.allergens.length > 0 && (

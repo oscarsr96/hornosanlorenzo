@@ -14,6 +14,14 @@ export const seccionIds = [
   "brazos",
   "detalles-celebracion",
   "las-lorenzas",
+  "empanadas",
+  "supremas",
+  "salado-para-todos",
+  "quiches",
+  "tartas-saladas",
+  "para-compartir",
+  "las-lorenzas-salado",
+  "por-encargo",
 ] as const;
 
 export type SeccionId = (typeof seccionIds)[number];
@@ -96,6 +104,60 @@ export const secciones: readonly Seccion[] = [
     eyebrow: "Dulce · Las Lorenzas",
     nota: "De mantequilla · unidades de 6, 12 y 24",
     order: 1000,
+  },
+  {
+    id: "empanadas",
+    label: "Empanadas de hojaldre",
+    eyebrow: "Salado · Hojaldre",
+    nota: "Entera 16–20 rac. · Media 8–10 · Supl. por corte",
+    order: 1100,
+  },
+  {
+    id: "supremas",
+    label: "Supremas de hojaldre",
+    eyebrow: "Salado · Hojaldre",
+    nota: "8–10 raciones",
+    order: 1200,
+  },
+  {
+    id: "salado-para-todos",
+    label: "Salado para todos",
+    eyebrow: "Salado · Sin alérgenos",
+    order: 1300,
+  },
+  {
+    id: "quiches",
+    label: "Quiches artesanas",
+    eyebrow: "Salado · Horno",
+    nota: "8–10 raciones",
+    order: 1400,
+  },
+  {
+    id: "tartas-saladas",
+    label: "Tartas saladas",
+    eyebrow: "Salado · Horno",
+    nota: "8–10 raciones",
+    order: 1500,
+  },
+  {
+    id: "para-compartir",
+    label: "Para compartir",
+    eyebrow: "Salado · Cóctel",
+    order: 1600,
+  },
+  {
+    id: "las-lorenzas-salado",
+    label: "Las Lorenzas · Mini Croissants Salados",
+    eyebrow: "Salado · Las Lorenzas",
+    nota: "Pedido con un día de antelación · unidades de 6, 12 y 24",
+    order: 1700,
+  },
+  {
+    id: "por-encargo",
+    label: "Por encargo",
+    eyebrow: "Salado · Las Lorenzas",
+    nota: "Precio a consultar con el obrador",
+    order: 1800,
   },
 ] as const;
 

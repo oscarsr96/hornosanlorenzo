@@ -13,7 +13,9 @@ interface Props {
   image?: ImageMetadata;
   imageAlt?: string;
   shortDescription: string;
-  priceCents: number;
+  priceCents?: number;
+  /** La carta no da precio: se consulta con el obrador. */
+  consultar?: boolean;
   unit?: string;
   variants?: { id: string; label: string; priceCents: number }[];
 }
@@ -27,6 +29,7 @@ const {
   imageAlt,
   shortDescription,
   priceCents,
+  consultar = false,
   unit,
   variants,
 } = Astro.props;
@@ -34,6 +37,7 @@ const {
 const eyebrow = seccionLabel ?? categoryById(category).label;
 /** Con varios tamaños el precio de la ficha es el de entrada. */
 const desde = Boolean(variants && variants.length > 1);
+const sinPrecio = consultar || priceCents === undefined;
 ---
 <article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:scale-[1.02] transition-transform duration-200">
   <a href={`/catalogo/${slug}`} class="block">
@@ -63,18 +67,34 @@ const desde = Boolean(variants && variants.length > 1);
     </h3>
     <p class="text-sm text-[color:var(--color-ink-muted)] mt-1 line-clamp-2">{shortDescription}</p>
     <div class="flex items-center justify-between mt-4">
-      <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
-        {desde && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal">desde </span>}
-        {formatPriceCents(priceCents)}{!desde && unit && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal"> / {unit}</span>}
-      </p>
-      <AddToCart
-        client:visible
-        slug={slug}
-        name={name}
-        unitPriceCents={priceCents}
-        variants={variants}
-        compact={true}
-      />
+      {sinPrecio ? (
+        <>
+          <p class="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink-muted)]">
+            Consultar
+          </p>
+          <a
+            href="/contacto"
+            class="inline-flex items-center h-9 px-4 border border-[color:var(--color-avellana)] text-[13px] font-semibold text-[color:var(--color-moka)] hover:border-[color:var(--color-moka)] transition-colors"
+          >
+            Preguntar
+          </a>
+        </>
+      ) : (
+        <>
+          <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
+            {desde && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal">desde </span>}
+            {formatPriceCents(priceCents!)}{!desde && unit && <span class="text-xs text-[color:var(--color-ink-muted)] font-normal"> / {unit}</span>}
+          </p>
+          <AddToCart
+            client:visible
+            slug={slug}
+            name={name}
+            unitPriceCents={priceCents!}
+            variants={variants}
+            compact={true}
+          />
+        </>
+      )}
     </div>
   </div>
 </article>

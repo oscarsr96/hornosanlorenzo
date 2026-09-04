@@ -1,0 +1,13 @@
+---
+name: "Las Lorenzas Rellenas Saladas"
+category: salado
+seccion: por-encargo
+consultar: true
+shortDescription: "Mini croissants salados rellenos · por encargo."
+allergens: []
+order: 1801
+---
+
+Mini croissants salados rellenos · por encargo.
+
+Precio a consultar con el obrador.
