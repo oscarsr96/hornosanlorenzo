@@ -1,0 +1,16 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import CatalogoGrid from "~/components/CatalogoGrid.astro";
+---
+<MarketingLayout
+  title="Top Ventas"
+  description="Lo que más sale del obrador: las especialidades de la casa desde 1986."
+>
+  <CatalogoGrid
+    destacados
+    conFiltro={false}
+    eyebrow="Tienda Online · Top Ventas"
+    title="Lo que más sale del obrador."
+    intro="Las especialidades que la casa lleva haciendo desde 1986, las que se piden un día sí y otro también."
+  />
+</MarketingLayout>

@@ -44,7 +44,7 @@ export const grupoCategories: Record<GrupoId, readonly CategoryId[]> = {
 export const grupoLabel: Record<GrupoId, string> = {
   dulce: "Dulce",
   salado: "Salado",
-  packs: "Packs y promos del mes",
+  packs: "Packs",
 };
 
 export const isGrupoId = (value: string | null): value is GrupoId =>

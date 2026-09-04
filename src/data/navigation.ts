@@ -39,8 +39,13 @@ export const mainNav: readonly NavItem[] = [
       },
       {
         href: "/catalogo/packs",
-        label: "Packs y promos del mes",
+        label: "Packs",
         short: "Nuestras cajitas para cada ocasión, listas para llevar.",
+      },
+      {
+        href: "/catalogo/top-ventas",
+        label: "Top Ventas",
+        short: "Lo que más sale del obrador.",
       },
     ],
   },

@@ -9,15 +9,24 @@ import { mainNav } from "~/data/navigation";
 import imgDulce from "../../public/images/productos/tarta-tres-chocolates.jpg";
 import imgSalado from "../../public/images/productos/quiche-lorraine.jpg";
 import imgPacks from "../../public/images/productos/bolleria.jpeg";
+import imgTop from "../../public/images/productos/croissant-mantequilla.jpg";
 
 // Fotos del submenú de «Tienda Online» (brief: «Aquí 3 fotos con submenú 3»).
 const submenuImages: Record<string, { src: ImageMetadata; alt: string }> = {
   Dulce: { src: imgDulce, alt: "Tarta de tres chocolates cortada" },
   Salado: { src: imgSalado, alt: "Quiche lorraine dorada, recién horneada" },
-  "Packs y promos del mes": {
-    src: imgPacks,
-    alt: "Surtido de bollería de obrador",
+  Packs: { src: imgPacks, alt: "Surtido de bollería de obrador" },
+  "Top Ventas": {
+    src: imgTop,
+    alt: "Croissants de mantequilla recién horneados",
   },
+};
+
+// El panel crece con el número de entradas del submenú.
+const submenuLayout: Record<number, string> = {
+  2: "w-[28rem] grid-cols-2",
+  3: "w-[41rem] grid-cols-3",
+  4: "w-[54rem] grid-cols-4",
 };
 
 const whatsappUrl = `https://wa.me/${String(site.whatsapp ?? "").replace(/\D/g, "")}`;
@@ -150,7 +159,7 @@ const isActive = (href: string) => {
             <div
               class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 top-full z-50 pt-px"
             >
-              <div class="w-[41rem] bg-[color:var(--color-leche)] border border-[color:var(--color-avellana)] p-6 grid grid-cols-3 gap-5">
+              <div class:list={["bg-[color:var(--color-leche)] border border-[color:var(--color-avellana)] p-6 grid gap-5", submenuLayout[item.children.length] ?? submenuLayout[3]]}>
                 {item.children.map((child) => {
                   const photo = submenuImages[child.label];
                   return (
