@@ -10,7 +10,7 @@ import imgDulce from "../../public/images/productos/tarta-tres-chocolates.jpg";
 import imgSalado from "../../public/images/productos/quiche-lorraine.jpg";
 import imgPacks from "../../public/images/productos/bolleria.jpeg";
 
-// Fotos del submenú de «Nuestros Productos» (brief: «Aquí 3 fotos con submenú 3»).
+// Fotos del submenú de «Tienda Online» (brief: «Aquí 3 fotos con submenú 3»).
 const submenuImages: Record<string, { src: ImageMetadata; alt: string }> = {
   Dulce: { src: imgDulce, alt: "Tarta de tres chocolates cortada" },
   Salado: { src: imgSalado, alt: "Quiche lorraine dorada, recién horneada" },
@@ -28,7 +28,7 @@ const isActive = (href: string) => {
 };
 ---
 <header
-  class="sticky top-0 z-50 bg-[color:var(--color-leche)]/95 backdrop-blur border-b border-[color:var(--color-avellana)]"
+  class="sticky top-0 z-50 bg-[color:var(--color-latte)]/95 backdrop-blur border-b border-[color:var(--color-avellana)]"
   transition:persist
 >
   <!-- La cinta cromática: la paleta en proporción, una por pieza -->
@@ -111,7 +111,7 @@ const isActive = (href: string) => {
   <!-- Banda de navegación: las cuatro secciones -->
   <nav
     aria-label="Principal"
-    class="hidden md:block bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
+    class="hidden md:block bg-[color:var(--color-teja)] border-t border-[color:var(--color-avellana)]"
   >
     <ul class="mx-auto max-w-6xl px-4 sm:px-6 flex items-stretch justify-center gap-8 lg:gap-12 text-[11px] font-medium uppercase tracking-[0.16em]">
       {mainNav.map((item) => {
@@ -119,8 +119,8 @@ const isActive = (href: string) => {
         const linkClass = [
           "flex items-center h-full py-4 border-b-2 transition-colors",
           active
-            ? "text-[color:var(--color-caramelo)] border-[color:var(--color-caramelo)]"
-            : "text-[color:var(--color-moka)] border-transparent hover:text-[color:var(--color-caramelo)]",
+            ? "text-[color:var(--color-leche)] border-[color:var(--color-leche)]"
+            : "text-[color:var(--color-leche)]/80 border-transparent hover:text-[color:var(--color-leche)]",
         ];
 
         if (!item.children) {
@@ -187,10 +187,10 @@ const isActive = (href: string) => {
   <nav
     id="mobile-nav"
     aria-label="Móvil"
-    class="md:hidden hidden bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]"
+    class="md:hidden hidden bg-[color:var(--color-teja)] border-t border-[color:var(--color-avellana)]"
   >
     <div class="mx-auto max-w-6xl px-4 py-3 flex flex-col">
-      <form action="/catalogo" method="get" role="search" class="flex items-center border border-[color:var(--color-avellana)] mb-3 bg-[color:var(--color-leche)]">
+      <form action="/catalogo" method="get" role="search" class="flex items-center border border-[color:var(--color-leche)]/45 mb-3 bg-[color:var(--color-leche)]">
         <label for="buscar-movil" class="sr-only">Buscar en el catálogo</label>
         <input
           id="buscar-movil"
@@ -209,8 +209,8 @@ const isActive = (href: string) => {
 
       <ul class="flex flex-col text-[11px] font-medium uppercase tracking-[0.16em]">
         {mainNav.map((item) => (
-          <li class="border-b border-[color:var(--color-avellana)]/60">
-            <a href={item.href} data-mobile-nav-link class="block py-3 text-[color:var(--color-moka)]">
+          <li class="border-b border-[color:var(--color-leche)]/25">
+            <a href={item.href} data-mobile-nav-link class="block py-3 text-[color:var(--color-leche)]">
               {item.label}
             </a>
             {item.children && (
@@ -220,7 +220,7 @@ const isActive = (href: string) => {
                     <a
                       href={child.href}
                       data-mobile-nav-link
-                      class="block py-2 text-[color:var(--color-ink-muted)] normal-case tracking-normal text-xs"
+                      class="block py-2 text-[color:var(--color-leche)]/70 normal-case tracking-normal text-xs"
                     >
                       {child.label}
                     </a>
@@ -235,7 +235,7 @@ const isActive = (href: string) => {
       <a
         href="/hosteleria-y-empresas#alta"
         data-mobile-nav-link
-        class="btn btn-secundario mt-4"
+        class="btn btn-contorno-claro mt-4"
       >
         Acceso clientes
       </a>
@@ -243,11 +243,11 @@ const isActive = (href: string) => {
         href={whatsappUrl}
         rel="noopener"
         target="_blank"
-        class="btn btn-primario mt-2"
+        class="btn btn-claro mt-2"
       >
         Contáctanos por WhatsApp
       </a>
-      <SocialLinks class="mt-4 pt-4 border-t border-[color:var(--color-avellana)]/60" />
+      <SocialLinks tono="leche" class="mt-4 pt-4 border-t border-[color:var(--color-leche)]/25" />
     </div>
   </nav>
 </header>

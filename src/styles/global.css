@@ -188,3 +188,13 @@
 .btn-claro:hover {
   background: var(--color-latte);
 }
+
+/* Contorno claro: para botones sobre fondo teja (barra de menú). */
+.btn-contorno-claro {
+  color: var(--color-leche);
+  border-color: color-mix(in srgb, var(--color-leche) 45%, transparent);
+}
+.btn-contorno-claro:hover {
+  background: var(--color-leche);
+  color: var(--color-moka);
+}
