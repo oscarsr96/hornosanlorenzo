@@ -1,26 +1,31 @@
 # Lecciones — hornosanlorenzo
 
-## Limpiar la caché de Vite tras instalar dependencias
+## El servidor de desarrollo da falsos positivos
 
-Después de `pnpm add`, si las islas de React dejan de hidratarse y la consola
-muestra `jsxDEV is not a function`, no es un fallo del código: es la caché de
-dependencias optimizadas de Vite, que quedó desfasada.
+Dos formas de perseguir el bug equivocado: tras `pnpm add`, la caché de Vite
+queda desfasada y las islas fallan con `jsxDEV is not a function`, que parece un
+error de React (pasó con `CartPage`, que estaba bien); y tras reiniciar, Astro
+elige otro puerto sin avisar, así que se prueba contra un servidor viejo que
+responde 200 con el módulo antiguo en memoria.
 
-**Why:** el síntoma parece un error de compilación de React y lleva a depurar el
-componente equivocado. Pasó con `CartPage`, que estaba correcto.
+**Why:** una prueba que pasa contra el entorno equivocado es peor que un error,
+porque cierra la investigación en falso.
 
-**How to apply:** vaciar `node_modules/.vite` y `.astro/` y reiniciar el
-servidor antes de tocar nada del componente.
+**How to apply:** ante un fallo raro de hidratación, vaciar `node_modules/.vite`
+y `.astro/` antes de tocar el componente. Y leer siempre el puerto del log
+(`grep Local`) en vez de darlo por hecho.
 
-## Leer el puerto real del servidor de desarrollo
+## Verificar el camino completo, no la pieza que tocaste
 
-`pkill` + arrancar de inmediato deja el puerto anterior ocupado, y Astro elige
-otro sin avisar. Estuve varias iteraciones probando contra un servidor viejo con
-el módulo antiguo en memoria, y las peticiones respondían: no había ningún
-indicio de que fuera el servidor equivocado.
+Cargué 54 productos con varios tamaños y comprobé que la ficha los mostraba: la
+rejilla del catálogo seguía metiendo en el carrito la talla más barata sin
+preguntar. Añadí «Top Ventas» y «Packs» al submenú y comprobé el menú:
+`/catalogo` seguía pintando la taxonomía vieja, con un chip que no filtraba
+nada. Las dos veces lo vio Oscar abriendo la web.
 
-**Why:** un `curl` que devuelve 200 contra el servidor equivocado es peor que un
-error, porque parece que la prueba ha pasado.
+**Why:** lo que edité funcionaba. Fallaba la pantalla de al lado que derivaba de
+lo mismo, y llegar ahí por reporte del usuario cuesta una ronda entera.
 
-**How to apply:** después de arrancar, leer el puerto del log (`grep Local`) en
-vez de darlo por hecho, sobre todo tras cambiar `astro.config.mjs`.
+**How to apply:** tras cargar datos o cambiar navegación, recorrer en el
+navegador hasta el carrito y abrir las páginas que derivan su UI de esa
+estructura —landings, filtros, portada—, no solo la editada.
