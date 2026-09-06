@@ -198,3 +198,14 @@
   background: var(--color-leche);
   color: var(--color-moka);
 }
+
+/* Móvil (< md): los CTA principales van en el rojo de la paleta.
+   Alcanza a «Haz tu pedido» del header y a «Ver el catálogo». */
+@media (max-width: 767.98px) {
+  .btn-primario {
+    background: var(--color-teja);
+  }
+  .btn-primario:hover {
+    background: var(--color-moka);
+  }
+}
