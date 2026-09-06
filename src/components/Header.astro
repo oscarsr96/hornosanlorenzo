@@ -1,11 +1,11 @@
 ---
 import { Image } from "astro:assets";
 import CartBadge from "~/islands/CartBadge.tsx";
-import Firma from "~/components/Firma.astro";
 import SocialLinks from "~/components/SocialLinks.astro";
 import { site } from "~/data/site";
 import { mainNav } from "~/data/navigation";
 
+import logoFirma from "../../public/images/logo-firma-completa.png";
 import imgDulce from "../../public/images/productos/tarta-tres-chocolates.jpg";
 import imgSalado from "../../public/images/productos/quiche-lorraine.jpg";
 import imgPacks from "../../public/images/productos/bolleria.jpeg";
@@ -69,7 +69,13 @@ const isActive = (href: string) => {
     </div>
 
     <a href="/" aria-label={`${site.name} — inicio`} class="justify-self-center">
-      <Firma />
+      <Image
+        src={logoFirma}
+        alt=""
+        widths={[220, 320, 480, 640]}
+        sizes="(min-width:1024px) 300px, (min-width:640px) 240px, 190px"
+        class="w-[190px] sm:w-[240px] lg:w-[300px] h-auto"
+      />
     </a>
 
     <div class="flex items-center justify-end gap-2">
