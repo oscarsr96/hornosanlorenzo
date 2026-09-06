@@ -187,10 +187,11 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
       name: name.trim() || undefined,
       notes: notes.trim() || undefined,
     };
-    window.location.href = buildWhatsAppUrl(
-      PHONE,
-      buildWhatsAppMessage(cart, order),
-    );
+    const url = buildWhatsAppUrl(PHONE, buildWhatsAppMessage(cart, order));
+    // En pestaña aparte: el carrito y el paso del checkout siguen ahí cuando
+    // vuelve de WhatsApp. Si el navegador bloquea la ventana, navegamos.
+    const tab = window.open(url, "_blank", "noopener,noreferrer");
+    if (!tab) window.location.href = url;
   }
 
   const TITLES: Record<Step, string> = {

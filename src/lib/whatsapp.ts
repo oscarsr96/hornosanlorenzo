@@ -55,7 +55,12 @@ export function buildWhatsAppMessage(cart: Cart, order: OrderInfo): string {
   return lines.join("\n");
 }
 
-export function buildWhatsAppUrl(phone: string, message: string): string {
-  const cleaned = phone.replace(/[^\d]/g, "");
+export function buildWhatsAppUrl(
+  phone: string | undefined,
+  message: string,
+): string {
+  // Sin PUBLIC_WHATSAPP_NUMBER esto reventaba con «phone.replace is not a
+  // function»; el resto del sitio ya normalizaba igual, aquí no.
+  const cleaned = String(phone ?? "").replace(/[^\d]/g, "");
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
