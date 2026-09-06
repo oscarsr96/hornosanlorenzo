@@ -16,8 +16,8 @@ variants:
 shortDescription: "Bizcocho y cobertura de chocolate negro."
 allergens: []
 order: 101
-image: ../../../public/images/productos/foto-rollos-chocolate.jpg
-imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 featured: true
 ---
 

@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 606
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

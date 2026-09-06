@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha de zanahoria."
 allergens: []
 order: 603
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Plancha de zanahoria.

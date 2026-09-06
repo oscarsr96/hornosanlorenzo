@@ -16,8 +16,8 @@ variants:
 shortDescription: "Mini croissants de mantequilla, en cajas de 6, 12 y 24 unidades."
 allergens: []
 order: 1004
-image: ../../../public/images/productos/foto-croissants.jpg
-imageAlt: "Croissants de mantequilla recién salidos del horno, en bandeja"
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Mini croissants de mantequilla, en cajas de 6, 12 y 24 unidades.

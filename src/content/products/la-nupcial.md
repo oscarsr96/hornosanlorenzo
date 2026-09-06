@@ -16,8 +16,8 @@ variants:
 shortDescription: "Nuestra tarta de bodas y celebraciones."
 allergens: []
 order: 109
-image: ../../../public/images/productos/foto-milhojas.jpg
-imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Nuestra tarta de bodas y celebraciones.

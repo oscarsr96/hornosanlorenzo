@@ -16,8 +16,8 @@ variants:
 shortDescription: "Bizcocho, nata y trufa."
 allergens: []
 order: 104
-image: ../../../public/images/productos/foto-milhojas.jpg
-imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Bizcocho, nata y trufa.

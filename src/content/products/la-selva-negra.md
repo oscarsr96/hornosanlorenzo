@@ -16,8 +16,8 @@ variants:
 shortDescription: "Bizcocho de chocolate y nata."
 allergens: []
 order: 107
-image: ../../../public/images/productos/foto-rollos-chocolate.jpg
-imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Bizcocho de chocolate y nata.

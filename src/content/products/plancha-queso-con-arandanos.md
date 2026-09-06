@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 609
-image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
-imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

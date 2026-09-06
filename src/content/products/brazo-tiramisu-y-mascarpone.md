@@ -13,8 +13,8 @@ variants:
 shortDescription: "Brazo de 8–10 raciones."
 allergens: []
 order: 807
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Brazo de 8–10 raciones.

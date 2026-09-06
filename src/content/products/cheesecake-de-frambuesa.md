@@ -7,8 +7,8 @@ unit: "8–10 raciones"
 shortDescription: "Tarta cremosa de queso y frambuesa."
 allergens: []
 order: 208
-image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
-imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Tarta cremosa de queso y frambuesa.

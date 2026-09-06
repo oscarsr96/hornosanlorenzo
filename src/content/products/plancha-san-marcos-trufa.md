@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 407
-image: ../../../public/images/productos/foto-rollos-chocolate.jpg
-imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15.

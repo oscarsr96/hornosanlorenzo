@@ -16,8 +16,8 @@ variants:
 shortDescription: "Mini croissants salados, en cajas de 6, 12 y 24 unidades. Pedido con un día de antelación."
 allergens: []
 order: 1702
-image: ../../../public/images/productos/foto-croissants.jpg
-imageAlt: "Croissants de mantequilla recién salidos del horno, en bandeja"
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Mini croissants salados, en cajas de 6, 12 y 24 unidades. Pedido con un día de antelación.

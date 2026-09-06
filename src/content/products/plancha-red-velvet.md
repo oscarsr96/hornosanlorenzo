@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 604
-image: ../../../public/images/productos/foto-tarta-fresas.jpg
-imageAlt: "Tarta de nata coronada con fresas naturales"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

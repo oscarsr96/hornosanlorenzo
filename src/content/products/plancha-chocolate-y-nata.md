@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 408
-image: ../../../public/images/productos/foto-rollos-chocolate.jpg
-imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15.

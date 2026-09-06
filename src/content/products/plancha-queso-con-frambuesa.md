@@ -13,8 +13,8 @@ variants:
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 608
-image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
-imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

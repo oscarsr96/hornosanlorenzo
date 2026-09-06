@@ -16,8 +16,8 @@ variants:
 shortDescription: "De crema, chocolate o dulce de leche."
 allergens: []
 order: 1006
-image: ../../../public/images/productos/foto-croissants.jpg
-imageAlt: "Croissants de mantequilla recién salidos del horno, en bandeja"
+image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
+imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
 ---
 
 De crema, chocolate o dulce de leche.

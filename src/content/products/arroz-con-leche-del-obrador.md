@@ -7,8 +7,8 @@ unit: "8–10 raciones"
 shortDescription: "Receta tradicional, elaboración diaria."
 allergens: []
 order: 205
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Receta tradicional, elaboración diaria.

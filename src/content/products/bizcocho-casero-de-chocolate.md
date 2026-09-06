@@ -7,8 +7,8 @@ unit: "unidad"
 shortDescription: "Bizcocho casero de chocolate."
 allergens: []
 order: 701
-image: ../../../public/images/productos/foto-rollos-chocolate.jpg
-imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 featured: true
 ---
 

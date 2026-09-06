@@ -13,8 +13,8 @@ variants:
 shortDescription: "Tarta americana de zanahoria."
 allergens: []
 order: 110
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Tarta americana de zanahoria.

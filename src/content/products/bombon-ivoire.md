@@ -16,8 +16,8 @@ variants:
 shortDescription: "Bizcocho y cobertura de chocolate blanco."
 allergens: []
 order: 103
-image: ../../../public/images/productos/foto-canastas-caramelo.jpg
-imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
+image: ../../../public/images/productos/foto-tarta-frutas.jpg
+imageAlt: "Tarta cubierta de frutas naturales sobre crema"
 ---
 
 Bizcocho y cobertura de chocolate blanco.
