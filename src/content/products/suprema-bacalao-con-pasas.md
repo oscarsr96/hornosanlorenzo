@@ -6,7 +6,9 @@ priceCents: 2080
 unit: "8–10 raciones"
 shortDescription: "Suprema de hojaldre de 8–10 raciones."
 allergens: []
-order: 1202
+order: 1203
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Suprema de hojaldre de 8–10 raciones.

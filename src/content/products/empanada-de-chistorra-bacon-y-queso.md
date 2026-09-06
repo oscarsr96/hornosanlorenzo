@@ -12,7 +12,9 @@ variants:
     priceCents: 2280
 shortDescription: "Empanada de hojaldre. Entera de 16–20 raciones, media de 8–10."
 allergens: []
-order: 1106
+order: 1105
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Empanada de hojaldre. Entera de 16–20 raciones, media de 8–10.

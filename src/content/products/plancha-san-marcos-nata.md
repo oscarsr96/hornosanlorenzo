@@ -12,7 +12,10 @@ variants:
     priceCents: 2080
 shortDescription: "Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
-order: 405
+order: 401
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
+featured: true
 ---
 
 Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15.

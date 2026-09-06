@@ -15,7 +15,9 @@ variants:
     priceCents: 2200
 shortDescription: "Bizcocho, nata y trufa."
 allergens: []
-order: 103
+order: 104
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
 ---
 
 Bizcocho, nata y trufa.

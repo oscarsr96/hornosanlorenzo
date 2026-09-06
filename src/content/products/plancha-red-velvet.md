@@ -12,7 +12,9 @@ variants:
     priceCents: 2500
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
-order: 601
+order: 604
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

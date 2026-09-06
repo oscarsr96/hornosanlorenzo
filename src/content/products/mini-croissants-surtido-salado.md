@@ -13,6 +13,8 @@ variants:
 shortDescription: "Variados."
 allergens: []
 order: 1707
+image: ../../../public/images/productos/foto-croissants.jpg
+imageAlt: "Croissants de mantequilla recién salidos del horno, en bandeja"
 ---
 
 Variados.

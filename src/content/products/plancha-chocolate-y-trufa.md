@@ -12,7 +12,10 @@ variants:
     priceCents: 2080
 shortDescription: "Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
-order: 408
+order: 402
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
+featured: true
 ---
 
 Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15.

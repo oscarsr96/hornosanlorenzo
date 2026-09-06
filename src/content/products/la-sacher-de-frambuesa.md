@@ -16,6 +16,8 @@ variants:
 shortDescription: "Chocolate y frambuesa."
 allergens: []
 order: 102
+image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
+imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
 ---
 
 Chocolate y frambuesa.

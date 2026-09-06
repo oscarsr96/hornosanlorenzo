@@ -7,6 +7,8 @@ unit: "6 raciones"
 shortDescription: "Elaborada sin alérgenos · encargo previo."
 allergens: []
 order: 1301
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Elaborada sin alérgenos · encargo previo.

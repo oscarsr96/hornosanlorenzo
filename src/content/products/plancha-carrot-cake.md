@@ -12,7 +12,9 @@ variants:
     priceCents: 2500
 shortDescription: "Plancha de zanahoria."
 allergens: []
-order: 602
+order: 603
+image: ../../../public/images/productos/foto-canastas-caramelo.jpg
+imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
 ---
 
 Plancha de zanahoria.

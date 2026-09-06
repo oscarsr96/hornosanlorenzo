@@ -12,7 +12,9 @@ variants:
     priceCents: 2500
 shortDescription: "Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
-order: 603
+order: 605
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Plancha especial de la casa. Grande de 24–30 raciones, pequeña de 12–15.

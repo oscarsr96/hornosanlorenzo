@@ -15,7 +15,9 @@ variants:
     priceCents: 2500
 shortDescription: "Bizcocho de chocolate y nata."
 allergens: []
-order: 106
+order: 107
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Bizcocho de chocolate y nata.

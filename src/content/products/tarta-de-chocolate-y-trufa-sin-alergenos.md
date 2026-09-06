@@ -7,6 +7,8 @@ unit: "6 raciones"
 shortDescription: "Elaborada sin alérgenos · encargo previo."
 allergens: []
 order: 301
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Elaborada sin alérgenos · encargo previo.

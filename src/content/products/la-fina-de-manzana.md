@@ -6,7 +6,10 @@ priceCents: 1700
 unit: "8–10 raciones"
 shortDescription: "Manzana y crema."
 allergens: []
-order: 209
+order: 203
+image: ../../../public/images/productos/foto-tarta-frutas.jpg
+imageAlt: "Tarta cubierta de frutas naturales sobre crema"
+featured: true
 ---
 
 Manzana y crema.

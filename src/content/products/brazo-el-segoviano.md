@@ -12,7 +12,10 @@ variants:
     priceCents: 2050
 shortDescription: "Ponche segoviano."
 allergens: []
-order: 809
+order: 801
+image: ../../../public/images/productos/foto-milhojas.jpg
+imageAlt: "Milhojas rectangular de nata y crema, espolvoreada de azúcar"
+featured: true
 ---
 
 Ponche segoviano.

@@ -12,7 +12,10 @@ variants:
     priceCents: 2600
 shortDescription: "Pastelitos variados · 1 kg ≈ 40 ud / ½ kg ≈ 20 ud."
 allergens: []
-order: 504
+order: 501
+image: ../../../public/images/productos/foto-canastas-frambuesa.jpg
+imageAlt: "Canastas de frambuesa natural sobre confitura, recién montadas en el obrador"
+featured: true
 ---
 
 Pastelitos variados · 1 kg ≈ 40 ud / ½ kg ≈ 20 ud.

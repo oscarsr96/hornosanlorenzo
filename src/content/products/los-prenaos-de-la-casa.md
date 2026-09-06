@@ -13,6 +13,8 @@ variants:
 shortDescription: "Bollos preñaos de chorizo."
 allergens: []
 order: 1603
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Bollos preñaos de chorizo.

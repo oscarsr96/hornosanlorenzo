@@ -6,7 +6,9 @@ priceCents: 2050
 unit: "Brazo · 8–10 rac."
 shortDescription: "Brazo de 8–10 raciones."
 allergens: []
-order: 808
+order: 804
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Brazo de 8–10 raciones.

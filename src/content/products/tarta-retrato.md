@@ -16,6 +16,8 @@ variants:
 shortDescription: "Con fotografía personalizada. Suplemento sobre la tarta elegida."
 allergens: []
 order: 901
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Con fotografía personalizada. Suplemento sobre la tarta elegida.

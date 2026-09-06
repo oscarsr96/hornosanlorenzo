@@ -16,6 +16,8 @@ variants:
 shortDescription: "Frutas naturales y nata."
 allergens: []
 order: 108
+image: ../../../public/images/productos/foto-tarta-frutas.jpg
+imageAlt: "Tarta cubierta de frutas naturales sobre crema"
 ---
 
 Frutas naturales y nata.

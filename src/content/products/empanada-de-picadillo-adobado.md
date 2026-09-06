@@ -1,5 +1,5 @@
 ---
-name: "De Zorza"
+name: "De Picadillo Adobado"
 category: salado
 seccion: empanadas
 priceCents: 1380
@@ -12,7 +12,9 @@ variants:
     priceCents: 2280
 shortDescription: "Picadillo de chorizo."
 allergens: []
-order: 1105
+order: 1106
+image: ../../../public/images/productos/foto-empanadas.jpg
+imageAlt: "Empanadas de hojaldre enfriándose en los carros del obrador"
 ---
 
 Picadillo de chorizo.

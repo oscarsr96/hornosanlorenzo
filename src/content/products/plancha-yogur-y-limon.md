@@ -13,6 +13,8 @@ variants:
 shortDescription: "Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15."
 allergens: []
 order: 409
+image: ../../../public/images/productos/foto-tarta-frutas.jpg
+imageAlt: "Tarta cubierta de frutas naturales sobre crema"
 ---
 
 Plancha «San Lorenzo» de bizcocho. Grande de 24–30 raciones, pequeña de 12–15.

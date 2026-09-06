@@ -15,7 +15,9 @@ variants:
     priceCents: 2500
 shortDescription: "De crema, chocolate o dulce de leche."
 allergens: []
-order: 1005
+order: 1006
+image: ../../../public/images/productos/foto-croissants.jpg
+imageAlt: "Croissants de mantequilla recién salidos del horno, en bandeja"
 ---
 
 De crema, chocolate o dulce de leche.

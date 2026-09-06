@@ -15,8 +15,9 @@ variants:
     priceCents: 2500
 shortDescription: "Bizcocho y cobertura de chocolate blanco."
 allergens: []
-featured: true
-order: 107
+order: 103
+image: ../../../public/images/productos/foto-canastas-caramelo.jpg
+imageAlt: "Bandeja de canastas de caramelo y de frutos rojos sobre base de chocolate"
 ---
 
 Bizcocho y cobertura de chocolate blanco.

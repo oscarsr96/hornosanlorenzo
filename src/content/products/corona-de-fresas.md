@@ -15,7 +15,9 @@ variants:
     priceCents: 2700
 shortDescription: "Fresas naturales y nata."
 allergens: []
-order: 105
+order: 106
+image: ../../../public/images/productos/foto-tarta-fresas.jpg
+imageAlt: "Tarta de nata coronada con fresas naturales"
 ---
 
 Fresas naturales y nata.

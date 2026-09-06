@@ -15,7 +15,9 @@ variants:
     priceCents: 2200
 shortDescription: "Nata y trufa."
 allergens: []
-order: 104
+order: 105
+image: ../../../public/images/productos/foto-rollos-chocolate.jpg
+imageAlt: "Rollos de chocolate rellenos de crema, rebozados en granillo"
 ---
 
 Nata y trufa.
