@@ -1,26 +1,35 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
-- [ ] **Alérgenos de las 98 fichas.** Van todas con `allergens: []` porque la
+- [ ] **Alérgenos de las 100 fichas.** Van todas con `allergens: []` porque la
       carta no los trae. No inventarlos: tienen que venir del obrador
 - [ ] Configurar las 5 variables de Stripe y Resend en Vercel (`.env.example`)
+- [ ] `PUBLIC_WHATSAPP_NUMBER` en Vercel: si falta, el botón de WhatsApp del
+      checkout abre `wa.me/` sin destinatario
 - [ ] Condiciones de compra: razón social, CIF y revisión legal
 - [ ] Confirmar con el obrador gastos de envío y pedido mínimo
       (constantes en `src/lib/entrega.ts`, hoy a cero)
 - [ ] Confirmar qué formas de pago admite cada tienda
 
 ## Carta: lo que falta
-- [ ] Fotos de producto: las 98 fichas pintan el hueco «Foto pendiente»
+- [ ] Fotos reales: las 100 fichas llevan las 8 fotos del obrador repetidas por
+      familia, ninguna es del producto de su ficha
+- [ ] Salado repite foto en fichas seguidas (solo hay una foto salada en el
+      lote). Decidir: dejarlo, o recortar la de empanadas en dos encuadres
 - [ ] Copy propio para 47 productos que hoy usan la nota de su sección
       (planchas, colección especial, brazos, empanadas, quiches, Lorenzas)
 - [ ] Páginas de la carta de **bollería diaria** y **temporada**: no estaban en
       los rangos 5–14, así que esas dos gamas no tienen ni una ficha
 - [ ] Precio de «Las Lorenzas Rellenas Saladas» y «Las Lorenzas Variadas»,
       hoy marcadas `consultar: true`
-- [ ] Top Ventas muestra los 4 marcados «Especialidad desde 1986» porque no hay
-      datos de ventas. Decir cuáles son los reales y mover `featured`
 
 ## Coherencia y deuda
+- [ ] `src/components/Firma.astro` quedó sin uso al poner el logo en PNG en la
+      cabecera: borrarlo o reutilizarlo en documentos
+- [ ] `/catalogo/empanada-de-zorza` ya no existe (ahora `-picadillo-adobado`) y
+      no hay redirección
+- [ ] Pozuelo abre domingos según su ficha, pero el checkout bloquea todos los
+      domingos (`isClosed` en `src/lib/entrega.ts`). Preguntar al obrador
 - [ ] Taxonomía legacy en `src/data/categories.ts`: `temporada` se quedó a cero
       productos y la etiqueta de `bolleria` ya no describe su contenido
 - [ ] Nombres desalineados: el pie dice «Nuestros productos» y «Packs y promos»
