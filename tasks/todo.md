@@ -1,6 +1,20 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **`DATABASE_URL` y `BETTER_AUTH_SECRET` en Vercel antes de fusionar
+      `feat/base-de-datos-y-acceso` a `main`.** `src/middleware.ts` corre en
+      todas las peticiones y importa `~/lib/auth/server`, que crea el pool de
+      Postgres en cuanto se carga el módulo: sin `DATABASE_URL` ese `import`
+      lanza y **el build de Vercel falla para todo el sitio**, no solo para
+      cuenta o carrito. Sin `BETTER_AUTH_SECRET` pasa lo mismo al construirse
+      `auth`. Las dos tienen que estar puestas en Vercel antes de fusionar,
+      no después.
+      Añadir también `PUBLIC_SITE_URL` al entorno de **build**, no solo al de
+      ejecución: `import.meta.env.PUBLIC_SITE_URL` se resuelve en build
+      (Vite la sustituye como una constante), así que si solo está en el
+      entorno de ejecución llega `undefined` a `auth.baseURL` y Better Auth
+      construye los enlaces de recuperación de contraseña con el `Host` de
+      cada petición en vez de con el dominio real.
 - [ ] **Antes de poner `RESEND_API_KEY`: cerrar la fuga por tiempo de la
       recuperación de contraseña.** La respuesta de «he olvidado mi contraseña»
       dice lo mismo exista o no la cuenta, pero si existe **espera** a que salga
