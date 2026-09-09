@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly PUBLIC_SITE_URL: string;
+  readonly DATABASE_URL: string;
 }
 
 interface ImportMeta {

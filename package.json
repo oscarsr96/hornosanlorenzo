@@ -14,7 +14,8 @@
     "check": "astro check",
     "astro": "astro",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrar": "node --env-file=.env scripts/migrar.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.0",
@@ -26,6 +27,7 @@
     "@vercel/analytics": "^1.5.0",
     "astro": "^5.14.0",
     "motion": "^11.18.0",
+    "pg": "^8.23.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "resend": "^6.26.0",
@@ -36,6 +38,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "typescript": "^5.8.0",
