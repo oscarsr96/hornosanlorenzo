@@ -2,9 +2,14 @@ import { useState } from "react";
 import { useCart } from "~/hooks/useCart";
 import { formatPriceCents } from "~/lib/format";
 import { MODE_COPY } from "~/lib/entrega";
-import CheckoutFlow from "~/islands/CheckoutFlow";
+import CheckoutFlow, { type Prefill } from "~/islands/CheckoutFlow";
 
-export default function CartPage() {
+type Props = {
+  /** Sin sesión llega `undefined` y el checkout se abre como siempre. */
+  prefill?: Prefill;
+};
+
+export default function CartPage({ prefill }: Props) {
   const { cart, totalCents, totalQty, updateQty, removeItem, clearCart } =
     useCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -256,6 +261,7 @@ export default function CartPage() {
           cart={cart}
           totalCents={totalCents}
           onClose={() => setCheckoutOpen(false)}
+          prefill={prefill}
         />
       )}
     </section>

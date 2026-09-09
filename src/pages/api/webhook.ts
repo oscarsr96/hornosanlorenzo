@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import Stripe from "stripe";
-import { Resend } from "resend";
+import { enviarCorreo } from "~/lib/email/enviar";
 import { site } from "~/data/site";
 
 // Stripe llama a esta ruta: nunca se prerenderiza.
@@ -31,7 +31,11 @@ export const POST: APIRoute = async ({ request }) => {
 
   let event: Stripe.Event;
   try {
-    event = await stripe.webhooks.constructEventAsync(body, signature, signingSecret);
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      signingSecret,
+    );
   } catch (err) {
     console.error("[webhook] firma inválida", err);
     return new Response("invalid signature", { status: 400 });
@@ -58,13 +62,15 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response("ok", { status: 200 });
 };
 
-async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
+export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
   const apiKey = import.meta.env.RESEND_API_KEY;
   const to = import.meta.env.ORDER_NOTIFICATION_EMAIL;
   const from = import.meta.env.ORDER_FROM_EMAIL;
 
   const m = session.metadata ?? {};
-  const total = ((session.amount_total ?? 0) / 100).toFixed(2).replace(".", ",");
+  const total = ((session.amount_total ?? 0) / 100)
+    .toFixed(2)
+    .replace(".", ",");
   const cliente = session.customer_details?.email ?? "";
 
   const items = await stripe.checkout.sessions.listLineItems(session.id, {
@@ -91,28 +97,40 @@ async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
     .filter(Boolean)
     .join("\n");
 
+  // Todo o nada, a propósito: el correo al cliente dice «Ya está pagado y
+  // anotado en el obrador», y esa frase solo puede ser cierta si ese aviso
+  // ha salido de verdad — da igual que la razón sea que falta configuración
+  // (este caso) o que el envío al obrador falle ya con todo bien
+  // configurado (el siguiente bloque: proveedor caído, dominio sin
+  // verificar, límite alcanzado...). Si mandáramos el correo al cliente de
+  // todos modos, podríamos confirmarle algo falso, o dejar una avería sin
+  // que nadie la note porque el cliente sigue viendo confirmaciones
+  // perfectas. Por eso cualquiera de los dos casos frena también el correo
+  // al cliente: el pedido no se pierde, queda en el panel de Stripe y en
+  // este registro.
   if (!apiKey || !to || !from) {
-    // Sin correo configurado el pedido no se pierde: queda en el panel de
-    // Stripe y en los registros de la función.
     console.warn("[webhook] correo no configurado; pedido:\n" + resumen);
     return;
   }
 
-  const resend = new Resend(apiKey);
-
-  await resend.emails.send({
-    from,
-    to,
-    subject: `Pedido web — ${m.dia ?? ""} · ${total} €`,
-    text: resumen,
+  const obrador = await enviarCorreo({
+    para: to,
+    asunto: `Pedido web — ${m.dia ?? ""} · ${total} €`,
+    texto: resumen,
   });
 
+  if (!obrador.ok) {
+    // Mismo motivo que el bloque de arriba: sin aviso al obrador, no se
+    // manda la confirmación al cliente.
+    console.warn("[webhook] no se pudo avisar al obrador; pedido:\n" + resumen);
+    return;
+  }
+
   if (cliente) {
-    await resend.emails.send({
-      from,
-      to: cliente,
-      subject: `Tu pedido en ${site.name}`,
-      text: [
+    const clienteEnviado = await enviarCorreo({
+      para: cliente,
+      asunto: `Tu pedido en ${site.name}`,
+      texto: [
         `Gracias por tu pedido. Ya está pagado y anotado en el obrador.`,
         "",
         detalle,
@@ -127,5 +145,12 @@ async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
         site.legend,
       ].join("\n"),
     });
+
+    if (!clienteEnviado.ok) {
+      console.warn(
+        `[webhook] no se pudo avisar al cliente (${cliente}) de su pedido:\n` +
+          resumen,
+      );
+    }
   }
 }

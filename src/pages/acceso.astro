@@ -1,6 +1,10 @@
 ---
+export const prerender = false;
+
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import AccesoClientes from "~/islands/AccesoClientes.tsx";
+
+if (Astro.locals.usuario) return Astro.redirect("/cuenta");
 ---
 <MarketingLayout
   title="Acceso clientes"

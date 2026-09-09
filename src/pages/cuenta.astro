@@ -1,0 +1,72 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import CuentaDatos from "~/islands/CuentaDatos.tsx";
+import CuentaDirecciones from "~/islands/CuentaDirecciones.tsx";
+import { listarDirecciones } from "~/lib/db/direcciones";
+
+// Página protegida: lee la sesión de la petición, así que no puede
+// prerenderizarse. Sin esta línea el middleware serviría la página como
+// estática, `Astro.locals.usuario` sería siempre null y se echaría a todo
+// el mundo a /acceso, incluso con sesión.
+export const prerender = false;
+
+const usuario = Astro.locals.usuario;
+if (!usuario) return Astro.redirect("/acceso");
+
+// Nombre, correo, teléfono y direcciones: nada de esto debe quedar en una
+// caché compartida ni en el disco del navegador.
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+// Un fallo de Postgres aquí no puede romper la página entera: la propia
+// isla de direcciones ya sabe crear, editar y borrar contra el endpoint, así
+// que arranca con la lista vacía y quien tiene cuenta puede volver a
+// intentarlo, en vez de ver un error 500 al entrar a su cuenta.
+let direccionesIniciales: Awaited<ReturnType<typeof listarDirecciones>> = [];
+try {
+  direccionesIniciales = await listarDirecciones(usuario.id);
+} catch (error) {
+  console.error(
+    "No se pudieron cargar las direcciones guardadas, se sigue sin ellas:",
+    error instanceof Error ? error.message : error,
+  );
+}
+---
+<MarketingLayout
+  title="Mi cuenta"
+  description="Consulta y edita tus datos personales."
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+    <p class="numeracion">Mi cuenta</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Tus datos</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+      Así te tenemos anotado. El correo es tu acceso y no se cambia desde
+      aquí.
+    </p>
+
+    <div class="mt-8">
+      <CuentaDatos
+        client:load
+        nombre={usuario.name}
+        email={usuario.email}
+        telefono={usuario.telefono ?? ""}
+      />
+    </div>
+
+    <hr class="mt-12 border-t border-[color:var(--color-avellana)]" />
+
+    <div class="mt-12">
+      <p class="numeracion">Reparto</p>
+      <h2 class="text-2xl sm:text-3xl mt-2">Tus direcciones</h2>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+        Guárdalas aquí para no volver a escribirlas en el siguiente pedido.
+      </p>
+
+      <div class="mt-8">
+        <CuentaDirecciones
+          client:load
+          direccionesIniciales={direccionesIniciales}
+        />
+      </div>
+    </div>
+  </section>
+</MarketingLayout>

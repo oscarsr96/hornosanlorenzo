@@ -1,6 +1,30 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **`DATABASE_URL` y `BETTER_AUTH_SECRET` en Vercel antes de fusionar
+      `feat/base-de-datos-y-acceso` a `main`.** `src/middleware.ts` corre en
+      todas las peticiones y importa `~/lib/auth/server`, que crea el pool de
+      Postgres en cuanto se carga el módulo: sin `DATABASE_URL` ese `import`
+      lanza y **el build de Vercel falla para todo el sitio**, no solo para
+      cuenta o carrito. Sin `BETTER_AUTH_SECRET` pasa lo mismo al construirse
+      `auth`. Las dos tienen que estar puestas en Vercel antes de fusionar,
+      no después.
+      Añadir también `PUBLIC_SITE_URL` al entorno de **build**, no solo al de
+      ejecución: `import.meta.env.PUBLIC_SITE_URL` se resuelve en build
+      (Vite la sustituye como una constante), así que si solo está en el
+      entorno de ejecución llega `undefined` a `auth.baseURL` y Better Auth
+      construye los enlaces de recuperación de contraseña con el `Host` de
+      cada petición en vez de con el dominio real.
+- [ ] **Antes de poner `RESEND_API_KEY`: cerrar la fuga por tiempo de la
+      recuperación de contraseña.** La respuesta de «he olvidado mi contraseña»
+      dice lo mismo exista o no la cuenta, pero si existe **espera** a que salga
+      el correo y si no existe no espera: se puede saber quién es cliente
+      midiendo cuánto tarda. Hoy no se nota porque no hay proveedor configurado.
+      El arreglo es `advanced.backgroundTasks.handler` de Better Auth con el
+      `waitUntil` de Vercel, pero **exige Fluid Compute activado** en el panel
+      del proyecto: sin eso, `waitUntil` es un no-op silencioso y el correo de
+      recuperación podría no enviarse nunca. Comprobar primero si está activo
+      (detalle en la sección «Ronda de arreglo 1» del informe de la tarea 9)
 - [ ] **Horario real de la tienda de Alcobendas.** La ficha dice «Lun–Sáb
       7:00–14:00» y Oscar confirmó el 9 de septiembre de 2026 que está mal: la
       recogida llega hasta las 19:30. No lo cambio sin el horario completo —si
@@ -70,6 +94,20 @@
       promesas de salud, pero puede ser un argumento de venta real
 
 ## Más adelante
+- [ ] **Llevar el cómputo a Cloud Run** cuando el proyecto esté asentado. Del
+      análisis de costes del 9 de septiembre de 2026: Vercel Pro son ~20 €/mes
+      —Hobby no vale, es solo uso no comercial y esto cobra con Stripe— y Cloud
+      Run a este tráfico son ~2–5 € porque escala a cero. La base de datos **se
+      queda donde esté**: Cloud SQL no tiene plan gratuito, no baja a cero y es
+      justo la pieza cara (~10–30 €/mes). O sea, la jugada es mover el cómputo,
+      no «migrar a Google Cloud». Son unas horas, no una migración, porque el
+      diseño ya no depende del proveedor
+      (`docs/superpowers/specs/2026-09-09-registro-usuarios-y-panel-admin-design.md`, §5.3).
+      Ojo con Cloudflare como alternativa barata: su entorno no es Node del todo
+      y `pg` no funciona ahí sin cambiar a un driver por HTTP. Cloud Run sí, es
+      un contenedor de Node normal.
+      Los precios salen de mi entrenamiento, no de sus webs: confírmalos antes
+      de decidir
 - [ ] Bloque E: alta B2B real con validación de CIF, precios por cliente y
       packs XL descontados. Necesita backend (auth + base de datos)
 - [ ] Si algún día se quieren cuentas de usuario, el alta de `/acceso` está

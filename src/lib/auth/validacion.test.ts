@@ -1,0 +1,90 @@
+import { describe, expect, it } from "vitest";
+import {
+  validaEntrada,
+  validaNuevaContrasena,
+  validaRecuperar,
+  validaRegistro,
+} from "~/lib/auth/validacion";
+
+describe("validaRegistro", () => {
+  const bueno = {
+    nombre: "Ana",
+    email: "ana@ejemplo.com",
+    telefono: "666123456",
+    password: "unaclavelarga",
+  };
+
+  it("acepta un alta completa", () => {
+    expect(validaRegistro(bueno)).toEqual({ ok: true });
+  });
+
+  it("exige nombre", () => {
+    const r = validaRegistro({ ...bueno, nombre: " " });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.errores.nombre).toBeTruthy();
+  });
+
+  it("exige un correo con forma de correo", () => {
+    const r = validaRegistro({ ...bueno, email: "ana@" });
+    expect(r.ok === false && r.errores.email).toBeTruthy();
+  });
+
+  it("reutiliza la validación de teléfono del pedido", () => {
+    const r = validaRegistro({ ...bueno, telefono: "12345" });
+    expect(r.ok === false && r.errores.telefono).toBeTruthy();
+  });
+
+  it("exige ocho caracteres de contraseña, como el servidor", () => {
+    const r = validaRegistro({ ...bueno, password: "corta7" });
+    expect(r.ok === false && r.errores.password).toBeTruthy();
+  });
+});
+
+describe("validaEntrada", () => {
+  it("solo mira que haya correo y contraseña", () => {
+    expect(validaEntrada({ email: "ana@ejemplo.com", password: "x" })).toEqual({
+      ok: true,
+    });
+    expect(validaEntrada({ email: "", password: "x" }).ok).toBe(false);
+  });
+});
+
+describe("validaRecuperar", () => {
+  it("acepta un correo con forma de correo", () => {
+    expect(validaRecuperar({ email: "ana@ejemplo.com" })).toEqual({
+      ok: true,
+    });
+  });
+
+  it("exige un correo con forma de correo", () => {
+    const r = validaRecuperar({ email: "no-es-correo" });
+    expect(r.ok === false && r.errores.email).toBeTruthy();
+  });
+});
+
+describe("validaNuevaContrasena", () => {
+  it("acepta dos contraseñas iguales y suficientemente largas", () => {
+    expect(
+      validaNuevaContrasena({
+        password: "unaclavelarga",
+        confirmar: "unaclavelarga",
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("exige el mínimo de caracteres, como el servidor", () => {
+    const r = validaNuevaContrasena({
+      password: "corta7",
+      confirmar: "corta7",
+    });
+    expect(r.ok === false && r.errores.password).toBeTruthy();
+  });
+
+  it("exige que las dos contraseñas coincidan", () => {
+    const r = validaNuevaContrasena({
+      password: "unaclavelarga",
+      confirmar: "otraclavelarga",
+    });
+    expect(r.ok === false && r.errores.confirmar).toBeTruthy();
+  });
+});

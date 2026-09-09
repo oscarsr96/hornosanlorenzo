@@ -24,12 +24,15 @@ const json = (body: unknown, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request, url, locals }) => {
   const secret = import.meta.env.STRIPE_SECRET_KEY;
   if (!secret) {
     console.error("[checkout] falta STRIPE_SECRET_KEY");
     return json(
-      { error: "El pago no está configurado todavía. Llámanos y te lo tomamos por teléfono." },
+      {
+        error:
+          "El pago no está configurado todavía. Llámanos y te lo tomamos por teléfono.",
+      },
       503,
     );
   }
@@ -48,9 +51,13 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   let order;
   try {
-    order = await priceOrder(parsed.data);
+    // El id sale de la sesión de la petición, nunca del cuerpo: si se
+    // aceptara del navegador, cualquiera podría atribuir su pedido a otra
+    // persona. Un invitado no tiene sesión y `userId` queda sin definir.
+    order = await priceOrder(parsed.data, { userId: locals.usuario?.id });
   } catch (err) {
-    if (err instanceof OrderError) return json({ error: err.message }, err.status);
+    if (err instanceof OrderError)
+      return json({ error: err.message }, err.status);
     console.error("[checkout] error al valorar el pedido", err);
     return json({ error: "No hemos podido preparar el pedido." }, 500);
   }
@@ -59,18 +66,19 @@ export const POST: APIRoute = async ({ request, url }) => {
   const stripe = new Stripe(secret);
   const origin = import.meta.env.PUBLIC_SITE_URL ?? url.origin;
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = order.lines.map(
-    (line) => ({
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+    order.lines.map((line) => ({
       quantity: line.qty,
       price_data: {
         currency: "eur",
         unit_amount: line.unitPriceCents,
         product_data: {
-          name: line.variantLabel ? `${line.name} — ${line.variantLabel}` : line.name,
+          name: line.variantLabel
+            ? `${line.name} — ${line.variantLabel}`
+            : line.name,
         },
       },
-    }),
-  );
+    }));
 
   if (order.shippingCents > 0) {
     lineItems.push({
@@ -111,6 +119,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     return json({ url: session.url });
   } catch (err) {
     console.error("[checkout] Stripe rechazó la sesión", err);
-    return json({ error: "No hemos podido abrir el pago. Inténtalo de nuevo." }, 502);
+    return json(
+      { error: "No hemos podido abrir el pago. Inténtalo de nuevo." },
+      502,
+    );
   }
 };

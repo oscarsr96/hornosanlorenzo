@@ -1,0 +1,76 @@
+import { authClient } from "~/lib/auth/cliente";
+
+type Tono = "claro" | "moka";
+
+// El sitio es estático: casi todas las páginas se generan en build, sin
+// petición ni sesión. Esta isla resuelve la sesión con
+// `authClient.useSession()` en vez de leer `Astro.locals.usuario` (que en
+// una página prerenderizada siempre es `null`).
+//
+// Se monta con `client:load`, no `client:only`: el store de sesión de
+// Better Auth empieza siempre en `{ data: null }` —no hace red hasta que se
+// monta en el navegador—, así que tanto el render de servidor (build) como
+// el primer pintado del cliente (antes de hidratar) producen el mismo
+// marcado de «sin sesión». Eso deja un `<a href="/acceso">` de verdad en el
+// HTML construido, sin depender de que llegue el bundle: si no hay sesión
+// no cambia nada; si la hay, la hidratación lo sustituye por «Mi cuenta» +
+// «Salir» en cuanto resuelve.
+const ESTILOS: Record<
+  Tono,
+  {
+    contenedor: string;
+    enlaceSolo: string;
+    enlaceEnGrupo: string;
+    salir: string;
+  }
+> = {
+  // Banda superior de escritorio: fondo teja, texto en leche.
+  claro: {
+    contenedor: "hidden lg:inline-flex items-center gap-3",
+    enlaceSolo:
+      "hidden lg:inline-flex items-center h-10 px-4 whitespace-nowrap border border-[color:var(--color-leche)]/45 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-leche)] hover:bg-[color:var(--color-leche)] hover:text-[color:var(--color-teja)] transition-colors",
+    // Mismo estilo que `enlaceSolo`, pero sin repetir la visibilidad/el
+    // `inline-flex` que ya pone el `contenedor` que lo envuelve.
+    enlaceEnGrupo:
+      "inline-flex items-center h-10 px-4 whitespace-nowrap border border-[color:var(--color-leche)]/45 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-leche)] hover:bg-[color:var(--color-leche)] hover:text-[color:var(--color-teja)] transition-colors",
+    salir:
+      "text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-leche)] underline underline-offset-4 hover:text-[color:var(--color-latte)] transition-colors",
+  },
+  // Panel del menú móvil: fondo latte, texto en moka con filete avellana.
+  moka: {
+    contenedor: "flex items-center gap-3 mt-4",
+    enlaceSolo: "btn btn-secundario mt-4",
+    enlaceEnGrupo: "btn btn-secundario",
+    salir:
+      "text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--color-moka)] underline underline-offset-4 hover:text-[color:var(--color-caramelo)] transition-colors",
+  },
+};
+
+async function salir() {
+  await authClient.signOut();
+  window.location.href = "/";
+}
+
+export default function AccesoSesion({ tono }: { tono: Tono }) {
+  const { data } = authClient.useSession();
+  const estilo = ESTILOS[tono];
+
+  if (!data?.user) {
+    return (
+      <a href="/acceso" data-mobile-nav-link className={estilo.enlaceSolo}>
+        Acceso clientes
+      </a>
+    );
+  }
+
+  return (
+    <div className={estilo.contenedor}>
+      <a href="/cuenta" data-mobile-nav-link className={estilo.enlaceEnGrupo}>
+        Mi cuenta
+      </a>
+      <button type="button" className={estilo.salir} onClick={salir}>
+        Salir
+      </button>
+    </div>
+  );
+}

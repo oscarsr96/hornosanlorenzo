@@ -1,0 +1,20 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import RecuperarForm from "~/islands/RecuperarForm.tsx";
+---
+<MarketingLayout
+  title="Recuperar contraseña"
+  description="Pide un enlace para cambiar la contraseña de tu cuenta."
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+    <p class="numeracion">Acceso clientes</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">¿Has olvidado tu contraseña?</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+      Escribe el correo de tu cuenta y te mandamos un enlace para cambiarla.
+    </p>
+
+    <div class="mt-8">
+      <RecuperarForm client:load />
+    </div>
+  </section>
+</MarketingLayout>
