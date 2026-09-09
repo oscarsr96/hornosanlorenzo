@@ -38,3 +38,23 @@ export function validaEntrada(d: {
   if (!d.password) errores.password = "Escribe tu contraseña.";
   return Object.keys(errores).length ? { ok: false, errores } : { ok: true };
 }
+
+export function validaRecuperar(d: { email: string }): Resultado {
+  const errores: Record<string, string> = {};
+  if (!esEmail(d.email)) errores.email = "Ese correo no parece válido.";
+  return Object.keys(errores).length ? { ok: false, errores } : { ok: true };
+}
+
+export function validaNuevaContrasena(d: {
+  password: string;
+  confirmar: string;
+}): Resultado {
+  const errores: Record<string, string> = {};
+  if (d.password.length < MIN_PASSWORD) {
+    errores.password = `La contraseña necesita al menos ${MIN_PASSWORD} caracteres.`;
+  }
+  if (d.confirmar !== d.password) {
+    errores.confirmar = "Las dos contraseñas no coinciden.";
+  }
+  return Object.keys(errores).length ? { ok: false, errores } : { ok: true };
+}

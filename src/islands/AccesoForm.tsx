@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "~/lib/auth/cliente";
 import {
   MIN_PASSWORD,
@@ -83,8 +83,16 @@ export default function AccesoForm() {
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [errorServidor, setErrorServidor] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [contrasenaRecuperada, setContrasenaRecuperada] = useState(false);
 
   const esRegistro = modo === "registro";
+
+  // El sitio es estático: el parámetro solo se puede leer en cliente. Llega
+  // aquí tras cambiar la contraseña en `/acceso/nueva-contrasena`.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("recuperada") === "1") setContrasenaRecuperada(true);
+  }, []);
 
   function cambiarModo(m: Modo) {
     setModo(m);
@@ -142,6 +150,21 @@ export default function AccesoForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate style={{ maxWidth: "28rem" }}>
+      {!esRegistro && contrasenaRecuperada && (
+        <p
+          role="status"
+          style={{
+            marginBottom: 16,
+            padding: "0.75rem 1rem",
+            border: "1px solid var(--color-avellana)",
+            color: "var(--color-ink-muted)",
+            fontSize: 13,
+          }}
+        >
+          Contraseña cambiada. Ya puedes entrar con ella.
+        </p>
+      )}
+
       {esRegistro && (
         <div>
           <label style={label} htmlFor="af-nombre">

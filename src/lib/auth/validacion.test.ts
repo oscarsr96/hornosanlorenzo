@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { validaEntrada, validaRegistro } from "~/lib/auth/validacion";
+import {
+  validaEntrada,
+  validaNuevaContrasena,
+  validaRecuperar,
+  validaRegistro,
+} from "~/lib/auth/validacion";
 
 describe("validaRegistro", () => {
   const bueno = {
@@ -41,5 +46,45 @@ describe("validaEntrada", () => {
       ok: true,
     });
     expect(validaEntrada({ email: "", password: "x" }).ok).toBe(false);
+  });
+});
+
+describe("validaRecuperar", () => {
+  it("acepta un correo con forma de correo", () => {
+    expect(validaRecuperar({ email: "ana@ejemplo.com" })).toEqual({
+      ok: true,
+    });
+  });
+
+  it("exige un correo con forma de correo", () => {
+    const r = validaRecuperar({ email: "no-es-correo" });
+    expect(r.ok === false && r.errores.email).toBeTruthy();
+  });
+});
+
+describe("validaNuevaContrasena", () => {
+  it("acepta dos contraseñas iguales y suficientemente largas", () => {
+    expect(
+      validaNuevaContrasena({
+        password: "unaclavelarga",
+        confirmar: "unaclavelarga",
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("exige el mínimo de caracteres, como el servidor", () => {
+    const r = validaNuevaContrasena({
+      password: "corta7",
+      confirmar: "corta7",
+    });
+    expect(r.ok === false && r.errores.password).toBeTruthy();
+  });
+
+  it("exige que las dos contraseñas coincidan", () => {
+    const r = validaNuevaContrasena({
+      password: "unaclavelarga",
+      confirmar: "otraclavelarga",
+    });
+    expect(r.ok === false && r.errores.confirmar).toBeTruthy();
   });
 });
