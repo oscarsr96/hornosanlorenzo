@@ -62,8 +62,10 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response("ok", { status: 200 });
 };
 
-async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
+export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
+  const apiKey = import.meta.env.RESEND_API_KEY;
   const to = import.meta.env.ORDER_NOTIFICATION_EMAIL;
+  const from = import.meta.env.ORDER_FROM_EMAIL;
 
   const m = session.metadata ?? {};
   const total = ((session.amount_total ?? 0) / 100)
@@ -95,20 +97,29 @@ async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
     .filter(Boolean)
     .join("\n");
 
-  // El aviso al obrador es el único registro del pedido si el correo falla,
-  // así que si no hay dónde mandarlo, se registra igual que antes.
-  const obrador = to
-    ? await enviarCorreo({
-        para: to,
-        asunto: `Pedido web — ${m.dia ?? ""} · ${total} €`,
-        texto: resumen,
-      })
-    : { ok: false, error: "Falta ORDER_NOTIFICATION_EMAIL." };
+  if (!apiKey || !to || !from) {
+    // Todo o nada, a propósito: el correo al cliente dice «Ya está pagado y
+    // anotado en el obrador», y esa frase solo es cierta si el aviso al
+    // obrador ha salido de verdad. Si mandáramos solo el correo cuya
+    // configuración sí está completa, podríamos confirmarle al cliente algo
+    // falso, o dejar una configuración rota sin que nadie lo note porque el
+    // cliente sigue recibiendo confirmaciones perfectas. Por eso una
+    // variable que falte para cualquiera de los dos correos frena los dos:
+    // el pedido no se pierde, queda en el panel de Stripe y en este registro.
+    console.warn("[webhook] correo no configurado; pedido:\n" + resumen);
+    return;
+  }
+
+  // A partir de aquí la configuración está completa: cada envío se hace por
+  // separado y un fallo puntual del proveedor en uno no impide el otro.
+  const obrador = await enviarCorreo({
+    para: to,
+    asunto: `Pedido web — ${m.dia ?? ""} · ${total} €`,
+    texto: resumen,
+  });
 
   if (!obrador.ok) {
-    // Sin correo (sin configurar o rechazado) el pedido no se pierde: queda
-    // en el panel de Stripe y en los registros de la función.
-    console.warn("[webhook] correo no configurado; pedido:\n" + resumen);
+    console.warn("[webhook] no se pudo avisar al obrador; pedido:\n" + resumen);
   }
 
   if (cliente) {
