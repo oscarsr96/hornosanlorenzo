@@ -1,5 +1,20 @@
 import { pool } from "~/lib/db/pool";
 import { admiteCP } from "~/lib/entrega";
+import {
+  DireccionError,
+  MENSAJE_DIRECCION_AJENA,
+} from "~/lib/db/direccionesErrores";
+
+// Reexportados para que el endpoint (`~/pages/api/cuenta/direcciones.ts`) y
+// quien más los necesite sigan importándolos desde aquí, como si vivieran
+// en este módulo: están en `direccionesErrores.ts` únicamente para que las
+// pruebas puedan importarlos sin arrastrar `~/lib/db/pool` (ver el
+// comentario de ese fichero).
+export {
+  DireccionError,
+  MENSAJE_DIRECCION_AJENA,
+  traduceError,
+} from "~/lib/db/direccionesErrores";
 
 /**
  * Direcciones guardadas de un usuario. Hacia fuera todo va en camelCase;
@@ -29,16 +44,6 @@ const SELECT_CAMPOS = `
   predeterminada
 `;
 
-/**
- * Mismo mensaje para «no existe» y «es de otro usuario»: distinguirlos le
- * diría a quien pruebe ids ajenos cuáles existen de verdad. Lo usan
- * `borrarDireccion` (vía el endpoint, que compone la respuesta a partir de
- * `rowCount`) y `marcarPredeterminada` (que lo lanza directamente), para que
- * el endpoint solo tenga que comparar contra una constante, no repetir el
- * texto.
- */
-export const MENSAJE_DIRECCION_AJENA = "Esa dirección no existe o no es tuya.";
-
 /** Todas las direcciones de un usuario, la predeterminada primero. */
 export async function listarDirecciones(userId: string): Promise<Direccion[]> {
   const { rows } = await pool.query<Direccion>(
@@ -61,7 +66,9 @@ export async function crearDireccion(
   datos: DatosDireccion,
 ): Promise<Direccion> {
   if (!admiteCP(datos.postalCode)) {
-    throw new Error(`No repartimos en el código postal ${datos.postalCode}.`);
+    throw new DireccionError(
+      `No repartimos en el código postal ${datos.postalCode}.`,
+    );
   }
 
   const { rows } = await pool.query<Direccion>(
@@ -122,7 +129,7 @@ export async function marcarPredeterminada(
       [id, userId],
     );
     if (!rowCount) {
-      throw new Error(MENSAJE_DIRECCION_AJENA);
+      throw new DireccionError(MENSAJE_DIRECCION_AJENA, 404);
     }
     await cliente.query("commit");
   } catch (err) {

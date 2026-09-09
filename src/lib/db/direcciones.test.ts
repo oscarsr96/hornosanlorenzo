@@ -1,7 +1,64 @@
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
+// Del módulo sin `pg`, no de `~/lib/db/direcciones`: ese importa
+// `~/lib/db/pool`, que crea el pool de conexión en cuanto se carga el
+// módulo. Un `import` estático de `~/lib/db/direcciones` aquí arriba
+// dispararía esa creación contra el `DATABASE_URL` normal *antes* de que el
+// `beforeAll` de más abajo lo redirija a `DATABASE_URL_TEST` — y, como los
+// módulos de Node se cachean, el `import()` dinámico de dentro del
+// `beforeAll` devolvería ese mismo pool ya apuntando a la base equivocada.
+import { DireccionError, traduceError } from "~/lib/db/direccionesErrores";
 
 const URL_PRUEBAS = process.env.DATABASE_URL_TEST;
 const describeSiHayBD = URL_PRUEBAS ? describe : describe.skip;
+
+// `traduceError` es lógica pura —no toca Postgres—, así que corre siempre,
+// sin depender de `DATABASE_URL_TEST` ni de tener una base de pruebas
+// configurada: es justo la prueba que faltaba y la que habría detectado la
+// ronda de arreglo anterior, donde un `Error` pelado sin `.code` (como el
+// que lanza `pg` cuando la conexión se cae a media consulta:
+// "Connection terminated unexpectedly", en `node_modules/pg/lib/client.js`)
+// se colaba por la rama de «error nuestro» y su texto en inglés llegaba tal
+// cual al navegador.
+describe("traduceError", () => {
+  it("un DireccionError propio se presenta tal cual, con su status", () => {
+    const { mensaje, status } = traduceError(
+      new DireccionError("No repartimos en el código postal 08001.", 400),
+      "genérico",
+    );
+    expect(mensaje).toBe("No repartimos en el código postal 08001.");
+    expect(status).toBe(400);
+  });
+
+  it("un error de pg con código conocido se traduce a un mensaje nuestro", () => {
+    const errorPg = Object.assign(
+      new Error(
+        'duplicate key value violates unique constraint "direcciones_una_predeterminada"',
+      ),
+      {
+        code: "23505",
+      },
+    );
+    const { mensaje, status } = traduceError(errorPg, "genérico");
+    expect(mensaje).not.toMatch(/direcciones_una_predeterminada/);
+    expect(mensaje).not.toMatch(/duplicate key/i);
+    expect(mensaje).toMatch(/ya tienes una dirección predeterminada/i);
+    expect(status).toBe(409);
+  });
+
+  it("un Error pelado sin código (como la conexión perdida de pg) cae en el genérico, nunca en su propio texto", () => {
+    // Así lanza `pg` en `lib/client.js` cuando la conexión se cae con una
+    // consulta en curso: un `Error` normal, sin `.code`, que antes del
+    // arreglo se colaba como si fuera un mensaje nuestro.
+    const errorConexion = new Error("Connection terminated unexpectedly");
+    const { mensaje, status } = traduceError(
+      errorConexion,
+      "No se pudo guardar la dirección.",
+    );
+    expect(mensaje).toBe("No se pudo guardar la dirección.");
+    expect(mensaje).not.toMatch(/connection terminated/i);
+    expect(status).toBe(400);
+  });
+});
 
 describeSiHayBD("repositorio de direcciones", () => {
   let pool: import("pg").Pool;

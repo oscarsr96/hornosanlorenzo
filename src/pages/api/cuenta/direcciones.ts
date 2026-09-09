@@ -5,6 +5,7 @@ import {
   crearDireccion,
   listarDirecciones,
   marcarPredeterminada,
+  traduceError,
   MENSAJE_DIRECCION_AJENA,
 } from "~/lib/db/direcciones";
 
@@ -17,46 +18,6 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { "content-type": "application/json" },
   });
-
-/**
- * Traduce un error a una respuesta presentable, en español, sin reenviar
- * nunca el texto crudo de Postgres al navegador: va en inglés y nombra
- * restricciones internas de la base de datos (nombres de índice, de tabla)
- * que no son asunto de quien hace el pedido.
- *
- * Los errores que lanzan `crearDireccion` y `marcarPredeterminada` ya son
- * mensajes nuestros, pensados para el usuario (`admiteCP`, "esa dirección
- * no existe o no es tuya"): se reconocen porque son `Error` normales, sin
- * `code`, y se reenvían tal cual. Los que vienen de `pg` traen un código
- * SQLSTATE en `.code` — aquí solo se traduce el que puede darse de verdad
- * en este endpoint (`23505`, violación del índice de «una predeterminada»,
- * si dos peticiones piden a la vez marcar dos direcciones distintas); para
- * cualquier otro código se usa el genérico, nunca el mensaje de la base de
- * datos.
- */
-function traduceError(
-  error: unknown,
-  generico: string,
-): { mensaje: string; status: number } {
-  if (error instanceof Error && !("code" in error)) {
-    return {
-      mensaje: error.message,
-      status: error.message === MENSAJE_DIRECCION_AJENA ? 404 : 400,
-    };
-  }
-  const code =
-    error && typeof error === "object" && "code" in error
-      ? (error as { code?: unknown }).code
-      : undefined;
-  if (code === "23505") {
-    return {
-      mensaje:
-        "Ya tienes una dirección predeterminada. Quítale la marca antes de poner otra.",
-      status: 409,
-    };
-  }
-  return { mensaje: generico, status: 400 };
-}
 
 const cuerpoJSON = async (
   request: Request,
