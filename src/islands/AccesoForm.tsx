@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { authClient } from "~/lib/auth/cliente";
-import { validaEntrada, validaRegistro } from "~/lib/auth/validacion";
+import {
+  MIN_PASSWORD,
+  validaEntrada,
+  validaRegistro,
+} from "~/lib/auth/validacion";
 
 type Modo = "entrar" | "registro";
 
@@ -41,20 +45,33 @@ const enlaceComoBoton: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const MENSAJE_GENERICO = "Algo ha fallado. Inténtalo de nuevo.";
+
 /**
+ * Traducciones fijas para los códigos de error que puede devolver el
+ * servidor. Es una lista cerrada a propósito: el texto de Better Auth viene
+ * en inglés, y cualquier código que no esté aquí cae en el mensaje genérico
+ * en vez de volcarse tal cual — nunca debe llegarle a alguien un mensaje en
+ * inglés de la librería.
+ *
  * Cuando las credenciales no valen, el mensaje es siempre el mismo tanto si
  * el correo no existe como si la contraseña es incorrecta: decir cuál de los
  * dos ha fallado le regala a cualquiera una forma de averiguar qué correos
  * están dados de alta en la tienda.
  */
-function mensajeDeError(
-  error: { code?: string; message?: string } | null,
-): string {
-  if (!error) return "Algo ha fallado. Inténtalo de nuevo.";
-  if (error.code === "INVALID_EMAIL_OR_PASSWORD") {
-    return "Correo o contraseña incorrectos.";
-  }
-  return error.message ?? "Algo ha fallado. Inténtalo de nuevo.";
+const MENSAJES_ERROR: Record<string, string> = {
+  INVALID_EMAIL_OR_PASSWORD: "Correo o contraseña incorrectos.",
+  USER_ALREADY_EXISTS: "Ya hay una cuenta con este correo.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Ya hay una cuenta con este correo.",
+  // El formulario ya valida esto antes de enviar; el servidor lo repite por
+  // si alguien llama al endpoint sin pasar por aquí.
+  INVALID_NAME: "Dinos cómo te llamas.",
+  INVALID_PHONE: "Escribe un móvil o fijo español de nueve dígitos.",
+};
+
+function mensajeDeError(error: { code?: string } | null): string {
+  if (!error?.code) return MENSAJE_GENERICO;
+  return MENSAJES_ERROR[error.code] ?? MENSAJE_GENERICO;
 }
 
 export default function AccesoForm() {
@@ -223,7 +240,7 @@ export default function AccesoForm() {
           onChange={(e) => setPassword(e.target.value)}
           aria-invalid={!!errores.password}
           aria-describedby={errores.password ? "af-password-error" : undefined}
-          placeholder="Mínimo 8 caracteres"
+          placeholder={`Mínimo ${MIN_PASSWORD} caracteres`}
           style={{
             ...field,
             borderColor: errores.password

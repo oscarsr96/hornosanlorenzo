@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { pool } from "~/lib/db/pool";
+import { preparaAltaUsuario } from "~/lib/auth/alta";
 
 /**
  * Autenticación sobre nuestras propias tablas de Postgres, no sobre el
@@ -39,6 +40,16 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "cliente",
         input: false,
+      },
+    },
+  },
+  // Ver `~/lib/auth/alta`: repite en el servidor la validación de teléfono
+  // y nombre que en el navegador hace `validaRegistro`, para quien llame a
+  // `/sign-up/email` sin pasar por el formulario.
+  databaseHooks: {
+    user: {
+      create: {
+        before: (user) => preparaAltaUsuario(user),
       },
     },
   },
