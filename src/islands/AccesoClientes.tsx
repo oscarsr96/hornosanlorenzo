@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AccesoForm from "~/islands/AccesoForm";
 import ContactForm from "~/islands/ContactForm";
 
 type Perfil = "particular" | "empresa";
@@ -7,7 +8,8 @@ const PERFILES: { id: Perfil; label: string; claim: string }[] = [
   {
     id: "particular",
     label: "Particulares",
-    claim: "Para pedir en casa, con tu contacto guardado y sin repetirlo cada vez.",
+    claim:
+      "Para pedir en casa, con tu contacto guardado y sin repetirlo cada vez.",
   },
   {
     id: "empresa",
@@ -114,7 +116,7 @@ export default function AccesoClientes() {
             registrarte.
           </p>
           <div style={{ marginTop: 24 }}>
-            <ContactForm variant="particular" />
+            <AccesoForm />
           </div>
         </div>
       )}
@@ -140,10 +142,7 @@ export default function AccesoClientes() {
             Te asignamos tu código de descuento y tus condiciones. A partir de
             ahí pides del mismo catálogo con tu precio, y facturamos a mes
             vencido.{" "}
-            <a
-              href="/a-quien-servimos"
-              style={{ textDecoration: "underline" }}
-            >
+            <a href="/a-quien-servimos" style={{ textDecoration: "underline" }}>
               Ver condiciones para empresas
             </a>
             .
