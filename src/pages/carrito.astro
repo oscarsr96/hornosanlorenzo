@@ -11,15 +11,39 @@ export const prerender = false;
 
 const usuario = Astro.locals.usuario;
 
+// Cuando hay sesión la página lleva nombre, correo, teléfono y direcciones:
+// nada de eso debe quedar en una caché compartida ni en el disco. Se fija
+// siempre, haya o no sesión, porque una CDN no distingue entre peticiones.
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
 // Sin sesión, `prefill` queda `undefined` y el checkout de invitado no
 // cambia de comportamiento: es la propia isla la que decide qué hacer con
 // cada caso.
+//
+// El middleware degrada a invitado si Postgres falla al resolver la
+// sesión, pero aquí hay sesión y el fallo puede venir después, al pedir las
+// direcciones: sin este `try/catch` esa caída se lleva la página entera por
+// delante y deja a quien tiene cuenta sin poder comprar, justo lo que el
+// middleware intenta evitar. Con direcciones vacías puede seguir
+// escribiéndola a mano, como un invitado.
+let direcciones: Awaited<ReturnType<typeof listarDirecciones>> = [];
+if (usuario) {
+  try {
+    direcciones = await listarDirecciones(usuario.id);
+  } catch (error) {
+    console.error(
+      "No se pudieron cargar las direcciones guardadas, se sigue sin ellas:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 const prefill = usuario
   ? {
       nombre: usuario.name,
       email: usuario.email,
       telefono: usuario.telefono ?? "",
-      direcciones: await listarDirecciones(usuario.id),
+      direcciones,
     }
   : undefined;
 ---

@@ -13,7 +13,23 @@ export const prerender = false;
 const usuario = Astro.locals.usuario;
 if (!usuario) return Astro.redirect("/acceso");
 
-const direccionesIniciales = await listarDirecciones(usuario.id);
+// Nombre, correo, teléfono y direcciones: nada de esto debe quedar en una
+// caché compartida ni en el disco del navegador.
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+// Un fallo de Postgres aquí no puede romper la página entera: la propia
+// isla de direcciones ya sabe crear, editar y borrar contra el endpoint, así
+// que arranca con la lista vacía y quien tiene cuenta puede volver a
+// intentarlo, en vez de ver un error 500 al entrar a su cuenta.
+let direccionesIniciales: Awaited<ReturnType<typeof listarDirecciones>> = [];
+try {
+  direccionesIniciales = await listarDirecciones(usuario.id);
+} catch (error) {
+  console.error(
+    "No se pudieron cargar las direcciones guardadas, se sigue sin ellas:",
+    error instanceof Error ? error.message : error,
+  );
+}
 ---
 <MarketingLayout
   title="Mi cuenta"

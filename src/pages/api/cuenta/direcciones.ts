@@ -36,8 +36,16 @@ export const GET: APIRoute = async ({ locals }) => {
   const usuario = locals.usuario;
   if (!usuario) return new Response("No autorizado", { status: 401 });
 
-  const direcciones = await listarDirecciones(usuario.id);
-  return json({ direcciones });
+  try {
+    const direcciones = await listarDirecciones(usuario.id);
+    return json({ direcciones });
+  } catch (error) {
+    const { mensaje, status } = traduceError(
+      error,
+      "No se pudieron cargar las direcciones.",
+    );
+    return json({ error: mensaje }, status);
+  }
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -114,11 +122,19 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
   const id = typeof cuerpo.id === "string" ? cuerpo.id : "";
   if (!id) return json({ error: "Falta la dirección a borrar." }, 400);
 
-  // `borrarDireccion` solo borra si la fila es de `usuario.id`: el número de
-  // filas afectadas distingue «borrada» de «no era tuya».
-  const borradas = await borrarDireccion(usuario.id, id);
-  if (borradas === 0) {
-    return json({ error: MENSAJE_DIRECCION_AJENA }, 404);
+  try {
+    // `borrarDireccion` solo borra si la fila es de `usuario.id`: el número
+    // de filas afectadas distingue «borrada» de «no era tuya».
+    const borradas = await borrarDireccion(usuario.id, id);
+    if (borradas === 0) {
+      return json({ error: MENSAJE_DIRECCION_AJENA }, 404);
+    }
+    return json({ ok: true });
+  } catch (error) {
+    const { mensaje, status } = traduceError(
+      error,
+      "No se pudo borrar la dirección.",
+    );
+    return json({ error: mensaje }, status);
   }
-  return json({ ok: true });
 };
