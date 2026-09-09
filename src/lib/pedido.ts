@@ -4,6 +4,8 @@ import {
   isDateAllowed,
   meetsMinimum,
   shippingCents,
+  admiteCP,
+  ZONA_REPARTO_COPY,
   MIN_ORDER_CENTS,
 } from "~/lib/entrega";
 import { stores, type StoreId } from "~/data/stores";
@@ -33,6 +35,11 @@ export const orderPayloadSchema = z.object({
   slot: z.enum(["morning", "afternoon"]).optional(),
   storeId: z.string().optional(),
   address: z.string().max(300).optional(),
+  /** Solo en domicilio: cinco dígitos, y tiene que ser zona de reparto. */
+  postalCode: z
+    .string()
+    .regex(/^\d{5}$/)
+    .optional(),
   name: z.string().max(120).optional(),
   notes: z.string().max(500).optional(),
   email: z.string().email().max(160),
@@ -85,6 +92,16 @@ export async function priceOrder(
     if (!payload.address || payload.address.trim().length < 6) {
       throw new OrderError("Falta la dirección de entrega.");
     }
+    // El navegador ya lo comprueba, pero el reparto se decide aquí: un CP de
+    // fuera de zona no puede entrar por mucho que el cliente edite el formulario.
+    if (!payload.postalCode) {
+      throw new OrderError("Falta el código postal de entrega.");
+    }
+    if (!admiteCP(payload.postalCode)) {
+      throw new OrderError(
+        `No repartimos en el código postal ${payload.postalCode}. ${ZONA_REPARTO_COPY}`,
+      );
+    }
   } else {
     const valid = stores.some((s) => s.id === payload.storeId);
     if (!valid) throw new OrderError("La tienda de recogida no es válida.");
@@ -110,7 +127,9 @@ export async function priceOrder(
     let variantLabel: string | undefined;
 
     if (item.variantId) {
-      const variant = product.data.variants?.find((v) => v.id === item.variantId);
+      const variant = product.data.variants?.find(
+        (v) => v.id === item.variantId,
+      );
       if (!variant) {
         throw new OrderError(
           `La opción elegida de «${product.data.name}» ya no está disponible.`,
@@ -151,7 +170,9 @@ export async function priceOrder(
 
 /** Dónde se entrega, en una línea, para el correo y los metadatos de Stripe. */
 export function destinationLabel(payload: OrderPayload): string {
-  if (payload.mode === "domicilio") return payload.address ?? "";
+  if (payload.mode === "domicilio") {
+    return [payload.address, payload.postalCode].filter(Boolean).join(" · ");
+  }
   const store = stores.find((s) => s.id === (payload.storeId as StoreId));
   return store ? `${store.shortName} — ${store.address}` : "";
 }

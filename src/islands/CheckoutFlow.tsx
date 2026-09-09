@@ -12,6 +12,8 @@ import {
   type DeliveryMode,
   ENTREGA_DOMICILIO_COPY,
   ZONA_REPARTO_COPY,
+  admiteCP,
+  municipioDeCP,
 } from "~/lib/entrega";
 import type { Cart } from "~/lib/cart";
 
@@ -63,6 +65,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [dateISO, setDateISO] = useState("");
   const [mode, setMode] = useState<DeliveryMode | null>(null);
   const [address, setAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [storeId, setStoreId] = useState<StoreId>("alcobendas");
   const [slot, setSlot] = useState<"morning" | "afternoon">("morning");
   const [name, setName] = useState("");
@@ -152,6 +155,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
           slot: mode === "recogida" ? slot : undefined,
           storeId: mode === "recogida" ? storeId : undefined,
           address: mode === "domicilio" ? address.trim() : undefined,
+          postalCode: mode === "domicilio" ? postalCode : undefined,
           name: name.trim() || undefined,
           notes: notes.trim() || undefined,
           email: email.trim(),
@@ -169,6 +173,10 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
       setSending(false);
     }
   }
+
+  const cpCompleto = postalCode.length === 5;
+  const cpValido = admiteCP(postalCode);
+  const direccionLista = address.trim().length >= 6 && cpValido;
 
   const TITLES: Record<Step, string> = {
     dia: "Selecciona qué día quieres el pedido",
@@ -443,26 +451,62 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 placeholder="Introduce la dirección"
                 style={field}
               />
+
+              <label style={{ ...label, display: "block", marginTop: 16 }} htmlFor="cf-cp">
+                Código postal
+              </label>
+              <input
+                id="cf-cp"
+                value={postalCode}
+                // Teclado numérico en móvil, pero texto: `type="number"` se
+                // come el cero de cabecera y admite signos y decimales.
+                inputMode="numeric"
+                autoComplete="postal-code"
+                maxLength={5}
+                onChange={(e) =>
+                  setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 5))
+                }
+                aria-invalid={cpCompleto && !cpValido}
+                aria-describedby="cf-cp-aviso"
+                placeholder="28001"
+                style={{
+                  ...field,
+                  borderColor:
+                    cpCompleto && !cpValido
+                      ? "var(--color-teja)"
+                      : "var(--color-avellana)",
+                }}
+              />
+
               <p
+                id="cf-cp-aviso"
                 style={{
                   marginTop: 8,
                   fontSize: 12,
-                  color: "var(--color-ink-muted)",
+                  color:
+                    cpCompleto && !cpValido
+                      ? "var(--color-teja)"
+                      : "var(--color-ink-muted)",
                 }}
               >
-                {ZONA_REPARTO_COPY}
+                {cpCompleto && !cpValido
+                  ? `No repartimos en el ${postalCode}. ${ZONA_REPARTO_COPY}`
+                  : cpValido
+                    ? `Repartimos en ${municipioDeCP(postalCode)}.`
+                    : ZONA_REPARTO_COPY}
               </p>
+
               <button
                 type="button"
                 className="btn btn-primario"
-                disabled={address.trim().length < 6}
+                disabled={!direccionLista}
                 onClick={() => go("resumen")}
                 style={{
                   width: "100%",
                   marginTop: 16,
                   border: "none",
-                  opacity: address.trim().length < 6 ? 0.5 : 1,
-                  cursor: address.trim().length < 6 ? "not-allowed" : "pointer",
+                  opacity: direccionLista ? 1 : 0.5,
+                  cursor: direccionLista ? "pointer" : "not-allowed",
                 }}
               >
                 Seleccionar
@@ -543,7 +587,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   <dt style={label}>{mode === "domicilio" ? "Dirección" : "Tienda"}</dt>
                   <dd style={{ margin: 0 }}>
                     {mode === "domicilio"
-                      ? address
+                      ? `${address} · ${postalCode}`
                       : stores.find((s) => s.id === storeId)?.shortName}
                   </dd>
                 </div>

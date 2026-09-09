@@ -32,6 +32,38 @@ export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = 
  * mañana y entrega antes del cierre del mediodía. Solo la recogida en tienda
  * ofrece mañana o tarde.
  */
+/**
+ * Códigos postales a los que llega el reparto propio.
+ *
+ * Madrid capital son los CP que existen de verdad (28001–28055), no todo el
+ * prefijo 280xx: 28056–28099 son apartados de correos y códigos
+ * administrativos, no direcciones a las que se pueda repartir.
+ *
+ * **Los rangos los tomé de fuentes públicas, no del cliente**, así que hay
+ * que validarlos con el obrador antes de cobrar (ver tasks/todo.md).
+ */
+const CP_RANGOS: readonly { desde: number; hasta: number; municipio: string }[] = [
+  { desde: 28001, hasta: 28055, municipio: "Madrid capital" },
+  { desde: 28100, hasta: 28109, municipio: "Alcobendas" },
+  { desde: 28220, hasta: 28224, municipio: "Pozuelo de Alarcón" },
+  { desde: 28700, hasta: 28709, municipio: "San Sebastián de los Reyes" },
+  { desde: 28760, hasta: 28760, municipio: "Tres Cantos" },
+];
+
+/** El CP es de reparto. Espera cinco dígitos; cualquier otra cosa es `false`. */
+export const admiteCP = (cp: string): boolean => {
+  if (!/^\d{5}$/.test(cp)) return false;
+  const n = Number(cp);
+  return CP_RANGOS.some((r) => n >= r.desde && n <= r.hasta);
+};
+
+/** Municipio de un CP de reparto, para confirmarle al cliente dónde entrega. */
+export const municipioDeCP = (cp: string): string | null => {
+  if (!/^\d{5}$/.test(cp)) return null;
+  const n = Number(cp);
+  return CP_RANGOS.find((r) => n >= r.desde && n <= r.hasta)?.municipio ?? null;
+};
+
 /** Municipios a los que llega el reparto propio. */
 export const ZONA_REPARTO = [
   "Madrid capital",

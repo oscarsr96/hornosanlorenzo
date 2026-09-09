@@ -1,6 +1,14 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **Validar los códigos postales de reparto.** `CP_RANGOS` en
+      `src/lib/entrega.ts` bloquea el envío fuera de zona, pero los rangos los
+      saqué yo de fuentes públicas, no del cliente: Madrid capital
+      28001–28055,
+      Alcobendas 28100–28109, Pozuelo 28220–28224, San Sebastián de los Reyes
+      28700–28709, Tres Cantos 28760. Confirmarlos con el obrador antes de
+      cobrar: un rango de más acepta pedidos que no se pueden repartir, y uno
+      de menos rechaza clientes buenos
 - [ ] **Alérgenos de las 100 fichas.** Van todas con `allergens: []` porque la
       carta no los trae. No inventarlos: tienen que venir del obrador
 - [ ] Configurar las 5 variables de Stripe y Resend en Vercel (`.env.example`)
