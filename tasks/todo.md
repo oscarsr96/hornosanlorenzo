@@ -70,6 +70,20 @@
       promesas de salud, pero puede ser un argumento de venta real
 
 ## Más adelante
+- [ ] **Llevar el cómputo a Cloud Run** cuando el proyecto esté asentado. Del
+      análisis de costes del 9 de septiembre de 2026: Vercel Pro son ~20 €/mes
+      —Hobby no vale, es solo uso no comercial y esto cobra con Stripe— y Cloud
+      Run a este tráfico son ~2–5 € porque escala a cero. La base de datos **se
+      queda donde esté**: Cloud SQL no tiene plan gratuito, no baja a cero y es
+      justo la pieza cara (~10–30 €/mes). O sea, la jugada es mover el cómputo,
+      no «migrar a Google Cloud». Son unas horas, no una migración, porque el
+      diseño ya no depende del proveedor
+      (`docs/superpowers/specs/2026-09-09-registro-usuarios-y-panel-admin-design.md`, §5.3).
+      Ojo con Cloudflare como alternativa barata: su entorno no es Node del todo
+      y `pg` no funciona ahí sin cambiar a un driver por HTTP. Cloud Run sí, es
+      un contenedor de Node normal.
+      Los precios salen de mi entrenamiento, no de sus webs: confírmalos antes
+      de decidir
 - [ ] Bloque E: alta B2B real con validación de CIF, precios por cliente y
       packs XL descontados. Necesita backend (auth + base de datos)
 - [ ] Si algún día se quieren cuentas de usuario, el alta de `/acceso` está
