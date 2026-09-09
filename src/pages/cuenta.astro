@@ -1,0 +1,35 @@
+---
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import CuentaDatos from "~/islands/CuentaDatos.tsx";
+
+// Página protegida: lee la sesión de la petición, así que no puede
+// prerenderizarse. Sin esta línea el middleware serviría la página como
+// estática, `Astro.locals.usuario` sería siempre null y se echaría a todo
+// el mundo a /acceso, incluso con sesión.
+export const prerender = false;
+
+const usuario = Astro.locals.usuario;
+if (!usuario) return Astro.redirect("/acceso");
+---
+<MarketingLayout
+  title="Mi cuenta"
+  description="Consulta y edita tus datos personales."
+>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
+    <p class="numeracion">Mi cuenta</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">Tus datos</h1>
+    <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+      Así te tenemos anotado. El correo es tu acceso y no se cambia desde
+      aquí.
+    </p>
+
+    <div class="mt-8">
+      <CuentaDatos
+        client:load
+        nombre={usuario.name}
+        email={usuario.email}
+        telefono={usuario.telefono ?? ""}
+      />
+    </div>
+  </section>
+</MarketingLayout>
