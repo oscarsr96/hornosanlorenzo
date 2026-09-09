@@ -1,7 +1,11 @@
 import type { APIRoute } from "astro";
 import Stripe from "stripe";
 import { formatDateISO } from "~/lib/format";
-import { MODE_COPY, ENTREGA_DOMICILIO_COPY } from "~/lib/entrega";
+import {
+  MODE_COPY,
+  ENTREGA_DOMICILIO_COPY,
+  normalizaTelefono,
+} from "~/lib/entrega";
 import {
   orderPayloadSchema,
   priceOrder,
@@ -97,6 +101,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             ? ENTREGA_DOMICILIO_COPY
             : SLOT_LABEL[payload.slot ?? "morning"],
         destino: destinationLabel(payload).slice(0, 480),
+        telefono: normalizaTelefono(payload.phone),
         nombre: payload.name?.slice(0, 120) ?? "",
         notas: payload.notes?.slice(0, 480) ?? "",
       },

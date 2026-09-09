@@ -64,6 +64,21 @@ export const municipioDeCP = (cp: string): string | null => {
   return CP_RANGOS.find((r) => n >= r.desde && n <= r.hasta)?.municipio ?? null;
 };
 
+/**
+ * Teléfono de contacto del pedido. Se admite escribirlo con espacios, puntos
+ * o guiones, y con prefijo +34: lo que importa es que queden nueve dígitos
+ * españoles, que es con lo que el obrador puede llamar.
+ */
+export const normalizaTelefono = (tel: string): string => {
+  const digitos = tel.replace(/\D/g, "");
+  return digitos.startsWith("34") && digitos.length === 11
+    ? digitos.slice(2)
+    : digitos;
+};
+
+export const esTelefonoValido = (tel: string): boolean =>
+  /^[6789]\d{8}$/.test(normalizaTelefono(tel));
+
 /** Municipios a los que llega el reparto propio. */
 export const ZONA_REPARTO = [
   "Madrid capital",

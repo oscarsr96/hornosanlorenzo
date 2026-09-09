@@ -14,6 +14,7 @@ import {
   ZONA_REPARTO_COPY,
   admiteCP,
   municipioDeCP,
+  esTelefonoValido,
 } from "~/lib/entrega";
 import type { Cart } from "~/lib/cart";
 
@@ -70,6 +71,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [slot, setSlot] = useState<"morning" | "afternoon">("morning");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,11 +135,12 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   }
 
   const emailOk = /.+@.+\..+/.test(email.trim());
-  const canPay = Boolean(mode && dateISO) && emailOk && !sending;
+  const telefonoOk = esTelefonoValido(phone);
+  const canPay = Boolean(mode && dateISO) && emailOk && telefonoOk && !sending;
 
   /** Solo se mandan referencias y cantidades: el precio lo pone el servidor. */
   async function pay() {
-    if (!mode || !dateISO || !emailOk || sending) return;
+    if (!mode || !dateISO || !emailOk || !telefonoOk || sending) return;
     setSending(true);
     setError(null);
     try {
@@ -159,6 +162,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
           name: name.trim() || undefined,
           notes: notes.trim() || undefined,
           email: email.trim(),
+          phone: phone.trim(),
         }),
       });
       const data = await res.json();
@@ -658,6 +662,43 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   placeholder="Para enviarte la confirmación"
                   style={field}
                 />
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <label style={label} htmlFor="cf-phone">
+                  Tu teléfono *
+                </label>
+                <input
+                  id="cf-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  aria-invalid={phone.trim() !== "" && !telefonoOk}
+                  aria-describedby="cf-phone-aviso"
+                  placeholder="Por si hay que avisarte del pedido"
+                  style={{
+                    ...field,
+                    borderColor:
+                      phone.trim() !== "" && !telefonoOk
+                        ? "var(--color-teja)"
+                        : "var(--color-avellana)",
+                  }}
+                />
+                {phone.trim() !== "" && !telefonoOk && (
+                  <p
+                    id="cf-phone-aviso"
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: "var(--color-teja)",
+                    }}
+                  >
+                    Escribe un móvil o fijo español de nueve dígitos.
+                  </p>
+                )}
               </div>
 
               <div style={{ marginTop: 16 }}>

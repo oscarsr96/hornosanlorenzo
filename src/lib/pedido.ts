@@ -5,6 +5,7 @@ import {
   meetsMinimum,
   shippingCents,
   admiteCP,
+  esTelefonoValido,
   ZONA_REPARTO_COPY,
   MIN_ORDER_CENTS,
 } from "~/lib/entrega";
@@ -43,6 +44,8 @@ export const orderPayloadSchema = z.object({
   name: z.string().max(120).optional(),
   notes: z.string().max(500).optional(),
   email: z.string().email().max(160),
+  /** Obligatorio en las dos modalidades: es como se avisa de un problema. */
+  phone: z.string().min(9).max(20),
 });
 
 export type OrderPayload = z.infer<typeof orderPayloadSchema>;
@@ -105,6 +108,10 @@ export async function priceOrder(
   } else {
     const valid = stores.some((s) => s.id === payload.storeId);
     if (!valid) throw new OrderError("La tienda de recogida no es válida.");
+  }
+
+  if (!esTelefonoValido(payload.phone)) {
+    throw new OrderError("El teléfono de contacto no parece válido.");
   }
 
   const catalog = await getCollection("products");
