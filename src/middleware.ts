@@ -2,6 +2,15 @@ import { defineMiddleware } from "astro:middleware";
 import { auth } from "~/lib/auth/server";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Las páginas prerenderizadas se generan en build, sin petición real: no
+  // hay cabeceras que leer y `auth.api.getSession` solo gastaría una
+  // consulta a Postgres por página estática para nada. Sin este corte,
+  // Astro además avisa de que `Astro.request.headers` no existe ahí.
+  if (context.isPrerendered) {
+    context.locals.usuario = null;
+    return next();
+  }
+
   // Este middleware corre en TODAS las peticiones, no solo en las de
   // autenticación. Si `getSession` lanza —un corte momentáneo con Postgres,
   // una cookie corrupta, un fallo interno de Better Auth— no puede tumbar el
