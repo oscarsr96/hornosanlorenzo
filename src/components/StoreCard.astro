@@ -21,6 +21,16 @@ const { store } = Astro.props;
         <dt class="numeracion">Teléfono</dt>
         <dd><a href={`tel:${store.phone}`}>{store.phoneDisplay}</a></dd>
       </div>
+      {store.mobiles.length > 0 && (
+        <div>
+          <dt class="numeracion">{store.mobiles.length > 1 ? "Móviles" : "Móvil"}</dt>
+          <dd class="flex flex-wrap gap-x-4 gap-y-1">
+            {store.mobiles.map((m) => (
+              <a href={`tel:${m.number}`}>{m.display}</a>
+            ))}
+          </dd>
+        </div>
+      )}
       <div>
         <dt class="numeracion">Email</dt>
         <dd><a href={`mailto:${store.email}`}>{store.email}</a></dd>

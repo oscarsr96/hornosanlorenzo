@@ -10,6 +10,8 @@ import {
   isClosed,
   toISO,
   type DeliveryMode,
+  ENTREGA_DOMICILIO_COPY,
+  ZONA_REPARTO_COPY,
 } from "~/lib/entrega";
 import type { Cart } from "~/lib/cart";
 
@@ -147,7 +149,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
           })),
           mode,
           dateISO,
-          slot,
+          slot: mode === "recogida" ? slot : undefined,
           storeId: mode === "recogida" ? storeId : undefined,
           address: mode === "domicilio" ? address.trim() : undefined,
           name: name.trim() || undefined,
@@ -441,6 +443,15 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 placeholder="Introduce la dirección"
                 style={field}
               />
+              <p
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                {ZONA_REPARTO_COPY}
+              </p>
               <button
                 type="button"
                 className="btn btn-primario"
@@ -550,6 +561,14 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 </div>
               </dl>
 
+              {mode === "domicilio" ? (
+                <div style={{ marginTop: 16 }}>
+                  <span style={label}>Entrega</span>
+                  <p style={{ margin: "8px 0 0", fontSize: 14, fontWeight: 600 }}>
+                    {ENTREGA_DOMICILIO_COPY}
+                  </p>
+                </div>
+              ) : (
               <div style={{ marginTop: 16 }}>
                 <span style={label}>Franja</span>
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -580,6 +599,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   ))}
                 </div>
               </div>
+              )}
 
               <div style={{ marginTop: 16 }}>
                 <label style={label} htmlFor="cf-email">

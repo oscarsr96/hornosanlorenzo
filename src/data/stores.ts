@@ -9,6 +9,8 @@ export type Store = {
   postal: string;
   phone: string;
   phoneDisplay: string;
+  /** Móviles de la tienda, además del fijo. */
+  mobiles: readonly { number: string; display: string }[];
   email: string;
   hoursText: string;
   openDays: number[]; // 0=Sun ... 6=Sat
@@ -29,6 +31,10 @@ export const stores: readonly Store[] = [
     postal: "28108",
     phone: "+34916613932",
     phoneDisplay: "916 613 932",
+    mobiles: [
+      { number: "+34667700059", display: "667 700 059" },
+      { number: "+34653985065", display: "653 985 065" },
+    ],
     email: "info@hornosanlorenzo.com",
     hoursText: "Lun–Sáb 7:00–14:00 · Domingos cerrado",
     openDays: [1, 2, 3, 4, 5, 6],
@@ -48,6 +54,7 @@ export const stores: readonly Store[] = [
     postal: "28223",
     phone: "+34916059056",
     phoneDisplay: "91 605 90 56",
+    mobiles: [{ number: "+34659878272", display: "659 878 272" }],
     email: "pasteleriapozuelo@hornosanlorenzo.com",
     hoursText: "Lun–Dom 8:00–14:30 y 17:00–20:30",
     openDays: [0, 1, 2, 3, 4, 5, 6],

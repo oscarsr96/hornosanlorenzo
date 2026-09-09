@@ -14,7 +14,7 @@ const jsonLd = stores.map((s) => ({
     postalCode: s.postal,
     addressCountry: "ES",
   },
-  telephone: s.phone,
+  telephone: [s.phone, ...s.mobiles.map((m) => m.number)],
   email: s.email,
   geo: { "@type": "GeoCoordinates", latitude: s.coords.lat, longitude: s.coords.lng },
   openingHours: s.hoursText,

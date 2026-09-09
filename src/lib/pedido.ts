@@ -29,7 +29,8 @@ export const orderPayloadSchema = z.object({
     .max(40),
   mode: z.enum(["domicilio", "recogida"]),
   dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  slot: z.enum(["morning", "afternoon"]),
+  /** Solo en recogida: el envío a domicilio no elige franja. */
+  slot: z.enum(["morning", "afternoon"]).optional(),
   storeId: z.string().optional(),
   address: z.string().max(300).optional(),
   name: z.string().max(120).optional(),

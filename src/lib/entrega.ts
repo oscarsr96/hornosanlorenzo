@@ -19,13 +19,31 @@ export const PICKUP_NEXT_DAY_THRESHOLD_CENTS = 20_000;
 export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = {
   domicilio: {
     label: "Envío a domicilio",
-    body: "Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior.",
+    body: "Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior. Solo Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
   },
   recogida: {
     label: "Recogida en tienda",
     body: "Recogida en tienda el mismo día (posibilidad día siguiente para pedidos superiores a 200 €).",
   },
 };
+
+/**
+ * El envío a domicilio no se elige por franja: el reparto propio sale por la
+ * mañana y entrega antes del cierre del mediodía. Solo la recogida en tienda
+ * ofrece mañana o tarde.
+ */
+/** Municipios a los que llega el reparto propio. */
+export const ZONA_REPARTO = [
+  "Madrid capital",
+  "Alcobendas",
+  "San Sebastián de los Reyes",
+  "Tres Cantos",
+  "Pozuelo de Alarcón",
+] as const;
+
+export const ZONA_REPARTO_COPY = `Solo enviamos a ${ZONA_REPARTO.slice(0, -1).join(", ")} y ${ZONA_REPARTO.at(-1)}.`;
+
+export const ENTREGA_DOMICILIO_COPY = "Entrega antes de las 14:30h";
 
 /** Reparto propio y obrador: de lunes a sábado. */
 export const isClosed = (date: Date): boolean => date.getDay() === 0;
