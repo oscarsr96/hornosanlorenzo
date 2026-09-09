@@ -49,7 +49,7 @@ const localBizJsonLd = stores.map((s) => ({
     image={heroImage}
     imageAlt="Bollería de obrador recién horneada"
     primaryCta={{ href: "/catalogo", label: "Ver el catálogo" }}
-    secondaryCta={{ href: "/hosteleria-y-empresas", label: "Hostelería y empresas" }}
+    secondaryCta={{ href: "/a-quien-servimos", label: "A quién servimos" }}
   />
 
   <!-- Claim de campaña: abre manifiesto y web -->
@@ -100,7 +100,7 @@ const localBizJsonLd = stores.map((s) => ({
     ctaLabel="Reservar"
   />
 
-  <section class="bg-[color:var(--color-latte)] border-y border-[color:var(--color-avellana)]">
+  <section class="bg-[color:var(--color-leche)] border-y border-[color:var(--color-avellana)]">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
       <SectionLabel number="02" label="Tres canales, una misma cocina" />
       <h2 class="text-3xl sm:text-4xl mt-2">A quién servimos cada día.</h2>
@@ -108,7 +108,7 @@ const localBizJsonLd = stores.map((s) => ({
       <div class="mt-8 grid gap-5 md:grid-cols-3">
         {services.map((s) => <ServiceCard service={s} />)}
       </div>
-      <a href="/hosteleria-y-empresas" class="btn btn-primario mt-8">Dar de alta mi empresa</a>
+      <a href="/a-quien-servimos#alta" class="btn btn-primario mt-8">Dar de alta mi empresa</a>
     </div>
   </section>
 

@@ -11,14 +11,7 @@ import {
   toISO,
   type DeliveryMode,
 } from "~/lib/entrega";
-import {
-  buildWhatsAppMessage,
-  buildWhatsAppUrl,
-  type OrderInfo,
-} from "~/lib/whatsapp";
 import type { Cart } from "~/lib/cart";
-
-const PHONE = import.meta.env.PUBLIC_WHATSAPP_NUMBER;
 
 type Step = "dia" | "opcion" | "direccion" | "tienda" | "resumen";
 
@@ -69,7 +62,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [mode, setMode] = useState<DeliveryMode | null>(null);
   const [address, setAddress] = useState("");
   const [storeId, setStoreId] = useState<StoreId>("alcobendas");
-  const [slot, setSlot] = useState<OrderInfo["slot"]>("morning");
+  const [slot, setSlot] = useState<"morning" | "afternoon">("morning");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
@@ -173,25 +166,6 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
       setError("No hemos podido conectar. Comprueba tu conexión.");
       setSending(false);
     }
-  }
-
-  /** Vía alternativa: dejar el pedido escrito en WhatsApp sin pagar online. */
-  function sendByWhatsApp() {
-    if (!mode || !dateISO) return;
-    const order: OrderInfo = {
-      mode,
-      dateISO,
-      storeId: mode === "recogida" ? storeId : undefined,
-      address: mode === "domicilio" ? address.trim() : undefined,
-      slot,
-      name: name.trim() || undefined,
-      notes: notes.trim() || undefined,
-    };
-    const url = buildWhatsAppUrl(PHONE, buildWhatsAppMessage(cart, order));
-    // En pestaña aparte: el carrito y el paso del checkout siguen ahí cuando
-    // vuelve de WhatsApp. Si el navegador bloquea la ventana, navegamos.
-    const tab = window.open(url, "_blank", "noopener,noreferrer");
-    if (!tab) window.location.href = url;
   }
 
   const TITLES: Record<Step, string> = {
@@ -484,7 +458,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
               </button>
               <p style={{ marginTop: 14, textAlign: "center", fontSize: 13 }}>
                 <a
-                  href="/hosteleria-y-empresas#alta"
+                  href="/a-quien-servimos#alta"
                   style={{ textDecoration: "underline", color: "var(--color-caramelo)" }}
                 >
                   Ya soy cliente
@@ -701,23 +675,6 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   condiciones de compra
                 </a>
                 .
-              </p>
-              <p style={{ marginTop: 12, textAlign: "center" }}>
-                <button
-                  type="button"
-                  onClick={sendByWhatsApp}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    fontSize: 12,
-                    color: "var(--color-ink-muted)",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
-                >
-                  Prefiero encargarlo por WhatsApp y pagar en tienda
-                </button>
               </p>
             </>
           )}

@@ -152,7 +152,7 @@ export default function AccesoClientes() {
             ahí pides del mismo catálogo con tu precio, y facturamos a mes
             vencido.{" "}
             <a
-              href="/hosteleria-y-empresas"
+              href="/a-quien-servimos"
               style={{ textDecoration: "underline" }}
             >
               Ver condiciones para empresas

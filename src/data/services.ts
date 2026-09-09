@@ -11,7 +11,7 @@ export const services: readonly Service[] = [
     id: "domicilio",
     title: "Reparto propio a domicilio",
     short: "Furgoneta y repartidor de la casa, de lunes a sábado.",
-    body: "Pide por WhatsApp o por teléfono antes de las 11:00 y lo llevamos esa misma tarde a Alcobendas, Pozuelo y municipios cercanos. Nadie subcontratado: al cliente se le conoce por su nombre, no por su número de pedido.",
+    body: "Pide por teléfono o desde la tienda online antes de las 11:00 y lo llevamos esa misma tarde a Alcobendas, Pozuelo y municipios cercanos. Nadie subcontratado: al cliente se le conoce por su nombre, no por su número de pedido.",
     number: "01",
   },
   {

@@ -43,7 +43,8 @@ export default function CartBadge() {
           justifyContent: "center",
           width: 40,
           height: 40,
-          color: "var(--color-ink)",
+          // La cabecera es teja: el icono va en claro.
+          color: "var(--color-leche)",
         }}
       >
         <CartIcon />
@@ -56,8 +57,8 @@ export default function CartBadge() {
               minWidth: 18,
               height: 18,
               padding: "0 5px",
-              background: "var(--color-hot)",
-              color: "white",
+              background: "var(--color-leche)",
+              color: "var(--color-hot)",
               borderRadius: 0,
               fontSize: 10,
               fontWeight: 700,
@@ -65,7 +66,7 @@ export default function CartBadge() {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "2px solid var(--color-cream)",
+              border: "2px solid var(--color-hot)",
             }}
           >
             {totalQty}

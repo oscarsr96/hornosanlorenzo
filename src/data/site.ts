@@ -13,7 +13,6 @@ export const site = {
   legend: "Obrador artesano · Madrid",
   founded: 1986,
   url: import.meta.env.PUBLIC_SITE_URL,
-  whatsapp: import.meta.env.PUBLIC_WHATSAPP_NUMBER,
   social: {
     instagram: "https://instagram.com/hornosanlorenzo_1986",
     facebook: "https://facebook.com/hornosanlorenzo",

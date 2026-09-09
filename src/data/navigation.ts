@@ -2,7 +2,7 @@ import type { CategoryId } from "~/data/categories";
 
 /**
  * Estructura de navegación del brief de front end:
- * cuatro secciones, con submenú de tres entradas en «Tienda Online».
+ * cinco secciones, con submenú en «Tienda Online» y en «A quién servimos».
  */
 export type NavChild = {
   href: string;
@@ -56,7 +56,27 @@ export const mainNav: readonly NavItem[] = [
     label: "Carta",
     download: true,
   },
-  { href: "/hosteleria-y-empresas", label: "Hostelería y Empresas" },
+  {
+    href: "/a-quien-servimos",
+    label: "A quién servimos",
+    children: [
+      {
+        href: "/a-quien-servimos#particulares",
+        label: "Particulares",
+        short: "La compra del día y el encargo de la semana, como en el mostrador.",
+      },
+      {
+        href: "/a-quien-servimos#hosteleria",
+        label: "Hostelería",
+        short: "Suministro diario en formato mayorista para bares y restaurantes.",
+      },
+      {
+        href: "/a-quien-servimos#empresas",
+        label: "Empresas",
+        short: "Desayunos de equipo, coffee breaks y regalo corporativo con factura.",
+      },
+    ],
+  },
 ] as const;
 
 /** Las entradas del submenú de Tienda Online, reutilizadas en /catalogo. */
@@ -66,7 +86,7 @@ export const tiendaOnlineNav: readonly NavChild[] =
 export const footerNav: readonly { href: string; label: string }[] = [
   { href: "/catalogo", label: "Nuestros productos" },
   { href: "/catalogo/packs", label: "Packs y promos" },
-  { href: "/hosteleria-y-empresas", label: "Hostelería y empresas" },
+  { href: "/a-quien-servimos", label: "A quién servimos" },
   { href: "/servicios", label: "Servicios" },
   { href: "/tradicion-y-calidad", label: "Tradición y calidad" },
   { href: "/tiendas", label: "Nuestras tiendas" },

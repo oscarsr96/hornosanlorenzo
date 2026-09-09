@@ -15,6 +15,11 @@ export default defineConfig({
   output: "static",
   adapter: vercel(),
   trailingSlash: "never",
+  // «Hostelería y Empresas» pasó a ser «A quién servimos»: la URL vieja puede
+  // estar compartida por ahí fuera, así que se redirige en vez de romperse.
+  redirects: {
+    "/hosteleria-y-empresas": "/a-quien-servimos",
+  },
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],

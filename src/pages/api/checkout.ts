@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (!secret) {
     console.error("[checkout] falta STRIPE_SECRET_KEY");
     return json(
-      { error: "El pago no está configurado todavía. Escríbenos por WhatsApp." },
+      { error: "El pago no está configurado todavía. Llámanos y te lo tomamos por teléfono." },
       503,
     );
   }

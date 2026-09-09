@@ -4,8 +4,6 @@
 - [ ] **Alérgenos de las 100 fichas.** Van todas con `allergens: []` porque la
       carta no los trae. No inventarlos: tienen que venir del obrador
 - [ ] Configurar las 5 variables de Stripe y Resend en Vercel (`.env.example`)
-- [ ] `PUBLIC_WHATSAPP_NUMBER` en Vercel: si falta, el botón de WhatsApp del
-      checkout abre `wa.me/` sin destinatario
 - [ ] Condiciones de compra: razón social, CIF y revisión legal
 - [ ] Confirmar con el obrador gastos de envío y pedido mínimo
       (constantes en `src/lib/entrega.ts`, hoy a cero)
@@ -24,6 +22,20 @@
       hoy marcadas `consultar: true`
 
 ## Coherencia y deuda
+- [ ] **Firma en versión clara.** La cabecera es teja y el logo es moka: hoy se
+      invierte a blanco por CSS (`[filter:brightness(0)_invert(1)]` en
+      `Header.astro`), lo que aplana el acento teja del «desde 1986». Pedir al
+      cliente el PNG de la firma en blanco y quitar el filtro
+- [ ] **Copy de «Particulares» inventado.** La sección 01 de
+      `/a-quien-servimos` (lead, bullets y cita) la escribí yo por analogía con
+      Hostelería y Empresas: el brief solo traía esos dos canales. Validar con
+      el cliente antes de enseñarlo
+- [ ] Los tres servicios de la home (`src/data/services.ts`) siguen siendo
+      «Reparto propio · Empresas y oficinas · Hostelería»: no casan con los tres
+      públicos nuevos (Particulares · Hostelería · Empresas). Unificar
+- [ ] Sin WhatsApp en todo el sitio (decisión del 9 de septiembre de 2026): la
+      única vía de pedido es Stripe, que aún no tiene claves. Hasta
+      configurarlo, el checkout solo puede ofrecer teléfono
 - [ ] `src/components/Firma.astro` quedó sin uso al poner el logo en PNG en la
       cabecera: borrarlo o reutilizarlo en documentos
 - [ ] `/catalogo/empanada-de-zorza` ya no existe (ahora `-picadillo-adobado`) y

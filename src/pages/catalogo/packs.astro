@@ -2,9 +2,6 @@
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import SectionLabel from "~/components/SectionLabel.astro";
 import { packsSalado, packsDulce, type PackRange } from "~/data/packs";
-import { site } from "~/data/site";
-
-const whatsappUrl = `https://wa.me/${String(site.whatsapp ?? "").replace(/\D/g, "")}`;
 
 const gamas: { label: string; number: string; intro: string; items: readonly PackRange[] }[] = [
   {
@@ -33,10 +30,10 @@ const gamas: { label: string; number: string; intro: string; items: readonly Pac
       la de casa y la de la empresa.
     </p>
     <div class="mt-7 flex flex-wrap gap-3">
-      <a href={whatsappUrl} rel="noopener" target="_blank" class="btn btn-primario">
-        Pedir por WhatsApp
+      <a href="/catalogo" class="btn btn-primario">
+        Pedir online
       </a>
-      <a href="/hosteleria-y-empresas" class="btn btn-secundario">
+      <a href="/a-quien-servimos" class="btn btn-secundario">
         Packs para empresa
       </a>
     </div>
@@ -64,7 +61,7 @@ const gamas: { label: string; number: string; intro: string; items: readonly Pac
     </section>
   ))}
 
-  <section class="bg-[color:var(--color-latte)] border-t border-[color:var(--color-avellana)]">
+  <section class="bg-[color:var(--color-leche)] border-t border-[color:var(--color-avellana)]">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 grid gap-10 md:grid-cols-2 items-start">
       <div>
         <SectionLabel number="03" label="Promos del mes" />

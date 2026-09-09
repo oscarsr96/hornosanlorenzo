@@ -10,4 +10,4 @@ tags: [temporada, navidad, reservas]
 El roscón es el postre de la casa: masa madre, agua de azahar de Carcaixent, naranja confitada
 artesana, fermentación de 24 horas. Cuatro versiones: sin relleno, nata, crema pastelera o trufa.
 
-**Reservas:** WhatsApp o en tienda. Hasta el 3 de enero. Recogida 5 y 6 de enero.
+**Reservas:** por teléfono o en tienda. Hasta el 3 de enero. Recogida 5 y 6 de enero.
