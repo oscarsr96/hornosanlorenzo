@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { pool } from "~/lib/db/pool";
 import { preparaAltaUsuario } from "~/lib/auth/alta";
+import { camposAdicionales } from "~/lib/auth/campos";
 import { enviarCorreo } from "~/lib/email/enviar";
 
 /**
@@ -8,7 +9,9 @@ import { enviarCorreo } from "~/lib/email/enviar";
  * servicio del proveedor: es lo que permite mudarse sin reemitir contraseñas.
  *
  * `rol` va con `input: false` a propósito. Sin eso, cualquiera podría
- * registrarse pidiendo `rol: "admin"` en el cuerpo de la petición.
+ * registrarse pidiendo `rol: "admin"` en el cuerpo de la petición. Ver
+ * `~/lib/auth/campos` (y su prueba) para el candado y por qué vive en su
+ * propio módulo.
  */
 export const auth = betterAuth({
   database: pool,
@@ -67,15 +70,7 @@ export const auth = betterAuth({
     storage: "database",
   },
   user: {
-    additionalFields: {
-      telefono: { type: "string", required: false },
-      rol: {
-        type: "string",
-        required: false,
-        defaultValue: "cliente",
-        input: false,
-      },
-    },
+    additionalFields: camposAdicionales,
   },
   // Ver `~/lib/auth/alta`: repite en el servidor la validación de teléfono
   // y nombre que en el navegador hace `validaRegistro`, para quien llame a
