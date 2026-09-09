@@ -1,6 +1,8 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import CuentaDatos from "~/islands/CuentaDatos.tsx";
+import CuentaDirecciones from "~/islands/CuentaDirecciones.tsx";
+import { listarDirecciones } from "~/lib/db/direcciones";
 
 // Página protegida: lee la sesión de la petición, así que no puede
 // prerenderizarse. Sin esta línea el middleware serviría la página como
@@ -10,6 +12,8 @@ export const prerender = false;
 
 const usuario = Astro.locals.usuario;
 if (!usuario) return Astro.redirect("/acceso");
+
+const direccionesIniciales = await listarDirecciones(usuario.id);
 ---
 <MarketingLayout
   title="Mi cuenta"
@@ -30,6 +34,23 @@ if (!usuario) return Astro.redirect("/acceso");
         email={usuario.email}
         telefono={usuario.telefono ?? ""}
       />
+    </div>
+
+    <hr class="mt-12 border-t border-[color:var(--color-avellana)]" />
+
+    <div class="mt-12">
+      <p class="numeracion">Reparto</p>
+      <h2 class="text-2xl sm:text-3xl mt-2">Tus direcciones</h2>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+        Guárdalas aquí para no volver a escribirlas en el siguiente pedido.
+      </p>
+
+      <div class="mt-8">
+        <CuentaDirecciones
+          client:load
+          direccionesIniciales={direccionesIniciales}
+        />
+      </div>
     </div>
   </section>
 </MarketingLayout>
