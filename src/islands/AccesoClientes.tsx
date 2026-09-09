@@ -12,12 +12,13 @@ const PERFILES: { id: Perfil; label: string; claim: string }[] = [
   {
     id: "empresa",
     label: "Empresas",
-    claim: "Hostelería, oficinas y catering: precio propio y factura a mes vencido.",
+    claim: "Hostelería, oficinas y catering.",
   },
 ];
 
 export default function AccesoClientes() {
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  // Particulares de serie: es lo que busca casi todo el que entra aquí.
+  const [perfil, setPerfil] = useState<Perfil>("particular");
 
   // El sitio es estático: el parámetro solo se puede leer en cliente.
   useEffect(() => {
@@ -89,18 +90,6 @@ export default function AccesoClientes() {
           );
         })}
       </div>
-
-      {perfil === null && (
-        <p
-          style={{
-            marginTop: 24,
-            fontSize: 14,
-            color: "var(--color-ink-muted)",
-          }}
-        >
-          Elige arriba cómo compras y te enseñamos el alta que te toca.
-        </p>
-      )}
 
       {perfil === "particular" && (
         <div style={{ marginTop: 32 }}>
