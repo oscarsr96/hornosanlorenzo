@@ -211,6 +211,15 @@ export default function CheckoutFlow({
    * lanza ni informa de un fallo: guardar una dirección es una comodidad, y
    * el pedido no puede depender de ella. Quien está pagando no puede
    * perder la venta porque esta llamada haya fallado.
+   *
+   * Tampoco puede depender de su *lentitud*: `pay()` no espera a que esta
+   * promesa termine, así que la petición de cobro sale sin retraso aunque
+   * esta tarde. Con `keepalive` la petición sigue en marcha aunque el
+   * `window.location.href` de `pay()` nos lleve a Stripe antes de que
+   * termine — sin `keepalive`, el navegador la cancelaría a mitad y la
+   * dirección no se guardaría nunca. El cuerpo (unas decenas de bytes) está
+   * muy por debajo del límite de 64 KiB que `keepalive` impone al conjunto
+   * de peticiones en vuelo.
    */
   async function guardarDireccionSiToca() {
     if (
@@ -224,6 +233,7 @@ export default function CheckoutFlow({
     try {
       await fetch("/api/cuenta/direcciones", {
         method: "POST",
+        keepalive: true,
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           alias: "Guardada en un pedido",
@@ -242,7 +252,9 @@ export default function CheckoutFlow({
     if (!mode || !dateISO || !emailOk || !telefonoOk || sending) return;
     setSending(true);
     setError(null);
-    await guardarDireccionSiToca();
+    // Sin `await`: guardar la dirección es una comodidad y no puede retrasar
+    // el arranque del pago. Ver el comentario de `guardarDireccionSiToca`.
+    void guardarDireccionSiToca();
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
