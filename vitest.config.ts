@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { getViteConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
