@@ -71,4 +71,61 @@ describeSiHayBD("repositorio de direcciones", () => {
     const borradas = await repo.borrarDireccion("otro-usuario", mia.id);
     expect(borradas).toBe(0);
   });
+
+  // Ronda de arreglo: `marcarPredeterminada` desmarca todas antes de
+  // comprobar que el segundo `update` encontró la fila. Sin la comprobación
+  // de `rowCount`, un id inexistente o ajeno dejaba al usuario sin ninguna
+  // predeterminada aunque el endpoint respondiera `{ok:true}`. Estas dos
+  // pruebas comprueban que, en ambos casos, la predeterminada que había
+  // antes se conserva exactamente igual.
+  it("marcar un id que no existe no deja al usuario sin predeterminada", async () => {
+    const antes = await repo.listarDirecciones(userId);
+    const predeterminadaAntes = antes.find((d) => d.predeterminada)?.id;
+    expect(predeterminadaAntes).toBeDefined();
+
+    await expect(
+      repo.marcarPredeterminada(userId, "00000000-0000-0000-0000-000000000000"),
+    ).rejects.toThrow(/no existe o no es tuya/i);
+
+    const despues = await repo.listarDirecciones(userId);
+    expect(despues.filter((d) => d.predeterminada)).toHaveLength(1);
+    expect(despues.find((d) => d.predeterminada)?.id).toBe(predeterminadaAntes);
+  });
+
+  it("marcar la dirección de otro usuario no toca la predeterminada de ninguno de los dos", async () => {
+    const otroUserId = `prueba-otro-${Date.now()}`;
+    await pool.query(
+      'insert into "user" (id, email, name, "emailVerified", "createdAt", "updatedAt") values ($1, $2, $3, false, now(), now())',
+      [otroUserId, `${otroUserId}@ejemplo.com`, "Prueba Otro"],
+    );
+
+    try {
+      const deOtro = await repo.crearDireccion(otroUserId, {
+        alias: "Casa de otro",
+        calle: "Calle Mayor 1",
+        postalCode: "28001",
+        predeterminada: true,
+      });
+
+      const antes = await repo.listarDirecciones(userId);
+      const predeterminadaAntes = antes.find((d) => d.predeterminada)?.id;
+      expect(predeterminadaAntes).toBeDefined();
+
+      await expect(
+        repo.marcarPredeterminada(userId, deOtro.id),
+      ).rejects.toThrow(/no existe o no es tuya/i);
+
+      const despues = await repo.listarDirecciones(userId);
+      expect(despues.filter((d) => d.predeterminada)).toHaveLength(1);
+      expect(despues.find((d) => d.predeterminada)?.id).toBe(
+        predeterminadaAntes,
+      );
+
+      const delOtroDespues = await repo.listarDirecciones(otroUserId);
+      expect(delOtroDespues.filter((d) => d.predeterminada)).toHaveLength(1);
+      expect(delOtroDespues.find((d) => d.predeterminada)?.id).toBe(deOtro.id);
+    } finally {
+      await pool.query('delete from "user" where id = $1', [otroUserId]);
+    }
+  });
 });

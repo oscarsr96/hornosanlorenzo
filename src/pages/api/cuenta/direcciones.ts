@@ -5,6 +5,7 @@ import {
   crearDireccion,
   listarDirecciones,
   marcarPredeterminada,
+  MENSAJE_DIRECCION_AJENA,
 } from "~/lib/db/direcciones";
 
 // Escribe y lee en Postgres a partir de la sesión de la petición: no puede
@@ -16,6 +17,46 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { "content-type": "application/json" },
   });
+
+/**
+ * Traduce un error a una respuesta presentable, en español, sin reenviar
+ * nunca el texto crudo de Postgres al navegador: va en inglés y nombra
+ * restricciones internas de la base de datos (nombres de índice, de tabla)
+ * que no son asunto de quien hace el pedido.
+ *
+ * Los errores que lanzan `crearDireccion` y `marcarPredeterminada` ya son
+ * mensajes nuestros, pensados para el usuario (`admiteCP`, "esa dirección
+ * no existe o no es tuya"): se reconocen porque son `Error` normales, sin
+ * `code`, y se reenvían tal cual. Los que vienen de `pg` traen un código
+ * SQLSTATE en `.code` — aquí solo se traduce el que puede darse de verdad
+ * en este endpoint (`23505`, violación del índice de «una predeterminada»,
+ * si dos peticiones piden a la vez marcar dos direcciones distintas); para
+ * cualquier otro código se usa el genérico, nunca el mensaje de la base de
+ * datos.
+ */
+function traduceError(
+  error: unknown,
+  generico: string,
+): { mensaje: string; status: number } {
+  if (error instanceof Error && !("code" in error)) {
+    return {
+      mensaje: error.message,
+      status: error.message === MENSAJE_DIRECCION_AJENA ? 404 : 400,
+    };
+  }
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? (error as { code?: unknown }).code
+      : undefined;
+  if (code === "23505") {
+    return {
+      mensaje:
+        "Ya tienes una dirección predeterminada. Quítale la marca antes de poner otra.",
+      status: 409,
+    };
+  }
+  return { mensaje: generico, status: 400 };
+}
 
 const cuerpoJSON = async (
   request: Request,
@@ -71,10 +112,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
     return json({ direccion }, 201);
   } catch (error) {
-    return json(
-      { error: error instanceof Error ? error.message : "No se pudo guardar." },
-      400,
+    const { mensaje, status } = traduceError(
+      error,
+      "No se pudo guardar la dirección.",
     );
+    return json({ error: mensaje }, status);
   }
 };
 
@@ -86,10 +128,21 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   const id = typeof cuerpo.id === "string" ? cuerpo.id : "";
   if (!id) return json({ error: "Falta la dirección a marcar." }, 400);
 
-  // El id sale de la sesión, nunca del cuerpo de la petición: `marcarPredeterminada`
-  // solo toca filas de `usuario.id`.
-  await marcarPredeterminada(usuario.id, id);
-  return json({ ok: true });
+  try {
+    // El id sale de la sesión, nunca del cuerpo de la petición:
+    // `marcarPredeterminada` solo toca filas de `usuario.id`. Si el id ya no
+    // existe o es de otro, lanza en vez de devolver `ok` y dejar al usuario
+    // sin ninguna predeterminada: ese fallo llega aquí como un error normal,
+    // nunca como un `{ok:true}` engañoso.
+    await marcarPredeterminada(usuario.id, id);
+    return json({ ok: true });
+  } catch (error) {
+    const { mensaje, status } = traduceError(
+      error,
+      "No se pudo marcar la dirección como predeterminada.",
+    );
+    return json({ error: mensaje }, status);
+  }
 };
 
 export const DELETE: APIRoute = async ({ request, locals }) => {
@@ -104,7 +157,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
   // filas afectadas distingue «borrada» de «no era tuya».
   const borradas = await borrarDireccion(usuario.id, id);
   if (borradas === 0) {
-    return json({ error: "Esa dirección no existe o no es tuya." }, 404);
+    return json({ error: MENSAJE_DIRECCION_AJENA }, 404);
   }
   return json({ ok: true });
 };

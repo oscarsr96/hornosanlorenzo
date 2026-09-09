@@ -29,6 +29,16 @@ const SELECT_CAMPOS = `
   predeterminada
 `;
 
+/**
+ * Mismo mensaje para «no existe» y «es de otro usuario»: distinguirlos le
+ * diría a quien pruebe ids ajenos cuáles existen de verdad. Lo usan
+ * `borrarDireccion` (vía el endpoint, que compone la respuesta a partir de
+ * `rowCount`) y `marcarPredeterminada` (que lo lanza directamente), para que
+ * el endpoint solo tenga que comparar contra una constante, no repetir el
+ * texto.
+ */
+export const MENSAJE_DIRECCION_AJENA = "Esa dirección no existe o no es tuya.";
+
 /** Todas las direcciones de un usuario, la predeterminada primero. */
 export async function listarDirecciones(userId: string): Promise<Direccion[]> {
   const { rows } = await pool.query<Direccion>(
@@ -86,6 +96,15 @@ export async function borrarDireccion(
  * pone en la elegida. Sin transacción, el índice único de la migración
  * podría rechazar a medias la segunda escritura y dejar al usuario sin
  * ninguna predeterminada.
+ *
+ * El segundo `update` puede no afectar a ninguna fila —el id ya no existe,
+ * o es de otro usuario, por ejemplo una pestaña con la lista desactualizada
+ * porque la dirección se borró en otra—. Si eso pasa, la primera consulta ya
+ * ha desmarcado todas: sin comprobarlo, el `commit` dejaría al usuario sin
+ * ninguna predeterminada aunque el resultado pareciera correcto. Por eso se
+ * comprueba `rowCount` y, si es cero, se lanza antes del `commit`: el único
+ * `catch`, más abajo, deshace la transacción entera con `rollback` y el
+ * estado anterior queda intacto.
  */
 export async function marcarPredeterminada(
   userId: string,
@@ -98,10 +117,13 @@ export async function marcarPredeterminada(
       `update direcciones set predeterminada = false where user_id = $1`,
       [userId],
     );
-    await cliente.query(
+    const { rowCount } = await cliente.query(
       `update direcciones set predeterminada = true where id = $1 and user_id = $2`,
       [id, userId],
     );
+    if (!rowCount) {
+      throw new Error(MENSAJE_DIRECCION_AJENA);
+    }
     await cliente.query("commit");
   } catch (err) {
     await cliente.query("rollback");
