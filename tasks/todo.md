@@ -1,6 +1,16 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **Antes de poner `RESEND_API_KEY`: cerrar la fuga por tiempo de la
+      recuperación de contraseña.** La respuesta de «he olvidado mi contraseña»
+      dice lo mismo exista o no la cuenta, pero si existe **espera** a que salga
+      el correo y si no existe no espera: se puede saber quién es cliente
+      midiendo cuánto tarda. Hoy no se nota porque no hay proveedor configurado.
+      El arreglo es `advanced.backgroundTasks.handler` de Better Auth con el
+      `waitUntil` de Vercel, pero **exige Fluid Compute activado** en el panel
+      del proyecto: sin eso, `waitUntil` es un no-op silencioso y el correo de
+      recuperación podría no enviarse nunca. Comprobar primero si está activo
+      (detalle en la sección «Ronda de arreglo 1» del informe de la tarea 9)
 - [ ] **Horario real de la tienda de Alcobendas.** La ficha dice «Lun–Sáb
       7:00–14:00» y Oscar confirmó el 9 de septiembre de 2026 que está mal: la
       recogida llega hasta las 19:30. No lo cambio sin el horario completo —si
