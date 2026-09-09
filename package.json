@@ -26,6 +26,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@vercel/analytics": "^1.5.0",
     "astro": "^5.14.0",
+    "better-auth": "^1.7.3",
     "motion": "^11.18.0",
     "pg": "^8.23.0",
     "react": "^19.1.0",
