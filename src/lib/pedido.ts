@@ -65,6 +65,13 @@ export type PricedOrder = {
   shippingCents: number;
   totalCents: number;
   payload: OrderPayload;
+  /**
+   * Quién hizo el pedido, si tenía sesión. Sale de `Astro.locals.usuario` en
+   * el endpoint que llama a `priceOrder`, nunca del cuerpo de la petición:
+   * aceptarlo del navegador dejaría que cualquiera atribuyera su pedido a
+   * otra persona. Un invitado no tiene sesión, así que aquí queda `undefined`.
+   */
+  userId?: string;
 };
 
 export class OrderError extends Error {
@@ -80,10 +87,14 @@ export class OrderError extends Error {
 /**
  * Valida el pedido y le pone precio leyendo el catálogo.
  * Lanza OrderError con un mensaje presentable si algo no cuadra.
+ *
+ * `userId` es opcional y solo lo rellena quien llama desde el endpoint, a
+ * partir de la sesión: aquí no se lee de ningún sitio que el navegador
+ * pueda tocar.
  */
 export async function priceOrder(
   payload: OrderPayload,
-  now: Date = new Date(),
+  { userId, now = new Date() }: { userId?: string; now?: Date } = {},
 ): Promise<PricedOrder> {
   if (payload.mode === "domicilio") {
     if (!payload.address || payload.address.trim().length < 6) {
@@ -179,6 +190,7 @@ export async function priceOrder(
     shippingCents: envio,
     totalCents: subtotalCents + envio,
     payload,
+    userId,
   };
 }
 

@@ -21,11 +21,38 @@ import type { Cart } from "~/lib/cart";
 
 type Step = "dia" | "opcion" | "direccion" | "tienda" | "resumen";
 
+/**
+ * Misma forma que `Direccion` de `~/lib/db/direcciones`, redefinida aquí en
+ * vez de importada: ese módulo arrastra `~/lib/db/pool` (Postgres), que no
+ * tiene sentido meter en el bundle de una isla de cliente. Es el mismo
+ * patrón que ya usa `CuentaDirecciones.tsx`.
+ */
+export type Direccion = {
+  id: string;
+  alias: string;
+  calle: string;
+  postalCode: string;
+  predeterminada: boolean;
+};
+
+/** Lo que trae quien tiene sesión, calculado en `carrito.astro`. */
+export type Prefill = {
+  nombre: string;
+  email: string;
+  telefono: string;
+  direcciones: Direccion[];
+};
+
 type Props = {
   cart: Cart;
   totalCents: number;
   onClose: () => void;
+  /** Sin sesión llega `undefined`: el checkout de invitado no cambia. */
+  prefill?: Prefill;
 };
+
+/** Valor del selector de direcciones cuando toca escribir una a mano. */
+const OTRA_DIRECCION = "otra";
 
 const WEEKDAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
 
@@ -60,19 +87,39 @@ const field: React.CSSProperties = {
   marginTop: 8,
 };
 
-export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
+export default function CheckoutFlow({
+  cart,
+  totalCents,
+  onClose,
+  prefill,
+}: Props) {
   const [step, setStep] = useState<Step>("opcion");
   const [history, setHistory] = useState<Step[]>([]);
 
+  // La predeterminada, si la hay, es lo único de `prefill` que rellena
+  // campos por sí sola. El resto de direcciones solo entran al elegirlas en
+  // el selector de más abajo.
+  const direccionPredeterminada = prefill?.direcciones.find(
+    (d) => d.predeterminada,
+  );
+
   const [dateISO, setDateISO] = useState("");
   const [mode, setMode] = useState<DeliveryMode | null>(null);
-  const [address, setAddress] = useState("");
-  const [postalCode, setPostalCode] = useState("");
+  const [address, setAddress] = useState(direccionPredeterminada?.calle ?? "");
+  const [postalCode, setPostalCode] = useState(
+    direccionPredeterminada?.postalCode ?? "",
+  );
+  // Qué opción muestra el selector de direcciones guardadas: el id de una
+  // guardada, o `OTRA_DIRECCION` para escribir a mano.
+  const [direccionSeleccionada, setDireccionSeleccionada] = useState(
+    direccionPredeterminada?.id ?? OTRA_DIRECCION,
+  );
+  const [guardarDireccion, setGuardarDireccion] = useState(true);
   const [storeId, setStoreId] = useState<StoreId>("alcobendas");
   const [slot, setSlot] = useState<"morning" | "afternoon">("morning");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(prefill?.nombre ?? "");
+  const [email, setEmail] = useState(prefill?.email ?? "");
+  const [phone, setPhone] = useState(prefill?.telefono ?? "");
   const [notes, setNotes] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,11 +206,43 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const telefonoOk = esTelefonoValido(phone);
   const canPay = Boolean(mode && dateISO) && emailOk && telefonoOk && !sending;
 
+  /**
+   * Guarda la dirección nueva en la cuenta, si toca. Deliberadamente no
+   * lanza ni informa de un fallo: guardar una dirección es una comodidad, y
+   * el pedido no puede depender de ella. Quien está pagando no puede
+   * perder la venta porque esta llamada haya fallado.
+   */
+  async function guardarDireccionSiToca() {
+    if (
+      mode !== "domicilio" ||
+      !prefill ||
+      !guardarDireccion ||
+      !esDireccionNueva
+    ) {
+      return;
+    }
+    try {
+      await fetch("/api/cuenta/direcciones", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          alias: "Guardada en un pedido",
+          calle: address.trim(),
+          postalCode,
+          predeterminada: prefill.direcciones.length === 0,
+        }),
+      });
+    } catch {
+      // Silencioso a propósito: ver el comentario de arriba.
+    }
+  }
+
   /** Solo se mandan referencias y cantidades: el precio lo pone el servidor. */
   async function pay() {
     if (!mode || !dateISO || !emailOk || !telefonoOk || sending) return;
     setSending(true);
     setError(null);
+    await guardarDireccionSiToca();
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -202,6 +281,17 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const cpCompleto = postalCode.length === 5;
   const cpValido = admiteCP(postalCode);
   const direccionLista = address.trim().length >= 6 && cpValido;
+
+  // Si lo escrito coincide con una dirección ya guardada no hay nada nuevo
+  // que ofrecer guardar: solo cuenta como «nueva» cuando además es válida
+  // y difiere de todas las de la lista.
+  const esDireccionGuardada = Boolean(
+    prefill?.direcciones.some(
+      (d) => d.calle === address.trim() && d.postalCode === postalCode,
+    ),
+  );
+  const esDireccionNueva =
+    Boolean(prefill) && direccionLista && !esDireccionGuardada;
 
   const TITLES: Record<Step, string> = {
     dia: "Selecciona qué día quieres el pedido",
@@ -358,7 +448,10 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 }}
               >
                 {WEEKDAYS.map((w) => (
-                  <span key={w} style={{ ...label, textAlign: "center", padding: "6px 0" }}>
+                  <span
+                    key={w}
+                    style={{ ...label, textAlign: "center", padding: "6px 0" }}
+                  >
                     {w}
                   </span>
                 ))}
@@ -398,15 +491,24 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 })}
               </div>
 
-              <p style={{ marginTop: 14, fontSize: 12, color: "var(--color-ink-muted)" }}>
-                Obrador y reparto propio de lunes a sábado. Los domingos no hay servicio.
+              <p
+                style={{
+                  marginTop: 14,
+                  fontSize: 12,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                Obrador y reparto propio de lunes a sábado. Los domingos no hay
+                servicio.
               </p>
 
               <button
                 type="button"
                 className="btn btn-primario"
                 disabled={!dateISO}
-                onClick={() => go(mode === "domicilio" ? "direccion" : "resumen")}
+                onClick={() =>
+                  go(mode === "domicilio" ? "direccion" : "resumen")
+                }
                 style={{
                   width: "100%",
                   marginTop: 16,
@@ -467,7 +569,52 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
 
           {step === "direccion" && (
             <>
-              <label style={label} htmlFor="cf-address">
+              {prefill && prefill.direcciones.length > 1 && (
+                <>
+                  <label style={label} htmlFor="cf-direccion-guardada">
+                    Elige una dirección guardada
+                  </label>
+                  <select
+                    id="cf-direccion-guardada"
+                    value={direccionSeleccionada}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setDireccionSeleccionada(id);
+                      if (id === OTRA_DIRECCION) {
+                        // «Otra dirección» vacía los campos para escribir a
+                        // mano: rellenos no bloquean, y aquí tampoco.
+                        setAddress("");
+                        setPostalCode("");
+                        return;
+                      }
+                      const elegida = prefill.direcciones.find(
+                        (d) => d.id === id,
+                      );
+                      if (elegida) {
+                        setAddress(elegida.calle);
+                        setPostalCode(elegida.postalCode);
+                      }
+                    }}
+                    style={field}
+                  >
+                    {prefill.direcciones.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.alias}
+                      </option>
+                    ))}
+                    <option value={OTRA_DIRECCION}>Otra dirección</option>
+                  </select>
+                </>
+              )}
+
+              <label
+                style={
+                  prefill && prefill.direcciones.length > 1
+                    ? { ...label, display: "block", marginTop: 16 }
+                    : label
+                }
+                htmlFor="cf-address"
+              >
                 Dirección de entrega
               </label>
               <input
@@ -478,7 +625,10 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 style={field}
               />
 
-              <label style={{ ...label, display: "block", marginTop: 16 }} htmlFor="cf-cp">
+              <label
+                style={{ ...label, display: "block", marginTop: 16 }}
+                htmlFor="cf-cp"
+              >
                 Código postal
               </label>
               <input
@@ -522,6 +672,31 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                     : ZONA_REPARTO_COPY}
               </p>
 
+              {esDireccionNueva && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    id="cf-guardar-direccion"
+                    type="checkbox"
+                    checked={guardarDireccion}
+                    onChange={(e) => setGuardarDireccion(e.target.checked)}
+                    style={{ marginTop: 3 }}
+                  />
+                  <label
+                    htmlFor="cf-guardar-direccion"
+                    style={{ fontSize: 13 }}
+                  >
+                    Guardar esta dirección en mi cuenta
+                  </label>
+                </div>
+              )}
+
               <button
                 type="button"
                 className="btn btn-primario"
@@ -540,7 +715,10 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
               <p style={{ marginTop: 14, textAlign: "center", fontSize: 13 }}>
                 <a
                   href="/a-quien-servimos#alta"
-                  style={{ textDecoration: "underline", color: "var(--color-caramelo)" }}
+                  style={{
+                    textDecoration: "underline",
+                    color: "var(--color-caramelo)",
+                  }}
                 >
                   Ya soy cliente
                 </a>
@@ -631,7 +809,9 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   <dd style={{ margin: 0 }}>{formatDateISO(dateISO)}</dd>
                 </div>
                 <div>
-                  <dt style={label}>{mode === "domicilio" ? "Dirección" : "Tienda"}</dt>
+                  <dt style={label}>
+                    {mode === "domicilio" ? "Dirección" : "Tienda"}
+                  </dt>
                   <dd style={{ margin: 0 }}>
                     {mode === "domicilio"
                       ? `${address} · ${postalCode}`
@@ -655,41 +835,49 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
               {mode === "domicilio" ? (
                 <div style={{ marginTop: 16 }}>
                   <span style={label}>Entrega</span>
-                  <p style={{ margin: "8px 0 0", fontSize: 14, fontWeight: 600 }}>
+                  <p
+                    style={{ margin: "8px 0 0", fontSize: 14, fontWeight: 600 }}
+                  >
                     {ENTREGA_DOMICILIO_COPY}
                   </p>
                 </div>
               ) : (
-              <div style={{ marginTop: 16 }}>
-                <span style={label}>Franja</span>
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  {([
-                    { id: "morning", label: "Mañana" },
-                    { id: "afternoon", label: "Tarde" },
-                  ] as const).map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setSlot(s.id)}
-                      aria-pressed={slot === s.id}
-                      style={{
-                        minHeight: 40,
-                        padding: "0 1rem",
-                        border: "1px solid var(--color-avellana)",
-                        background:
-                          slot === s.id ? "var(--color-caramelo)" : "transparent",
-                        color:
-                          slot === s.id ? "var(--color-leche)" : "var(--color-moka)",
-                        cursor: "pointer",
-                        fontSize: 14,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+                <div style={{ marginTop: 16 }}>
+                  <span style={label}>Franja</span>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    {(
+                      [
+                        { id: "morning", label: "Mañana" },
+                        { id: "afternoon", label: "Tarde" },
+                      ] as const
+                    ).map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSlot(s.id)}
+                        aria-pressed={slot === s.id}
+                        style={{
+                          minHeight: 40,
+                          padding: "0 1rem",
+                          border: "1px solid var(--color-avellana)",
+                          background:
+                            slot === s.id
+                              ? "var(--color-caramelo)"
+                              : "transparent",
+                          color:
+                            slot === s.id
+                              ? "var(--color-leche)"
+                              : "var(--color-moka)",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
 
               <div style={{ marginTop: 16 }}>
@@ -814,8 +1002,8 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   textAlign: "center",
                 }}
               >
-                Pago seguro con tarjeta, Apple Pay o Google Pay. Al pagar aceptas
-                las{" "}
+                Pago seguro con tarjeta, Apple Pay o Google Pay. Al pagar
+                aceptas las{" "}
                 <a
                   href="/legal/condiciones-de-compra"
                   style={{ textDecoration: "underline" }}
