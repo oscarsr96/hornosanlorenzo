@@ -1,6 +1,11 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **Horario real de la tienda de Alcobendas.** La ficha dice «Lun–Sáb
+      7:00–14:00» y Oscar confirmó el 9 de septiembre de 2026 que está mal: la
+      recogida llega hasta las 19:30. No lo cambio sin el horario completo —si
+      hay cierre a mediodía, como en Pozuelo, no me lo puedo inventar. Está en
+      `src/data/stores.ts`
 - [ ] **Validar los códigos postales de reparto.** `CP_RANGOS` en
       `src/lib/entrega.ts` bloquea el envío fuera de zona, pero los rangos los
       saqué yo de fuentes públicas, no del cliente: Madrid capital

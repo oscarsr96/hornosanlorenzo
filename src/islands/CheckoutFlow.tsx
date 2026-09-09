@@ -3,7 +3,8 @@ import { stores, type StoreId } from "~/data/stores";
 import { formatPriceCents, formatDateISO } from "~/lib/format";
 import {
   MODE_COPY,
-  PICKUP_NEXT_DAY_THRESHOLD_CENTS,
+  DOS_DIAS_DESDE_CENTS,
+  DOS_DIAS_COPY,
   earliestDate,
   earliestSelectableDate,
   fromISO,
@@ -77,10 +78,23 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
-  /** La modalidad se elige antes que el día, así que el mínimo ya es el suyo. */
+  /**
+   * Modalidad e importe se conocen antes que el día, y en recogida la tienda
+   * también: el calendario ya puede abrir con el mínimo definitivo.
+   */
+  const plazoOpts = useMemo(
+    () => ({
+      subtotalCents: totalCents,
+      storeId: mode === "recogida" ? storeId : undefined,
+    }),
+    [totalCents, mode, storeId],
+  );
   const minISO = useMemo(
-    () => (mode ? earliestDate(mode, today) : earliestSelectableDate(today)),
-    [mode, today],
+    () =>
+      mode
+        ? earliestDate(mode, today, plazoOpts)
+        : earliestSelectableDate(today),
+    [mode, today, plazoOpts],
   );
   const [cursor, setCursor] = useState(() => {
     const d = fromISO(earliestSelectableDate(today));
@@ -130,8 +144,15 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
   /** La modalidad manda: si la fecha ya elegida deja de valer, se descarta. */
   function chooseMode(next: DeliveryMode) {
     setMode(next);
-    if (dateISO && dateISO < earliestDate(next, today)) setDateISO("");
-    go("dia");
+    if (
+      dateISO &&
+      dateISO < earliestDate(next, today, { subtotalCents: totalCents })
+    ) {
+      setDateISO("");
+    }
+    // En recogida la tienda va antes que el día: Pozuelo no prepara para hoy,
+    // así que el calendario necesita saberla para no ofrecer una fecha falsa.
+    go(next === "recogida" ? "tienda" : "dia");
   }
 
   const emailOk = /.+@.+\..+/.test(email.trim());
@@ -385,7 +406,7 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                 type="button"
                 className="btn btn-primario"
                 disabled={!dateISO}
-                onClick={() => go(mode === "domicilio" ? "direccion" : "tienda")}
+                onClick={() => go(mode === "domicilio" ? "direccion" : "resumen")}
                 style={{
                   width: "100%",
                   marginTop: 16,
@@ -436,10 +457,11 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   </span>
                 </button>
               ))}
-              <p style={{ fontSize: 12, color: "var(--color-ink-muted)" }}>
-                Pedidos superiores a {formatPriceCents(PICKUP_NEXT_DAY_THRESHOLD_CENTS)} pueden
-                pasar al día siguiente en recogida.
-              </p>
+              {totalCents >= DOS_DIAS_DESDE_CENTS && (
+                <p style={{ fontSize: 12, color: "var(--color-ink-muted)" }}>
+                  {DOS_DIAS_COPY}
+                </p>
+              )}
             </div>
           )}
 
@@ -534,7 +556,17 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                   type="button"
                   onClick={() => {
                     setStoreId(s.id);
-                    go("resumen");
+                    if (
+                      dateISO &&
+                      dateISO <
+                        earliestDate("recogida", today, {
+                          subtotalCents: totalCents,
+                          storeId: s.id,
+                        })
+                    ) {
+                      setDateISO("");
+                    }
+                    go("dia");
                   }}
                   style={{
                     textAlign: "left",
@@ -552,6 +584,17 @@ export default function CheckoutFlow({ cart, totalCents, onClose }: Props) {
                     }}
                   >
                     {s.shortName}
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      marginTop: 4,
+                      fontSize: 12,
+                      color: "var(--color-ink-muted)",
+                    }}
+                  >
+                    Recogida hasta las {s.pickupUntil}
+                    {s.id === "pozuelo" && " · siempre de un día para otro"}
                   </span>
                   <span
                     style={{

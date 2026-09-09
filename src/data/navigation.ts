@@ -2,7 +2,7 @@ import type { CategoryId } from "~/data/categories";
 
 /**
  * Estructura de navegación del brief de front end:
- * cinco secciones, con submenú en «Tienda Online» y en «A quién servimos».
+ * seis secciones, con submenú en «Tienda Online» y en «A quién servimos».
  */
 export type NavChild = {
   href: string;
@@ -77,6 +77,8 @@ export const mainNav: readonly NavItem[] = [
       },
     ],
   },
+  // Sin submenú de momento: entra como sección y ya se poblará.
+  { href: "/noticias", label: "Noticias" },
 ] as const;
 
 /** Las entradas del submenú de Tienda Online, reutilizadas en /catalogo. */

@@ -1,11 +1,13 @@
 /**
- * Reglas de entrega del brief de front end.
+ * Reglas de entrega.
  *
  *   Envío a domicilio — «Entregamos en 24 horas. Entrega programada al día
  *   siguiente para pedidos realizados antes de las 18:00 del día anterior.»
  *
- *   Recogida en tienda — «Recogida en tienda el mismo día (posibilidad día
- *   siguiente para pedidos superiores a 200 €).»
+ *   Recogida en tienda — el mismo día en Alcobendas; en Pozuelo, siempre de un
+ *   día para otro.
+ *
+ *   Cualquier modalidad — desde 250 € el obrador necesita dos días.
  */
 
 export type DeliveryMode = "domicilio" | "recogida";
@@ -13,8 +15,14 @@ export type DeliveryMode = "domicilio" | "recogida";
 /** Hora límite para que el envío salga al día siguiente. */
 export const CUTOFF_HOUR = 18;
 
-/** A partir de este importe, la recogida puede pasar al día siguiente. */
-export const PICKUP_NEXT_DAY_THRESHOLD_CENTS = 20_000;
+/** Desde este importe el obrador necesita dos días: no vale el día siguiente. */
+export const DOS_DIAS_DESDE_CENTS = 25_000;
+
+/** Tiendas que nunca preparan para el mismo día. */
+const TIENDAS_SIN_MISMO_DIA: readonly string[] = ["pozuelo"];
+
+export const DOS_DIAS_COPY =
+  "Los pedidos desde 250 € necesitan dos días de preparación.";
 
 export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = {
   domicilio: {
@@ -23,7 +31,7 @@ export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = 
   },
   recogida: {
     label: "Recogida en tienda",
-    body: "Recogida en tienda el mismo día (posibilidad día siguiente para pedidos superiores a 200 €).",
+    body: "Recogida el mismo día en Alcobendas. En Pozuelo, siempre de un día para otro.",
   },
 };
 
@@ -116,16 +124,38 @@ const nextOpenDay = (date: Date): Date => {
   return d;
 };
 
+/** Lo que condiciona el primer día disponible, además de la modalidad. */
+export type PlazoOpts = {
+  /** Subtotal del pedido: desde 250 € hacen falta dos días. */
+  subtotalCents?: number;
+  /** Solo en recogida: Pozuelo nunca prepara para el mismo día. */
+  storeId?: string;
+};
+
 /**
- * Primer día que se puede elegir para cada modalidad.
- * Recogida: hoy mismo. Domicilio: mañana si aún no son las 18:00; si no, pasado.
+ * Primer día que se puede elegir.
+ *
+ * Recogida: hoy mismo, salvo en Pozuelo, que es de un día para otro.
+ * Domicilio: mañana si aún no son las 18:00; si no, pasado.
+ * En ambas, un pedido de 250 € o más no baja de dos días.
  */
-export function earliestDate(mode: DeliveryMode, now: Date = new Date()): string {
-  const base =
+export function earliestDate(
+  mode: DeliveryMode,
+  now: Date = new Date(),
+  { subtotalCents = 0, storeId }: PlazoOpts = {},
+): string {
+  let dias =
     mode === "recogida"
-      ? now
-      : addDays(now, now.getHours() < CUTOFF_HOUR ? 1 : 2);
-  return toISO(nextOpenDay(base));
+      ? storeId && TIENDAS_SIN_MISMO_DIA.includes(storeId)
+        ? 1
+        : 0
+      : now.getHours() < CUTOFF_HOUR
+        ? 1
+        : 2;
+
+  if (subtotalCents >= DOS_DIAS_DESDE_CENTS) dias = Math.max(dias, 2);
+
+  return toISO(nextOpenDay(addDays(now, dias)));
 }
 
 /** El calendario abre con la opción más permisiva: la recogida. */
@@ -166,15 +196,16 @@ export function meetsMinimum(mode: DeliveryMode, subtotalCents: number): boolean
   return subtotalCents >= MIN_ORDER_CENTS;
 }
 
-/** ¿Es una fecha admisible para esta modalidad? */
+/** ¿Es una fecha admisible para esta modalidad, importe y tienda? */
 export function isDateAllowed(
   mode: DeliveryMode,
   dateISO: string,
   now: Date = new Date(),
+  opts: PlazoOpts = {},
 ): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return false;
   const date = fromISO(dateISO);
   if (Number.isNaN(date.getTime())) return false;
   if (isClosed(date)) return false;
-  return dateISO >= earliestDate(mode, now);
+  return dateISO >= earliestDate(mode, now, opts);
 }

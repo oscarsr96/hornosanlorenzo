@@ -85,12 +85,6 @@ export async function priceOrder(
   payload: OrderPayload,
   now: Date = new Date(),
 ): Promise<PricedOrder> {
-  if (!isDateAllowed(payload.mode, payload.dateISO, now)) {
-    throw new OrderError(
-      "La fecha elegida ya no está disponible para esa modalidad de entrega.",
-    );
-  }
-
   if (payload.mode === "domicilio") {
     if (!payload.address || payload.address.trim().length < 6) {
       throw new OrderError("Falta la dirección de entrega.");
@@ -157,6 +151,19 @@ export async function priceOrder(
   }
 
   const subtotalCents = lines.reduce((sum, l) => sum + l.totalCents, 0);
+
+  // El plazo depende del importe y de la tienda, así que la fecha no se puede
+  // validar hasta tener el pedido valorado.
+  if (
+    !isDateAllowed(payload.mode, payload.dateISO, now, {
+      subtotalCents,
+      storeId: payload.storeId,
+    })
+  ) {
+    throw new OrderError(
+      "La fecha elegida no está disponible para este pedido. Revisa el día de entrega.",
+    );
+  }
 
   if (!meetsMinimum(payload.mode, subtotalCents)) {
     throw new OrderError(

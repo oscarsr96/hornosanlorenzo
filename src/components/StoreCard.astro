@@ -18,6 +18,10 @@ const { store } = Astro.props;
         <dd>{store.hoursText}</dd>
       </div>
       <div>
+        <dt class="numeracion">Recogida de pedidos</dt>
+        <dd>Hasta las {store.pickupUntil}</dd>
+      </div>
+      <div>
         <dt class="numeracion">Teléfono</dt>
         <dd><a href={`tel:${store.phone}`}>{store.phoneDisplay}</a></dd>
       </div>

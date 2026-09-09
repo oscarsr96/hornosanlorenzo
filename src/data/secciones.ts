@@ -21,7 +21,6 @@ export const seccionIds = [
   "tartas-saladas",
   "para-compartir",
   "las-lorenzas-salado",
-  "por-encargo",
 ] as const;
 
 export type SeccionId = (typeof seccionIds)[number];
@@ -34,6 +33,8 @@ export type Seccion = {
   eyebrow: string;
   /** Nota de raciones y tamaños que acompaña a la sección. */
   nota?: string;
+  /** Aviso con teléfono: para lo que no se puede encargar por la web. */
+  aviso?: string;
   order: number;
 };
 
@@ -43,6 +44,8 @@ export const secciones: readonly Seccion[] = [
     label: "Las Tartas del Obrador",
     eyebrow: "Dulce · Tartas",
     nota: "Tartas tradicionales de bizcocho · Grande 15–20 rac. · Mediana 10–12 · Pequeña 6–8",
+    aviso:
+      "¿Una tarta personalizada con foto? No se encarga por la web: llama directamente a la tienda y te la preparamos.",
     order: 100,
   },
   {
@@ -100,8 +103,8 @@ export const secciones: readonly Seccion[] = [
   },
   {
     id: "las-lorenzas",
-    label: "Las Lorenzas · Mini Croissants Dulces",
-    eyebrow: "Dulce · Las Lorenzas",
+    label: "Mini Croissants Dulces",
+    eyebrow: "Dulce · Mini Croissants",
     nota: "De mantequilla · unidades de 6, 12 y 24",
     order: 1000,
   },
@@ -147,17 +150,10 @@ export const secciones: readonly Seccion[] = [
   },
   {
     id: "las-lorenzas-salado",
-    label: "Las Lorenzas · Mini Croissants Salados",
-    eyebrow: "Salado · Las Lorenzas",
+    label: "Mini Croissants Salados",
+    eyebrow: "Salado · Mini Croissants",
     nota: "Pedido con un día de antelación · unidades de 6, 12 y 24",
     order: 1700,
-  },
-  {
-    id: "por-encargo",
-    label: "Por encargo",
-    eyebrow: "Salado · Las Lorenzas",
-    nota: "Precio a consultar con el obrador",
-    order: 1800,
   },
 ] as const;
 
