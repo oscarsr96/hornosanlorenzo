@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { preparaAltaUsuario } from "~/lib/auth/alta";
+import {
+  preparaAltaUsuario,
+  preparaActualizacionUsuario,
+} from "~/lib/auth/alta";
 
 describe("preparaAltaUsuario", () => {
   const bueno = { name: "Ana", telefono: "666123456" };
@@ -40,5 +43,49 @@ describe("preparaAltaUsuario", () => {
     await expect(
       preparaAltaUsuario({ ...bueno, telefono: "12345" }),
     ).rejects.toMatchObject({ status: "BAD_REQUEST" });
+  });
+});
+
+// El endpoint `update-user` de Better Auth solo manda los campos que
+// cambian: a diferencia del alta, aquí un campo ausente no debe rechazarse.
+describe("preparaActualizacionUsuario", () => {
+  it("no toca nada si la actualización no trae ni nombre ni teléfono", async () => {
+    const { data } = await preparaActualizacionUsuario({ image: "foto.png" });
+    expect(data).toEqual({ image: "foto.png" });
+  });
+
+  it("valida y normaliza el teléfono cuando es lo único que cambia", async () => {
+    const { data } = await preparaActualizacionUsuario({
+      telefono: "+34 666 12 34 56",
+    });
+    expect(data.telefono).toBe("666123456");
+    expect(data.name).toBeUndefined();
+  });
+
+  it("valida el nombre cuando es lo único que cambia", async () => {
+    const { data } = await preparaActualizacionUsuario({ name: "  Ana  " });
+    expect(data.name).toBe("Ana");
+    expect(data.telefono).toBeUndefined();
+  });
+
+  it("rechaza un nombre en blanco aunque el teléfono no venga", async () => {
+    await expect(
+      preparaActualizacionUsuario({ name: "   " }),
+    ).rejects.toMatchObject({ status: "BAD_REQUEST" });
+  });
+
+  it("rechaza un teléfono sin forma de teléfono español aunque el nombre no venga", async () => {
+    await expect(
+      preparaActualizacionUsuario({ telefono: "12345" }),
+    ).rejects.toMatchObject({ status: "BAD_REQUEST" });
+  });
+
+  it("valida los dos campos cuando los dos cambian a la vez", async () => {
+    const { data } = await preparaActualizacionUsuario({
+      name: "Ana",
+      telefono: "666123456",
+    });
+    expect(data.name).toBe("Ana");
+    expect(data.telefono).toBe("666123456");
   });
 });

@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
 import { pool } from "~/lib/db/pool";
-import { preparaAltaUsuario } from "~/lib/auth/alta";
+import {
+  preparaAltaUsuario,
+  preparaActualizacionUsuario,
+} from "~/lib/auth/alta";
 import { camposAdicionales } from "~/lib/auth/campos";
 import { enviarCorreo } from "~/lib/email/enviar";
 
@@ -75,10 +78,18 @@ export const auth = betterAuth({
   // Ver `~/lib/auth/alta`: repite en el servidor la validación de teléfono
   // y nombre que en el navegador hace `validaRegistro`, para quien llame a
   // `/sign-up/email` sin pasar por el formulario.
+  //
+  // El hook de `update` es igual de necesario: el endpoint `update-user` de
+  // Better Auth está montado y exige sesión, pero sin este hook actualizaba
+  // `name` y `telefono` sin validar nada, saltándose las reglas que
+  // `/api/cuenta/datos` aplica con cuidado.
   databaseHooks: {
     user: {
       create: {
         before: (user) => preparaAltaUsuario(user),
+      },
+      update: {
+        before: (user) => preparaActualizacionUsuario(user),
       },
     },
   },
