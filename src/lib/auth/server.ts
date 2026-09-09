@@ -20,10 +20,16 @@ export const auth = betterAuth({
   // contraseña. El spec lo pide explícitamente. `/sign-in` y `/sign-up`
   // tienen además una regla especial más estricta (10 s / 3 intentos) que
   // trae Better Auth por defecto y que esta configuración no sustituye.
+  //
+  // `storage: "database"` es obligatorio en Vercel: cada petición puede caer
+  // en una instancia distinta (o una instancia fría sin memoria previa), así
+  // que el contador en memoria no sirve para nada ahí. Guardarlo en Postgres
+  // hace que el límite sea el mismo cuente quien cuente.
   rateLimit: {
     enabled: true,
     window: 60,
     max: 10,
+    storage: "database",
   },
   user: {
     additionalFields: {
