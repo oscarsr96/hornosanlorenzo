@@ -60,3 +60,41 @@ describe("notify — configuración de correo incompleta", () => {
     warnSpy.mockRestore();
   });
 });
+
+describe("notify — envío al obrador rechazado con configuración completa", () => {
+  it("si el aviso al obrador falla (proveedor), no manda la confirmación al cliente y registra el pedido", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("ORDER_NOTIFICATION_EMAIL", "obrador@hornosanlorenzo.com");
+    vi.stubEnv("ORDER_FROM_EMAIL", "web@hornosanlorenzo.com");
+
+    // El envío al obrador (la única llamada que debería producirse) falla
+    // en el proveedor, aunque toda la configuración está bien puesta.
+    enviarCorreoMock.mockResolvedValue({
+      ok: false,
+      error: "No se pudo enviar el correo.",
+    });
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const { notify } = await import("~/pages/api/webhook");
+    await notify(
+      stripeConLineItems([{ quantity: 1, description: "Tarta" }]),
+      sesionPagada(),
+    );
+
+    // Solo se intenta el correo al obrador; el del cliente nunca se llama,
+    // porque afirmaría algo falso («ya anotado en el obrador»).
+    expect(enviarCorreoMock).toHaveBeenCalledTimes(1);
+    expect(enviarCorreoMock).toHaveBeenCalledWith(
+      expect.objectContaining({ para: "obrador@hornosanlorenzo.com" }),
+    );
+
+    // El pedido queda registrado para que no se pierda.
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const [mensaje] = warnSpy.mock.calls[0] as [string];
+    expect(mensaje).toContain("Pedido pagado");
+    expect(mensaje).toContain("cs_test_123");
+
+    warnSpy.mockRestore();
+  });
+});
