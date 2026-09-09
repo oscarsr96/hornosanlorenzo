@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getCollection } from "astro:content";
 import { earliestDate } from "~/lib/entrega";
-import { priceOrder, OrderError, type OrderPayload } from "~/lib/pedido";
+import { priceOrder, type OrderPayload } from "~/lib/pedido";
 
 /**
  * `priceOrder` es la pieza del dinero: el checkout entero se apoya en que
@@ -17,6 +17,7 @@ const AHORA = new Date("2026-03-10T10:00:00");
 const FECHA_RECOGIDA = earliestDate("recogida", AHORA, {
   storeId: "alcobendas",
 });
+const FECHA_DOMICILIO = earliestDate("domicilio", AHORA);
 
 async function productoDeCatalogoSencillo() {
   // Cualquier producto con precio de venta online, sin variantes: así el
@@ -53,10 +54,17 @@ function pedidoBase(
 
 describe("priceOrder", () => {
   it("rechaza un código postal fuera de la zona de reparto", async () => {
+    const producto = await productoDeCatalogoSencillo();
+
+    // El pedido tiene que ser válido en todo salvo el código postal: un
+    // slug inventado también lo habría rechazado (por «producto no
+    // disponible»), pero entonces la prueba seguiría en verde aunque se
+    // rompiera del todo la validación de zona. Con un producto real y una
+    // fecha válida para domicilio, lo único que puede fallar es el CP.
     const payload: OrderPayload = {
-      items: [{ slug: "lo-que-sea", qty: 1 }],
+      items: [{ slug: producto.id, qty: 1 }],
       mode: "domicilio",
-      dateISO: FECHA_RECOGIDA,
+      dateISO: FECHA_DOMICILIO,
       address: "Calle Falsa 123",
       // Ningún rango de `admiteCP` llega a 28900: fuera de zona a propósito.
       postalCode: "28900",
@@ -64,9 +72,15 @@ describe("priceOrder", () => {
       phone: "666123456",
     };
 
-    await expect(priceOrder(payload, { now: AHORA })).rejects.toBeInstanceOf(
-      OrderError,
-    );
+    // No basta con comprobar que lanza `OrderError`: cualquier otro motivo
+    // de rechazo (fecha, producto, teléfono...) también es un `OrderError`
+    // y dejaría pasar la prueba aunque `admiteCP` se rompiera. Se afirma
+    // sobre el motivo, no solo sobre el tipo.
+    await expect(priceOrder(payload, { now: AHORA })).rejects.toMatchObject({
+      message: expect.stringContaining(
+        "No repartimos en el código postal 28900",
+      ),
+    });
   });
 
   it("ignora un importe que venga del navegador: el precio sale del catálogo", async () => {
