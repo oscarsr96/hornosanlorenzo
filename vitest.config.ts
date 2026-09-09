@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { getViteConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
@@ -29,7 +29,16 @@ function envDelProyecto(): NodeJS.Dict<string> {
   }
 }
 
-export default defineConfig({
+/**
+ * `defineConfig` a secas no arranca la integración de contenido de Astro:
+ * cualquier fichero que importe `astro:content` (`~/lib/pedido`, entre
+ * otros) revienta antes de empezar con «Cannot find package "astro:content"».
+ * `getViteConfig`, en cambio, procesa `astro.config.mjs` igual que el propio
+ * Astro y expone `astro:content` a las pruebas. Sustituye a `defineConfig`
+ * como la exportación por defecto: es la propia documentación de Astro la
+ * que lo pide para Vitest, no un añadido nuestro.
+ */
+export default getViteConfig({
   resolve: {
     alias: {
       "~": fileURLToPath(new URL("./src", import.meta.url)),
