@@ -12,7 +12,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.0",
@@ -36,7 +38,8 @@
     "@astrojs/check": "^0.9.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^5.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
