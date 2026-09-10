@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { compruebaFichero, normaliza } from "~/lib/storage/imagen";
 import { sube, borra } from "~/lib/storage/blob";
 
@@ -22,9 +23,22 @@ function nombreSeguro(nombre: string): string {
 }
 
 /**
- * Guarda una foto y devuelve su URL y sus medidas. El sufijo con la fecha
- * evita que subir una foto nueva con el mismo nombre pise a la anterior, que
- * puede seguir usada por otra ficha.
+ * Compone la ruta del blob. Dos componentes en el sufijo, cada uno por su
+ * motivo: la fecha, para que el almacén se pueda ojear en orden cronológico
+ * a mano; y un trozo de UUID, porque nombres de cámara de móvil como
+ * `IMG_0001.jpg` se repiten constantemente y dos subidas con ese nombre en
+ * el mismo milisegundo no pueden acabar componiendo la misma ruta — eso es
+ * lo que evita el choque, no la fecha por sí sola. Exportada para poder
+ * probarla sin simular el proveedor: es lógica nuestra, no una llamada a
+ * Vercel Blob.
+ */
+export function rutaDeImagen(nombreOriginal: string, carpeta: Carpeta): string {
+  const sufijo = `${Date.now()}-${randomUUID().slice(0, 8)}`;
+  return `${carpeta}/${nombreSeguro(nombreOriginal)}-${sufijo}.webp`;
+}
+
+/**
+ * Guarda una foto y devuelve su URL y sus medidas.
  */
 export async function guardarImagen(
   fichero: File,
@@ -35,7 +49,7 @@ export async function guardarImagen(
   const original = Buffer.from(await fichero.arrayBuffer());
   const { datos, ancho, alto, tipo } = await normaliza(original);
 
-  const ruta = `${carpeta}/${nombreSeguro(fichero.name)}-${Date.now()}.webp`;
+  const ruta = rutaDeImagen(fichero.name, carpeta);
   const url = await sube(ruta, datos, tipo);
 
   return { url, ancho, alto };

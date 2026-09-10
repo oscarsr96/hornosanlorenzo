@@ -15,10 +15,18 @@ export async function sube(
   const { url } = await put(ruta, datos, {
     access: "public",
     contentType: tipo,
-    // El nombre lo componemos nosotros con un sufijo propio (ver index.ts):
-    // no hace falta que el proveedor añada el suyo, y así la URL es legible.
+    // El nombre lo componemos nosotros con un sufijo propio (ver
+    // `rutaDeImagen` en index.ts): no hace falta que el proveedor añada el
+    // suyo, y así la URL es legible.
     addRandomSuffix: false,
-    allowOverwrite: true,
+    // `rutaDeImagen` ya incluye un componente aleatorio: con eso, dos rutas
+    // iguales son prácticamente imposibles. Si aun así ocurre, significa que
+    // algo va muy mal, y la respuesta correcta es fallar alto — un 500 al
+    // subir la foto se ve y se puede reintentar. Con `allowOverwrite: true`
+    // el choque pisaría en silencio una foto que puede seguir usada por otra
+    // ficha, y eso no se descubre hasta que alguien pregunta por qué su
+    // tarta enseña una foto de una empanada.
+    allowOverwrite: false,
   });
   return url;
 }
