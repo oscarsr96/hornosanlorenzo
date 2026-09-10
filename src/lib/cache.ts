@@ -1,0 +1,53 @@
+/**
+ * Invalidación de la caché de Vercel (ISR).
+ *
+ * Las páginas públicas que leen de la base de datos se cachean; cuando el
+ * panel guarda un cambio, hay que decirle a Vercel que las vuelva a generar.
+ * Se hace pidiendo la propia página con la cabecera `x-prerender-revalidate`
+ * y el token que va configurado en `astro.config.mjs` como `bypassToken`.
+ *
+ * NADA de esto puede lanzar hacia arriba. Si la invalidación falla, el cambio
+ * ya está guardado y lo que ocurre es que se ve unos minutos más tarde. Tirar
+ * el guardado por eso sería cambiar un problema pequeño por uno grande.
+ */
+
+/** Lo que hay que refrescar cuando cambia una noticia. */
+export const RUTAS_NOTICIAS = ["/", "/noticias"];
+
+/** Lo que hay que refrescar cuando cambia un producto. */
+export const RUTAS_CATALOGO = [
+  "/",
+  "/catalogo",
+  "/catalogo/dulce",
+  "/catalogo/salado",
+  "/catalogo/top-ventas",
+];
+
+export async function invalidar(rutas: string[]): Promise<void> {
+  const token = import.meta.env.VERCEL_BYPASS_TOKEN;
+  const base = import.meta.env.PUBLIC_SITE_URL;
+
+  if (!token || !base) {
+    // En local no hay ISR: el aviso deja constancia sin ensuciar producción.
+    console.warn(
+      "[cache] sin VERCEL_BYPASS_TOKEN o PUBLIC_SITE_URL: no se invalida nada",
+    );
+    return;
+  }
+
+  await Promise.all(
+    rutas.map(async (ruta) => {
+      try {
+        await fetch(new URL(ruta, base), {
+          method: "HEAD",
+          headers: { "x-prerender-revalidate": token },
+        });
+      } catch (err) {
+        console.error(
+          `[cache] no se pudo invalidar ${ruta}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }),
+  );
+}
