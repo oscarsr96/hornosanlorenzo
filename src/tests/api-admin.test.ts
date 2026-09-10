@@ -7,10 +7,22 @@ vi.mock("~/lib/db/noticias", () => ({
   borrarNoticia: vi.fn(),
   NoticiaError: class extends Error {},
 }));
-vi.mock("~/lib/cache", () => ({ invalidar: vi.fn(), RUTAS_NOTICIAS: ["/"] }));
+vi.mock("~/lib/cache", () => ({
+  invalidar: vi.fn(),
+  RUTAS_NOTICIAS: ["/"],
+  // El endpoint de productos también importa esto: sin extenderlo aquí
+  // quedaría `undefined` y `[...RUTAS_CATALOGO, ...]` del PUT reventaría.
+  RUTAS_CATALOGO: ["/", "/catalogo"],
+}));
 vi.mock("~/lib/storage", () => ({
   guardarImagen: vi.fn(),
   ImagenError: class extends Error {},
+}));
+vi.mock("~/lib/db/productos", () => ({
+  listarProductos: vi.fn().mockResolvedValue([]),
+  crearProducto: vi.fn(),
+  actualizarProducto: vi.fn(),
+  ProductoError: class extends Error {},
 }));
 
 const cliente = { id: "u1", email: "a@b.c", name: "Ana", rol: "cliente" };
@@ -85,6 +97,58 @@ describe("guardia del endpoint de subida de fotos", () => {
     const { POST } = await import("~/pages/api/admin/imagen");
     const r = await POST({
       request: peticionImagen(),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(400);
+  });
+});
+
+describe("guardia y validación de /api/admin/productos", () => {
+  const peticionProducto = (body: unknown) =>
+    new Request("https://x.test/api/admin/productos", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+  it("con sesión de cliente, 404", async () => {
+    const { POST } = await import("~/pages/api/admin/productos");
+    const r = await POST({
+      request: peticionProducto({}),
+      locals: { usuario: cliente },
+    } as never);
+    expect(r.status).toBe(404);
+  });
+
+  it("un precio negativo o cero no entra, aunque lo mande un admin", async () => {
+    const { POST } = await import("~/pages/api/admin/productos");
+    const base = {
+      name: "Tarta",
+      category: "tartas",
+      shortDescription: "Una tarta.",
+      priceCents: 0,
+      consultar: false,
+      allergens: [],
+      variantes: [],
+    };
+    const r = await POST({
+      request: peticionProducto(base),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(400);
+  });
+
+  it("una categoría inventada tampoco: la lista está cerrada en código", async () => {
+    const { POST } = await import("~/pages/api/admin/productos");
+    const r = await POST({
+      request: peticionProducto({
+        name: "Tarta",
+        category: "inventada",
+        shortDescription: "Una tarta.",
+        priceCents: 1000,
+        consultar: false,
+        allergens: [],
+        variantes: [],
+      }),
       locals: { usuario: admin },
     } as never);
     expect(r.status).toBe(400);

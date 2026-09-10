@@ -1,0 +1,23 @@
+---
+// src/pages/admin/productos.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import AdminProductos from "~/islands/AdminProductos.tsx";
+import { listarProductos, type Producto } from "~/lib/db/productos";
+
+export const prerender = false;
+
+let productosIniciales: Producto[] = [];
+try {
+  productosIniciales = await listarProductos({ soloActivos: false });
+} catch (error) {
+  // La isla sabe recargar la lista por su cuenta: mejor entrar con la lista
+  // vacía y poder reintentar que ver un 500 al abrir el panel.
+  console.error(
+    "No se pudo cargar el catálogo del panel:",
+    error instanceof Error ? error.message : error,
+  );
+}
+---
+<AdminLayout titulo="Productos">
+  <AdminProductos client:load productosIniciales={productosIniciales} />
+</AdminLayout>
