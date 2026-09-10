@@ -128,6 +128,12 @@ describeSiHayBD("repositorio de pedidos", () => {
   it("crearPedidoReconstruido es idempotente: dos entregas del mismo webhook no duplican las líneas", async () => {
     const datos = {
       stripeSessionId: "cs_test_reconstruido",
+      mode: "domicilio" as const,
+      fechaEntrega: "2026-12-24",
+      slot: null,
+      storeId: null,
+      address: "Calle de la Prueba 1",
+      postalCode: "28100",
       email: "cliente@example.com",
       telefono: "666123456",
       nombre: "Ana",
@@ -155,5 +161,59 @@ describeSiHayBD("repositorio de pedidos", () => {
       [datos.stripeSessionId],
     );
     expect(lineas[0].n).toBe(2);
+  });
+
+  it("un pedido reconstruido guarda la entrega que venía en Stripe, no una inventada", async () => {
+    await repo.crearPedidoReconstruido({
+      stripeSessionId: "cs_test_con_entrega",
+      mode: "domicilio",
+      fechaEntrega: "2026-12-24",
+      slot: null,
+      storeId: null,
+      address: "Calle de la Prueba 1",
+      postalCode: "28100",
+      email: "cliente@example.com",
+      telefono: "666123456",
+      nombre: null,
+      notas: null,
+      totalCents: 3000,
+      lineas: [{ nombre: "Roscón", qty: 1, unitPriceCents: 3000 }],
+    });
+
+    const [pedido] = (await repo.listarPedidos(50)).filter(
+      (p) => p.stripeSessionId === "cs_test_con_entrega",
+    );
+    // Antes esto era siempre 'recogida' y la fecha de hoy, escritas a mano
+    // por la propia función mientras el webhook tenía los datos buenos
+    // delante y no los pasaba.
+    expect(pedido.mode).toBe("domicilio");
+    expect(pedido.fechaEntrega).toBe("2026-12-24");
+    expect(pedido.postalCode?.trim()).toBe("28100");
+  });
+
+  it("lo que Stripe no trae se guarda como nulo, no como un valor por defecto", async () => {
+    await repo.crearPedidoReconstruido({
+      stripeSessionId: "cs_test_sin_entrega",
+      mode: null,
+      fechaEntrega: null,
+      slot: null,
+      storeId: null,
+      address: null,
+      postalCode: null,
+      email: "cliente@example.com",
+      telefono: "666123456",
+      nombre: null,
+      notas: null,
+      totalCents: 3000,
+      lineas: [{ nombre: "Roscón", qty: 1, unitPriceCents: 3000 }],
+    });
+
+    const [pedido] = (await repo.listarPedidos(50)).filter(
+      (p) => p.stripeSessionId === "cs_test_sin_entrega",
+    );
+    // El panel lo enseña como «sin datos»: un día y una modalidad
+    // inventados serían peores que admitir que no se saben.
+    expect(pedido.mode).toBeNull();
+    expect(pedido.fechaEntrega).toBeNull();
   });
 });

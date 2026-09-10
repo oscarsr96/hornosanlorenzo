@@ -148,10 +148,62 @@ describe("anotarPago — el pedido queda escrito", () => {
     expect(datos.lineas).toEqual([
       { nombre: "Croissant", qty: 2, unitPriceCents: 190 },
     ]);
+    // Esta sesión solo lleva los metadatos de LECTURA («recogida», «sábado»),
+    // no los crudos: lo que no se sabe se guarda como nulo, y el panel lo
+    // enseña como «sin datos». Nunca 'recogida' + la fecha de hoy, que es lo
+    // que se escribía antes y se leía como un hecho.
+    expect(datos.mode).toBeNull();
+    expect(datos.fechaEntrega).toBeNull();
     // Encadenado con `?.`: `anotarPago` devuelve `PedidoAnotado | null` por
     // firma (el catch puede devolver null), así que TS en modo estricto
     // exige la comprobación aunque en esta rama concreta no pueda serlo.
     expect(anotado?.id).toBe("pedido-2");
+  });
+
+  it("reconstruye con la entrega que venía en los metadatos, sin inventarse nada", async () => {
+    marcarPagado.mockResolvedValue(null);
+    const { anotarPago } = await import("~/pages/api/webhook");
+    const sesion = sesionPagada();
+    // Los metadatos crudos que escribe `checkout.ts` junto a los de lectura.
+    sesion.metadata = {
+      ...sesion.metadata,
+      entregaModo: "domicilio",
+      entregaFecha: "2026-12-24",
+      entregaFranja: "",
+      entregaTienda: "",
+      entregaDireccion: "Calle de la Prueba 1",
+      entregaCP: "28100",
+    };
+
+    await anotarPago(stripeConLineItems([]), sesion);
+
+    const datos = crearPedidoReconstruido.mock.calls[0][0];
+    expect(datos.mode).toBe("domicilio");
+    expect(datos.fechaEntrega).toBe("2026-12-24");
+    expect(datos.address).toBe("Calle de la Prueba 1");
+    expect(datos.postalCode).toBe("28100");
+    // La franja vacía no es "" en la columna: es nulo.
+    expect(datos.slot).toBeNull();
+    expect(datos.storeId).toBeNull();
+  });
+
+  it("un metadato con basura no llega a la tabla: se queda en nulo", async () => {
+    marcarPagado.mockResolvedValue(null);
+    const { anotarPago } = await import("~/pages/api/webhook");
+    const sesion = sesionPagada();
+    sesion.metadata = {
+      ...sesion.metadata,
+      entregaModo: "Recogida en tienda", // el texto de lectura, no el crudo
+      entregaFecha: "24/12/2026", // formateado, no ISO
+      entregaCP: "281", // a medias
+    };
+
+    await anotarPago(stripeConLineItems([]), sesion);
+
+    const datos = crearPedidoReconstruido.mock.calls[0][0];
+    expect(datos.mode).toBeNull();
+    expect(datos.fechaEntrega).toBeNull();
+    expect(datos.postalCode).toBeNull();
   });
 
   it("un fallo de Postgres no tumba el aviso: devuelve null y sigue", async () => {

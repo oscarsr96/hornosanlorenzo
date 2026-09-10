@@ -131,6 +131,19 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
         nombre: payload.name?.slice(0, 120) ?? "",
         notas: payload.notes?.slice(0, 480) ?? "",
         pedidoId: pedidoId ?? "",
+        // Los mismos datos de entrega que arriba, pero EN CRUDO. Los de
+        // arriba están formateados para leerse en un correo («Recogida en
+        // tienda», «miércoles 24 de diciembre») y no se pueden deshacer sin
+        // adivinar. Estos son los que van tal cual a la tabla, y son los que
+        // usa el webhook si Postgres estaba caído al cobrar y tiene que
+        // reconstruir el pedido: sin ellos tenía que inventarse la modalidad
+        // y el día, y el panel enseñaba esa invención como un hecho.
+        entregaModo: payload.mode,
+        entregaFecha: payload.dateISO,
+        entregaFranja: payload.slot ?? "",
+        entregaTienda: payload.storeId ?? "",
+        entregaDireccion: payload.address?.slice(0, 480) ?? "",
+        entregaCP: payload.postalCode ?? "",
       },
     });
 

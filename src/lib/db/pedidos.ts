@@ -18,8 +18,13 @@ export type PedidoConLineas = {
   id: string;
   userId: string | null;
   stripeSessionId: string | null;
-  mode: "domicilio" | "recogida";
-  fechaEntrega: string;
+  /**
+   * Nulos SOLO en un pedido reconstruido al que Stripe no le dio el dato
+   * (migración 008). Un pedido normal los lleva siempre. El panel tiene que
+   * enseñarlos como «sin datos», nunca rellenarlos con un valor por defecto.
+   */
+  mode: "domicilio" | "recogida" | null;
+  fechaEntrega: string | null;
   slot: "morning" | "afternoon" | null;
   storeId: string | null;
   address: string | null;
@@ -41,6 +46,19 @@ export type PedidoAnotado = { id: string; notificadoEn: Date | null };
 
 export type PedidoReconstruido = {
   stripeSessionId: string;
+  /**
+   * Lo que se sepa de la entrega, o null. Nada de valores por defecto: un
+   * pedido reconstruido que dice «Recogida en tienda, hoy» cuando era un
+   * reparto a domicilio para el 24 de diciembre es peor que uno que admite
+   * no saberlo, porque nadie va a ir a comprobarlo. Quien llama lo saca de
+   * los metadatos de Stripe y valida cada campo antes de pasarlo.
+   */
+  mode: "domicilio" | "recogida" | null;
+  fechaEntrega: string | null;
+  slot: "morning" | "afternoon" | null;
+  storeId: string | null;
+  address: string | null;
+  postalCode: string | null;
   email: string;
   telefono: string;
   nombre: string | null;
@@ -155,6 +173,15 @@ export async function marcarPagado(ref: {
  * (Postgres caído en ese momento). Se reconstruye con lo que da Stripe, que
  * es menos —no hay slugs ni desglose de envío— y por eso queda marcado.
  * Es preferible a que el pedido no aparezca en el panel.
+ *
+ * Lo que no se sabe se escribe como NULL. Antes esta función clavaba
+ * `mode = 'recogida'` y `fecha_entrega = current_date` porque las columnas
+ * eran `not null`, mientras quien la llamaba tenía delante los metadatos de
+ * Stripe con la modalidad y el día de verdad y no los pasaba. El panel
+ * enseñaba entonces un envío a domicilio del 24 de diciembre como
+ * «10/09/2026 · Recogida en tienda»: no era detalle que faltara, era detalle
+ * inventado, y encima contradecía al correo del obrador, que sí llevaba los
+ * datos buenos. La migración 008 permite el nulo justo para esto.
  */
 export async function crearPedidoReconstruido(
   datos: PedidoReconstruido,
@@ -163,14 +190,24 @@ export async function crearPedidoReconstruido(
   try {
     await cliente.query("begin");
     const { rows } = await cliente.query<PedidoAnotado>(
+      // `envio_cents` va a 0 y el total entero al subtotal: Stripe no
+      // desglosa el reparto, así que no hay forma de separarlos. Eso sí es
+      // «falta detalle», y por eso la fila queda marcada `reconstruido`.
       `insert into pedidos (
-         stripe_session_id, mode, fecha_entrega, email, telefono, nombre, notas,
+         stripe_session_id, mode, fecha_entrega, slot, store_id, address,
+         postal_code, email, telefono, nombre, notas,
          subtotal_cents, envio_cents, total_cents, estado, reconstruido
-       ) values ($1, 'recogida', current_date, $2, $3, $4, $5, $6, 0, $6, 'pagado', true)
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, 0, $12, 'pagado', true)
        on conflict (stripe_session_id) do update set estado = 'pagado'
        returning id, notificado_en as "notificadoEn"`,
       [
         datos.stripeSessionId,
+        datos.mode,
+        datos.fechaEntrega,
+        datos.slot,
+        datos.storeId,
+        datos.address,
+        datos.postalCode,
         datos.email,
         datos.telefono,
         datos.nombre,

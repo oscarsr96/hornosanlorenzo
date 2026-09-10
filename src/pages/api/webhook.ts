@@ -105,6 +105,15 @@ export async function anotarPago(
     const m = session.metadata ?? {};
     return await crearPedidoReconstruido({
       stripeSessionId: session.id,
+      // La modalidad y el día de verdad, que ya venían en los metadatos y
+      // antes no se pasaban: la fila se escribía con 'recogida' y la fecha de
+      // hoy, y el panel las enseñaba como si fueran ciertas.
+      mode: modoDeEntrega(m.entregaModo),
+      fechaEntrega: fechaDeEntrega(m.entregaFecha),
+      slot: franjaDeEntrega(m.entregaFranja),
+      storeId: m.entregaTienda || null,
+      address: m.entregaDireccion || null,
+      postalCode: cpDeEntrega(m.entregaCP),
       email: session.customer_details?.email ?? "",
       telefono: m.telefono ?? "",
       nombre: m.nombre || null,
@@ -124,6 +133,30 @@ export async function anotarPago(
     );
     return null;
   }
+}
+
+/**
+ * Los metadatos de Stripe son texto libre: llegan tal y como los escribió
+ * `checkout.ts`, pero una sesión vieja —o creada de otra manera— puede no
+ * traerlos. Cada campo se valida antes de escribirlo y, si no cuadra, se
+ * queda en null: en el panel se verá como «sin datos», que es la verdad,
+ * en vez de un valor por defecto que se lee como un hecho.
+ */
+export function modoDeEntrega(v: unknown): "domicilio" | "recogida" | null {
+  return v === "domicilio" || v === "recogida" ? v : null;
+}
+
+export function fechaDeEntrega(v: unknown): string | null {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+}
+
+export function franjaDeEntrega(v: unknown): "morning" | "afternoon" | null {
+  return v === "morning" || v === "afternoon" ? v : null;
+}
+
+/** `postal_code` es `char(5)`: un valor a medias ahí ensucia más que ayuda. */
+export function cpDeEntrega(v: unknown): string | null {
+  return typeof v === "string" && /^\d{5}$/.test(v) ? v : null;
 }
 
 /**

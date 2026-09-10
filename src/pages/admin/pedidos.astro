@@ -24,12 +24,29 @@ try {
 
 const SLOT_LABEL = { morning: "mañana", afternoon: "tarde" } as const;
 
+/**
+ * `mode`, `fechaEntrega` y el destino pueden faltar en un pedido
+ * reconstruido desde Stripe (migración 008). Cuando faltan hay que decirlo:
+ * escribir un valor por defecto convertiría un «no lo sé» en un dato que
+ * nadie va a comprobar, y el obrador prepararía el pedido equivocado.
+ */
+const SIN_DATOS = "sin datos — mira la sesión en Stripe";
+
 function destino(p: PedidoConLineas): string {
+  if (p.mode === null) return `Destino ${SIN_DATOS}`;
   if (p.mode === "domicilio") {
-    return [p.address, p.postalCode].filter(Boolean).join(" · ");
+    const linea = [p.address, p.postalCode].filter(Boolean).join(" · ");
+    return linea || `Dirección ${SIN_DATOS}`;
   }
   const tienda = stores.find((s) => s.id === p.storeId);
-  return tienda ? `${tienda.shortName} — ${tienda.address}` : "Recogida";
+  return tienda ? `${tienda.shortName} — ${tienda.address}` : `Recogida (tienda ${SIN_DATOS})`;
+}
+
+/** La franja solo se enseña cuando se sabe la modalidad. */
+function franja(p: PedidoConLineas): string {
+  if (p.mode === "recogida") return p.slot ? ` (${SLOT_LABEL[p.slot]})` : "";
+  if (p.mode === "domicilio") return ` (${ENTREGA_DOMICILIO_COPY})`;
+  return "";
 }
 ---
 <AdminLayout titulo="Pedidos">
@@ -51,9 +68,9 @@ function destino(p: PedidoConLineas): string {
       <li class="bg-[color:var(--color-leche)] p-5">
         <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <p class="numeracion">
-            {formatDateISO(p.fechaEntrega)} ·
-            {" "}{MODE_COPY[p.mode].label}
-            {p.mode === "recogida" && p.slot ? ` (${SLOT_LABEL[p.slot]})` : ` (${ENTREGA_DOMICILIO_COPY})`}
+            {p.fechaEntrega ? formatDateISO(p.fechaEntrega) : `Día ${SIN_DATOS}`} ·
+            {" "}{p.mode ? MODE_COPY[p.mode].label : `Modalidad ${SIN_DATOS}`}
+            {franja(p)}
           </p>
           <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
             {formatPriceCents(p.totalCents)}
