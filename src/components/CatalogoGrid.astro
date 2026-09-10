@@ -3,7 +3,7 @@ import ProductCard from "~/components/ProductCard.astro";
 import CategoryFilter from "~/islands/CategoryFilter.tsx";
 import { listarProductos, type Producto } from "~/lib/db/productos";
 import { grupoCategories, grupoOfCategory, grupoLabel, type GrupoId, type CategoryId } from "~/data/categories";
-import { secciones, seccionById, type SeccionId } from "~/data/secciones";
+import { secciones, seccionById, isSeccionId } from "~/data/secciones";
 import { stores } from "~/data/stores";
 
 interface Props {
@@ -74,6 +74,19 @@ const gamas = porGrupo
 function imagenDe(p: Producto): { url: string; alt: string; ancho: number; alto: number } | null {
   if (!p.imageUrl || !p.imageWidth || !p.imageHeight) return null;
   return { url: p.imageUrl, alt: p.imageAlt ?? p.name, ancho: p.imageWidth, alto: p.imageHeight };
+}
+
+/**
+ * `seccion` es texto libre en la base de datos, sin CHECK ni FK: a
+ * diferencia de antes (`z.enum(seccionIds)` en `content.config.ts`), el
+ * compilador ya no puede garantizar que lo que hay en la fila sea uno de
+ * los ids de `secciones.ts`. `isSeccionId` es la comprobación en tiempo de
+ * ejecución que sustituye a esa garantía; sin ella, una ficha con un valor
+ * que no está en la lista (un typo desde el panel, tarea 19) tira abajo
+ * cualquier página pública que la enseñe fuera de un bloque `porSeccion`.
+ */
+function seccionLabelDe(seccion: string | null): string | undefined {
+  return seccion && isSeccionId(seccion) ? seccionById(seccion).label : undefined;
 }
 ---
 <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
@@ -154,13 +167,13 @@ function imagenDe(p: Producto): { url: string; alt: string; ancho: number; alto:
           data-category={p.category}
           data-grupo={grupoOfCategory(p.category as CategoryId)}
           data-seccion={p.seccion}
-          data-search={`${p.name} ${p.shortDescription} ${p.seccion ? seccionById(p.seccion as SeccionId).label : ""}`}
+          data-search={`${p.name} ${p.shortDescription} ${seccionLabelDe(p.seccion) ?? ""}`}
         >
           <ProductCard
             slug={p.slug}
             name={p.name}
             category={p.category as CategoryId}
-            seccionLabel={p.seccion ? seccionById(p.seccion as SeccionId).label : undefined}
+            seccionLabel={seccionLabelDe(p.seccion)}
             imagen={imagenDe(p)}
             shortDescription={p.shortDescription}
             priceCents={p.priceCents ?? undefined}

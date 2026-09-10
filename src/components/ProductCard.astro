@@ -1,7 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import AddToCart from "~/islands/AddToCart.tsx";
-import { categoryById, type CategoryId } from "~/data/categories";
+import { categoryById, isCategoryId, type CategoryId } from "~/data/categories";
 import { formatPriceCents } from "~/lib/format";
 
 interface Props {
@@ -36,7 +36,13 @@ const {
   variants,
 } = Astro.props;
 
-const eyebrow = seccionLabel ?? categoryById(category).label;
+// `category` llega ya convertida con `as CategoryId` desde quien la pinta,
+// pero la columna de la base de datos es texto libre sin CHECK ni FK: el
+// compilador no puede garantizar que ese valor exista de verdad en
+// `categories.ts`. `isCategoryId` es la comprobación en tiempo de
+// ejecución; sin ella, un valor inválido tira `categoryById` (que sí
+// asume que existe) y con él toda la tarjeta.
+const eyebrow = seccionLabel ?? (isCategoryId(category) ? categoryById(category).label : undefined) ?? "";
 /** Con varios tamaños la tarjeta lleva selector y el precio lo pone la isla. */
 const conTamanos = Boolean(variants && variants.length > 1);
 const sinPrecio = consultar || priceCents === undefined;
