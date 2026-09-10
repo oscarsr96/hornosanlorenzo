@@ -15,7 +15,8 @@
     "astro": "astro",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrar": "node --env-file=.env scripts/migrar.mjs"
+    "db:migrar": "node --env-file=.env scripts/migrar.mjs",
+    "admin": "node --env-file=.env scripts/hacer-admin.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.0",

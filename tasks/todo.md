@@ -80,8 +80,13 @@
 - [ ] Comprobar en un despliegue real que el límite de intentos identifica la IP
       del cliente y no cae en el contador global. Es la única defensa contra
       fuerza bruta que hay
-- [ ] Decidir y documentar cómo se crea el **primer administrador**: hoy es un
-      `update` a mano sobre la columna `rol`
+- [ ] **Pantalla para dar de alta a otro admin.** Hoy el papel se da con
+      `pnpm admin correo@ejemplo.com` contra la base de datos. La spec §7 dice
+      que un admin debería poder dar de alta a otro desde el panel; mientras no
+      exista, cada alta pasa por alguien con acceso a `DATABASE_URL`
+- [ ] **Cerrar y volver a abrir sesión después de `pnpm admin`.** El papel viaja
+      en la sesión que resuelve el middleware: quien ya estuviera dentro sigue
+      viendo la web como cliente hasta que vuelve a entrar
 - [ ] **Firma en versión clara.** La cabecera es teja y el logo es moka: hoy se
       invierte a blanco por CSS (`[filter:brightness(0)_invert(1)]` en
       `Header.astro`), lo que aplana el acento teja del «desde 1986». Pedir al
