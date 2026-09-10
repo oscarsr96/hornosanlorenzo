@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrar": "node --env-file=.env scripts/migrar.mjs",
-    "admin": "node --env-file=.env scripts/hacer-admin.mjs"
+    "admin": "node --env-file=.env scripts/hacer-admin.mjs",
+    "migrar:noticias": "node --env-file=.env scripts/migrar-noticias.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "6.3.11",
@@ -45,6 +46,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "gray-matter": "^4.0.3",
     "typescript": "^5.8.0",
     "vitest": "^5.0.0"
   },
