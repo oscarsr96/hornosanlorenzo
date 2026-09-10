@@ -151,7 +151,11 @@ const breadcrumbs = {
               así que con los dos flags a la vez el mensaje correcto es el que no promete una
               reposición que nunca va a llegar por aquí. No reordenar por prolijidad: son estados
               independientes (el panel de la tarea 19 los deja marcar por separado), así que ese
-              caso es alcanzable de verdad, no solo teórico. */}
+              caso es alcanzable de verdad, no solo teórico.
+
+              La tarjeta del catálogo (`ProductCard.astro`) sí mira `agotado` primero, y no es
+              una contradicción: allí no se escoge un mensaje entre dos, se enseñan los dos a la
+              vez («Consultar» de precio + etiqueta «Agotado hoy»). Está explicado en su sitio. */}
           {product.consultar || product.priceCents === null ? (
             <div>
               <p class="font-[family-name:var(--font-display)] text-3xl text-[color:var(--color-ink-muted)]">

@@ -153,6 +153,22 @@ export async function priceOrder(
     let unitPriceCents = product.priceCents;
     let variantLabel: string | undefined;
 
+    // Con variantes, elegir una es OBLIGATORIO, no opcional. Mientras la
+    // carta vivía en los 98 Markdown, `priceCents` era siempre igual al
+    // tamaño más barato y omitir `variantId` solo perdía la etiqueta. El
+    // panel (tarea 19) desacopló los dos campos: son casillas distintas del
+    // formulario, y nada en él sugiere que el «Precio» de arriba siga
+    // importando cuando hay tamaños. Así que subir «Pequeña» de 16,50 a
+    // 18,00 y dejar el base en 16,50 basta para que una petición sin
+    // `variantId` se cobre al precio viejo. Y peor que el dinero: la línea
+    // llega a /admin/pedidos como «1× Bombón Noir» SIN tamaño, y el obrador
+    // no puede saber cuál de las tres tartas tiene que hacer.
+    if (product.variantes.length > 0 && !item.variantId) {
+      throw new OrderError(
+        `Elige un tamaño para «${product.name}»: sin él no podemos ponerle precio ni saber cuál preparar.`,
+      );
+    }
+
     if (item.variantId) {
       const variant = product.variantes.find(
         (v) => v.variantId === item.variantId,

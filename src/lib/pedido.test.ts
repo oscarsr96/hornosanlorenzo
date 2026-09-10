@@ -29,6 +29,25 @@ const SENCILLO: ProductoVendible = {
   variantes: [],
 };
 
+/**
+ * Un producto con tamaños. El precio base NO coincide con ninguna variante a
+ * propósito: es exactamente el destape que trajo el panel (antes, en los 98
+ * Markdown, el base era siempre el del tamaño más barato), y es lo que hace
+ * visible que valorar sin `variantId` cobra un importe que ya no existe.
+ */
+const CON_TAMANOS: ProductoVendible = {
+  slug: "bombon-noir",
+  name: "Bombón Noir",
+  priceCents: 1650,
+  consultar: false,
+  activo: true,
+  agotado: false,
+  variantes: [
+    { variantId: "pequena", label: "Pequeña", priceCents: 1800 },
+    { variantId: "mediana", label: "Mediana", priceCents: 2600 },
+  ],
+};
+
 const catalogo = (...productos: ProductoVendible[]) =>
   new Map(productos.map((p) => [p.slug, p]));
 
@@ -127,6 +146,32 @@ describe("priceOrder", () => {
     await expect(priceOrder(payload, { now: AHORA })).rejects.toThrow(
       /opción elegida.*ya no está disponible/i,
     );
+  });
+
+  it("un producto con tamaños exige elegir uno: no se cobra el precio base", async () => {
+    productosParaPedido.mockResolvedValue(catalogo(CON_TAMANOS));
+    const payload: OrderPayload = {
+      ...pedidoBase(),
+      items: [{ slug: CON_TAMANOS.slug, qty: 1 }],
+    };
+
+    await expect(priceOrder(payload, { now: AHORA })).rejects.toThrow(
+      /Elige un tamaño para «Bombón Noir»/i,
+    );
+  });
+
+  it("con el tamaño elegido, cobra el de la variante y lo deja escrito en la línea", async () => {
+    productosParaPedido.mockResolvedValue(catalogo(CON_TAMANOS));
+    const payload: OrderPayload = {
+      ...pedidoBase(),
+      items: [{ slug: CON_TAMANOS.slug, variantId: "mediana", qty: 1 }],
+    };
+
+    const pedido = await priceOrder(payload, { now: AHORA });
+
+    expect(pedido.lines[0].unitPriceCents).toBe(2600);
+    // Sin la etiqueta, el obrador no sabe cuál de las tartas hacer.
+    expect(pedido.lines[0].variantLabel).toBe("Mediana");
   });
 
   it("un producto a consultar no tiene precio de venta online", async () => {
