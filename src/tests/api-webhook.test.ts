@@ -6,14 +6,30 @@ vi.mock("~/lib/email/enviar", () => ({
   enviarCorreo: enviarCorreoMock,
 }));
 
+const marcarPagado = vi.fn();
+const marcarAvisado = vi.fn();
+const crearPedidoReconstruido = vi.fn();
+vi.mock("~/lib/db/pedidos", () => ({
+  marcarPagado,
+  marcarAvisado,
+  crearPedidoReconstruido,
+}));
+
 beforeEach(() => {
   enviarCorreoMock.mockReset();
   vi.resetModules();
   vi.unstubAllEnvs();
+  marcarPagado
+    .mockReset()
+    .mockResolvedValue({ id: "pedido-1", notificadoEn: null });
+  marcarAvisado.mockReset().mockResolvedValue(undefined);
+  crearPedidoReconstruido
+    .mockReset()
+    .mockResolvedValue({ id: "pedido-2", notificadoEn: null });
 });
 
 function stripeConLineItems(
-  items: { quantity: number; description: string }[],
+  items: { quantity: number; description: string; amount_total?: number }[],
 ) {
   return {
     checkout: {
@@ -96,5 +112,78 @@ describe("notify — envío al obrador rechazado con configuración completa", (
     expect(mensaje).toContain("cs_test_123");
 
     warnSpy.mockRestore();
+  });
+});
+
+describe("anotarPago — el pedido queda escrito", () => {
+  it("marca pagado por la referencia del pedido, no solo por la de Stripe", async () => {
+    const { anotarPago } = await import("~/pages/api/webhook");
+    const sesion = sesionPagada();
+    sesion.metadata = { ...sesion.metadata, pedidoId: "pedido-1" };
+
+    const anotado = await anotarPago(stripeConLineItems([]), sesion);
+
+    expect(marcarPagado).toHaveBeenCalledWith({
+      pedidoId: "pedido-1",
+      sessionId: "cs_test_123",
+    });
+    expect(crearPedidoReconstruido).not.toHaveBeenCalled();
+    expect(anotado).toEqual({ id: "pedido-1", notificadoEn: null });
+  });
+
+  it("si el pedido no está en la base de datos, lo reconstruye desde Stripe", async () => {
+    marcarPagado.mockResolvedValue(null);
+    const { anotarPago } = await import("~/pages/api/webhook");
+
+    const anotado = await anotarPago(
+      stripeConLineItems([
+        { quantity: 2, description: "Croissant", amount_total: 380 },
+      ]),
+      sesionPagada(),
+    );
+
+    expect(crearPedidoReconstruido).toHaveBeenCalledOnce();
+    const datos = crearPedidoReconstruido.mock.calls[0][0];
+    expect(datos.stripeSessionId).toBe("cs_test_123");
+    expect(datos.lineas).toEqual([
+      { nombre: "Croissant", qty: 2, unitPriceCents: 190 },
+    ]);
+    // Encadenado con `?.`: `anotarPago` devuelve `PedidoAnotado | null` por
+    // firma (el catch puede devolver null), así que TS en modo estricto
+    // exige la comprobación aunque en esta rama concreta no pueda serlo.
+    expect(anotado?.id).toBe("pedido-2");
+  });
+
+  it("un fallo de Postgres no tumba el aviso: devuelve null y sigue", async () => {
+    marcarPagado.mockRejectedValue(
+      new Error("Connection terminated unexpectedly"),
+    );
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { anotarPago } = await import("~/pages/api/webhook");
+
+    expect(await anotarPago(stripeConLineItems([]), sesionPagada())).toBeNull();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+});
+
+describe("POST /api/webhook — reintentos de Stripe", () => {
+  it("si el pedido ya constaba avisado, no vuelve a mandar el correo", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("ORDER_NOTIFICATION_EMAIL", "pedidos@example.com");
+    vi.stubEnv("ORDER_FROM_EMAIL", "web@example.com");
+    marcarPagado.mockResolvedValue({
+      id: "pedido-1",
+      notificadoEn: new Date(),
+    });
+
+    const { yaAvisado } = await import("~/pages/api/webhook");
+
+    // La decisión vive en una función pura para poder fijarla sin montar
+    // toda la petición firmada de Stripe.
+    expect(yaAvisado({ id: "pedido-1", notificadoEn: new Date() })).toBe(true);
+    expect(yaAvisado({ id: "pedido-1", notificadoEn: null })).toBe(false);
+    expect(yaAvisado(null)).toBe(false);
+    expect(enviarCorreoMock).not.toHaveBeenCalled();
   });
 });
