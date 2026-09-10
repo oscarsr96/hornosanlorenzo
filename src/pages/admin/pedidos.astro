@@ -1,0 +1,100 @@
+---
+// src/pages/admin/pedidos.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import { listarPedidos, type PedidoConLineas } from "~/lib/db/pedidos";
+import { formatPriceCents, formatDateISO } from "~/lib/format";
+import { MODE_COPY, ENTREGA_DOMICILIO_COPY } from "~/lib/entrega";
+import { stores } from "~/data/stores";
+
+export const prerender = false;
+
+// Igual que en `cuenta.astro`: un fallo de Postgres no puede dejar el panel
+// en un 500. Se enseña el aviso y el resto del panel sigue navegable.
+let pedidos: PedidoConLineas[] = [];
+let fallo = false;
+try {
+  pedidos = await listarPedidos(100);
+} catch (error) {
+  fallo = true;
+  console.error(
+    "No se pudieron cargar los pedidos:",
+    error instanceof Error ? error.message : error,
+  );
+}
+
+const SLOT_LABEL = { morning: "mañana", afternoon: "tarde" } as const;
+
+function destino(p: PedidoConLineas): string {
+  if (p.mode === "domicilio") {
+    return [p.address, p.postalCode].filter(Boolean).join(" · ");
+  }
+  const tienda = stores.find((s) => s.id === p.storeId);
+  return tienda ? `${tienda.shortName} — ${tienda.address}` : "Recogida";
+}
+---
+<AdminLayout titulo="Pedidos">
+  {fallo && (
+    <p class="border-l-2 border-[color:var(--color-caramelo)] pl-3 py-2 text-sm">
+      Ahora mismo no se pueden leer los pedidos. Vuelve a intentarlo en un
+      momento; los cobros siguen estando en el panel de Stripe.
+    </p>
+  )}
+
+  {!fallo && pedidos.length === 0 && (
+    <p class="text-[color:var(--color-ink-muted)]">
+      Todavía no ha entrado ningún pedido por la web.
+    </p>
+  )}
+
+  <ul class="flex flex-col gap-px bg-[color:var(--color-avellana)]">
+    {pedidos.map((p) => (
+      <li class="bg-[color:var(--color-leche)] p-5">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <p class="numeracion">
+            {formatDateISO(p.fechaEntrega)} ·
+            {" "}{MODE_COPY[p.mode].label}
+            {p.mode === "recogida" && p.slot ? ` (${SLOT_LABEL[p.slot]})` : ` (${ENTREGA_DOMICILIO_COPY})`}
+          </p>
+          <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
+            {formatPriceCents(p.totalCents)}
+          </p>
+        </div>
+
+        <p class="mt-2 text-sm">
+          {p.nombre ?? "Sin nombre"} ·
+          {" "}<a href={`tel:${p.telefono}`} class="underline font-semibold whitespace-nowrap">{p.telefono}</a> ·
+          {" "}<a href={`mailto:${p.email}`} class="underline">{p.email}</a>
+        </p>
+        <p class="text-sm text-[color:var(--color-ink-muted)]">{destino(p)}</p>
+
+        <ul class="mt-3 text-sm">
+          {p.lineas.map((l) => (
+            <li>
+              {l.qty}× {l.nombre}{l.varianteLabel ? ` — ${l.varianteLabel}` : ""}
+              <span class="text-[color:var(--color-ink-muted)]"> · {formatPriceCents(l.unitPriceCents)}/ud</span>
+            </li>
+          ))}
+        </ul>
+
+        {p.notas && (
+          <p class="mt-3 text-sm border-l-2 border-[color:var(--color-caramelo)] pl-3">
+            {p.notas}
+          </p>
+        )}
+
+        {p.envioCents > 0 && (
+          <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+            Reparto: {formatPriceCents(p.envioCents)}
+          </p>
+        )}
+
+        {p.reconstruido && (
+          <p class="mt-3 text-xs text-[color:var(--color-ink-muted)]">
+            Reconstruido desde Stripe: puede faltarle detalle. Referencia
+            {" "}{p.stripeSessionId}
+          </p>
+        )}
+      </li>
+    ))}
+  </ul>
+</AdminLayout>
