@@ -26,27 +26,41 @@ export default defineConfig({
       // que se guardara ahí se le serviría a la siguiente persona. Esta lista
       // es una medida de seguridad, no de rendimiento.
       //
-      // El adaptador decide si una ruta va a ISR comparando el patrón de
-      // texto con el `route.pattern` de Astro por IGUALDAD EXACTA, no como
-      // prefijo. `/admin` y `/api` no son un único fichero dinámico: son
-      // ficheros sueltos (`pedidos.astro`, `clientes.astro`, `checkout.ts`,
-      // y los que se añadan), así que un patrón de texto por ruta se queda
-      // corto en cuanto se añade una página nueva. Con una expresión
-      // regular, en cambio, esa misma comparación se hace con `.test()`, así
-      // que cubre el árbol entero sin depender de listar cada fichero.
-      // (El patrón de texto con corchetes, tal y como lo compila este
-      // adaptador, también deja cada ruta afectada fuera del caché en la
-      // build actual, pero solo porque la regla genérica que genera para el
-      // `exclude` queda antes en `config.json` que la entrada de ISR
-      // redundante y sin usar que deja para esa misma ruta: depende del
-      // ORDEN de las reglas, no de que la comparación en sí case. La
-      // expresión regular no deja esa entrada muerta ni esa dependencia:
-      // ver la comparación de ambos `config.json` en `task-8-report.md`.
+      // El adaptador decide si una ruta va a ISR comparando cada entrada de
+      // `exclude` con el `route.pattern` de Astro: si es string, por
+      // IGUALDAD EXACTA; si es RegExp, con `.test()`. Un string solo protege
+      // ESA ruta exacta, nunca sus hijas. `/admin`, `/cuenta`, `/carrito` y
+      // `/api` no son un único fichero dinámico: son ficheros sueltos
+      // (`pedidos.astro`, `clientes.astro`, `checkout.ts`, y los que se
+      // añadan), así que un string por ruta se queda corto en cuanto se
+      // añade una página nueva bajo ese árbol y la deja cacheada sin avisar.
+      // Por eso las cinco raíces con sesión van con string (la raíz exacta)
+      // + regex (`/^\/raíz\//`, el árbol entero) — no solo las que ya tienen
+      // hijas hoy, sino todas, porque la próxima página que se añada bajo
+      // cualquiera de ellas no debe depender de acordarse de tocar esta
+      // lista.
+      //
+      // Probé primero el patrón con corchetes que usa Astro para rutas
+      // dinámicas (p. ej. `"/admin/[...ruta]"`) pensando que el adaptador lo
+      // interpretaría como "todo el árbol". Con un build real
+      // (`task-8-report.md`) vi que sí genera una regla de enrutado que
+      // cubre el árbol, pero la comparación de arriba (la que decide si esa
+      // ruta entra en el mapeo a ISR) sigue siendo por igualdad exacta y ese
+      // string nunca es igual a `route.pattern` de una página real, así que
+      // cada hija se colaba igualmente en el mapeo a ISR. Que esas páginas
+      // no acabaran sirviéndose desde ahí era solo porque la regla de
+      // enrutado quedaba antes en `config.json` que esa entrada de ISR
+      // sobrante: un accidente del ORDEN en que el adaptador genera las
+      // reglas, no una garantía del patrón. De ahí la regex: hace que la
+      // comparación misma excluya la ruta, sin entradas muertas ni depender
+      // de ese orden.
       exclude: [
         "/admin",
         /^\/admin\//,
         "/cuenta",
+        /^\/cuenta\//,
         "/carrito",
+        /^\/carrito\//,
         "/acceso",
         /^\/acceso\//,
         /^\/api\//,
