@@ -1,10 +1,23 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import NewsCarousel from "~/components/NewsCarousel.astro";
-import { getCollection } from "astro:content";
+import { listarNoticias, type Noticia } from "~/lib/db/noticias";
 
-const items = (await getCollection("noticias", ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+// Lee de la base de datos: bajo demanda, con la caché ISR delante
+// (`astro.config.mjs`) y el panel invalidándola al publicar.
+export const prerender = false;
+
+let items: Noticia[] = [];
+try {
+  items = await listarNoticias({ soloPublicadas: true });
+} catch (error) {
+  // Que la base de datos falle no puede tumbar una página pública: se enseña
+  // la sección vacía, que es feo pero navegable.
+  console.error(
+    "No se pudieron cargar las noticias:",
+    error instanceof Error ? error.message : error,
+  );
+}
 ---
 <MarketingLayout
   title="Noticias y promociones"
@@ -14,7 +27,13 @@ const items = (await getCollection("noticias", ({ data }) => !data.draft))
     <p class="numeracion">Noticias</p>
     <h1 class="text-4xl sm:text-5xl mt-2">Lo que tenemos esta temporada.</h1>
     <div class="mt-10">
-      <NewsCarousel items={items} />
+      {items.length > 0 ? (
+        <NewsCarousel items={items} />
+      ) : (
+        <p class="text-[color:var(--color-ink-muted)]">
+          Ahora mismo no hay nada publicado. Vuelve en unos días.
+        </p>
+      )}
     </div>
   </section>
 </MarketingLayout>

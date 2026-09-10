@@ -1,9 +1,9 @@
 ---
 import NewsCard from "~/components/NewsCard.astro";
-import type { CollectionEntry } from "astro:content";
+import type { Noticia } from "~/lib/db/noticias";
 
 interface Props {
-  items: CollectionEntry<"noticias">[];
+  items: Noticia[];
 }
 const { items } = Astro.props;
 ---
@@ -12,12 +12,15 @@ const { items } = Astro.props;
     {items.map((n) => (
       <div class="news-carousel__slide" data-slide>
         <NewsCard
-          slug={n.id}
-          title={n.data.title}
-          excerpt={n.data.excerpt}
-          date={n.data.date}
-          image={n.data.image}
-          imageAlt={n.data.imageAlt}
+          slug={n.slug}
+          title={n.titulo}
+          excerpt={n.excerpt}
+          date={new Date(`${n.fecha}T00:00:00`)}
+          imagen={
+            n.imageUrl && n.imageWidth && n.imageHeight
+              ? { url: n.imageUrl, alt: n.imageAlt ?? "", ancho: n.imageWidth, alto: n.imageHeight }
+              : null
+          }
         />
       </div>
     ))}
