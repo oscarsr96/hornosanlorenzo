@@ -19,6 +19,7 @@
     "admin": "node --env-file=.env scripts/hacer-admin.mjs"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "6.3.11",
     "@astrojs/react": "^4.4.0",
     "@astrojs/sitemap": "^3.6.0",
     "@astrojs/vercel": "^9",
