@@ -1,0 +1,44 @@
+---
+// src/pages/admin/index.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+
+// Obligatorio en TODAS las páginas del panel: sin esto se generaría en
+// construcción, el middleware saldría por su atajo de prerenderizado y la
+// guardia no llegaría a correr.
+export const prerender = false;
+---
+<AdminLayout titulo="Panel">
+  <p class="text-[color:var(--color-ink-muted)] max-w-xl">
+    Desde aquí se editan la carta y las noticias, y se ven los pedidos que han
+    entrado y los clientes registrados.
+  </p>
+  <ul class="mt-8 grid gap-px bg-[color:var(--color-avellana)] sm:grid-cols-2 border border-[color:var(--color-avellana)]">
+    <li class="bg-[color:var(--color-leche)]">
+      <a href="/admin/pedidos" class="flex h-full flex-col p-5 hover:bg-[color:var(--color-latte)] transition-colors">
+        <span class="font-[family-name:var(--font-display)] text-xl">Pedidos</span>
+        <span class="mt-2 text-sm text-[color:var(--color-ink-muted)]">Lo que ha entrado por la web, del más reciente al más antiguo.</span>
+      </a>
+    </li>
+    <li class="bg-[color:var(--color-leche)]">
+      <a href="/admin/clientes" class="flex h-full flex-col p-5 hover:bg-[color:var(--color-latte)] transition-colors">
+        <span class="font-[family-name:var(--font-display)] text-xl">Clientes</span>
+        <span class="mt-2 text-sm text-[color:var(--color-ink-muted)]">Quién se ha registrado, con su correo y su teléfono.</span>
+      </a>
+    </li>
+    {/* Productos y Noticias son las dos pantallas del día a día del obrador y
+        solo estaban en la tira de navegación de arriba: quien entra por aquí
+        buscando «dónde se cambia un precio» no las veía. */}
+    <li class="bg-[color:var(--color-leche)]">
+      <a href="/admin/productos" class="flex h-full flex-col p-5 hover:bg-[color:var(--color-latte)] transition-colors">
+        <span class="font-[family-name:var(--font-display)] text-xl">Productos</span>
+        <span class="mt-2 text-sm text-[color:var(--color-ink-muted)]">La carta entera: precios, tamaños, alérgenos, fotos y qué está agotado hoy.</span>
+      </a>
+    </li>
+    <li class="bg-[color:var(--color-leche)]">
+      <a href="/admin/noticias" class="flex h-full flex-col p-5 hover:bg-[color:var(--color-latte)] transition-colors">
+        <span class="font-[family-name:var(--font-display)] text-xl">Noticias</span>
+        <span class="mt-2 text-sm text-[color:var(--color-ink-muted)]">Promociones y temporada: lo que sale en la portada y en /noticias.</span>
+      </a>
+    </li>
+  </ul>
+</AdminLayout>

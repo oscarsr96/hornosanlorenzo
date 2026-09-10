@@ -12,6 +12,7 @@ import {
   destinationLabel,
   OrderError,
 } from "~/lib/pedido";
+import { crearPedidoIniciado, anotarSesionStripe } from "~/lib/db/pedidos";
 
 // El cobro se calcula en servidor: esta ruta no puede prerenderizarse.
 export const prerender = false;
@@ -60,6 +61,23 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
       return json({ error: err.message }, err.status);
     console.error("[checkout] error al valorar el pedido", err);
     return json({ error: "No hemos podido preparar el pedido." }, 500);
+  }
+
+  // El pedido se anota AQUÍ, con el desglose que acaba de calcular
+  // `priceOrder`, y no en el webhook: en los metadatos de Stripe no caben ni
+  // los slugs ni las líneas (500 caracteres por valor), solo esta referencia.
+  //
+  // Un fallo de Postgres no puede impedir una venta: se registra y se sigue.
+  // El webhook reconstruirá el pedido con lo que dé Stripe, que es menos,
+  // pero mejor eso que un cobro que no aparece en ningún sitio.
+  let pedidoId: string | null = null;
+  try {
+    pedidoId = await crearPedidoIniciado(order);
+  } catch (err) {
+    console.error(
+      "[checkout] no se pudo anotar el pedido, se cobra igual:",
+      err instanceof Error ? err.message : err,
+    );
   }
 
   const { payload } = order;
@@ -112,10 +130,38 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
         telefono: normalizaTelefono(payload.phone),
         nombre: payload.name?.slice(0, 120) ?? "",
         notas: payload.notes?.slice(0, 480) ?? "",
+        pedidoId: pedidoId ?? "",
+        // Los mismos datos de entrega que arriba, pero EN CRUDO. Los de
+        // arriba están formateados para leerse en un correo («Recogida en
+        // tienda», «miércoles 24 de diciembre») y no se pueden deshacer sin
+        // adivinar. Estos son los que van tal cual a la tabla, y son los que
+        // usa el webhook si Postgres estaba caído al cobrar y tiene que
+        // reconstruir el pedido: sin ellos tenía que inventarse la modalidad
+        // y el día, y el panel enseñaba esa invención como un hecho.
+        entregaModo: payload.mode,
+        entregaFecha: payload.dateISO,
+        entregaFranja: payload.slot ?? "",
+        entregaTienda: payload.storeId ?? "",
+        entregaDireccion: payload.address?.slice(0, 480) ?? "",
+        entregaCP: payload.postalCode ?? "",
       },
     });
 
     if (!session.url) throw new Error("Stripe no devolvió URL de pago");
+
+    // La referencia de Stripe solo se conoce ahora. Si esto falla, el webhook
+    // todavía puede encontrar el pedido por `metadata.pedidoId`.
+    if (pedidoId) {
+      try {
+        await anotarSesionStripe(pedidoId, session.id);
+      } catch (err) {
+        console.error(
+          "[checkout] no se pudo anotar la referencia de Stripe:",
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
+
     return json({ url: session.url });
   } catch (err) {
     console.error("[checkout] Stripe rechazó la sesión", err);

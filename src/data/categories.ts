@@ -27,6 +27,9 @@ export const categories: readonly Category[] = [
 export const categoryById = (id: CategoryId): Category =>
   categories.find((c) => c.id === id)!;
 
+export const isCategoryId = (value: string | null): value is CategoryId =>
+  value !== null && (categoryIds as readonly string[]).includes(value);
+
 /**
  * Agrupación comercial del brief: Dulce · Salado · Packs.
  * Se superpone a las categorías del catálogo sin sustituirlas.

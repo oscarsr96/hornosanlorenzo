@@ -1,24 +1,58 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, render } from "astro:content";
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import { formatDate } from "~/lib/format";
 import { site } from "~/data/site";
+import { obtenerNoticia } from "~/lib/db/noticias";
+import { SIN_CACHE } from "~/lib/lectura-publica";
+import { aHtml } from "~/lib/markdown";
 
-export async function getStaticPaths() {
-  const items = await getCollection("noticias", ({ data }) => !data.draft);
-  return items.map((n) => ({ params: { slug: n.id }, props: { item: n } }));
+// Lee de la base de datos: bajo demanda, con la caché ISR delante
+// (`astro.config.mjs`) y el panel invalidándola al publicar.
+export const prerender = false;
+
+const { slug } = Astro.params;
+// `soloPublicada`: un borrador no se ve escribiendo su URL a mano.
+let item: Awaited<ReturnType<typeof obtenerNoticia>> = null;
+let fallo = false;
+try {
+  item = slug ? await obtenerNoticia(slug, { soloPublicada: true }) : null;
+} catch (error) {
+  // Un fallo de Postgres aquí no puede convertirse en un 500: se trata como
+  // si la noticia no existiera, igual que un slug inventado.
+  fallo = true;
+  console.error(
+    "No se pudo cargar la noticia:",
+    error instanceof Error ? error.message : error,
+  );
 }
+// Mismo criterio que en la ficha de producto: el 404 de un slug inventado se
+// puede cachear, el de un fallo de la base de datos no — se quedaría fijo y
+// una noticia publicada seguiría dando «no encontrado» hasta el siguiente
+// despliegue.
+// `astro check` avisa de que esta variable «no se usa»: el .tsx que genera
+// para diagnosticar no incluye el `return` del frontmatter, así que no ve
+// la única línea que la lee. Es un falso positivo del comprobador, no
+// código muerto — comprobado quitando el `return` y viendo desaparecer el
+// aviso. El resumen de `pnpm check` sigue en 0 errores y 0 avisos.
+const cabeceras404 = fallo ? SIN_CACHE : undefined;
+if (!item) return new Response("No encontrado", { status: 404, headers: cabeceras404 });
 
-const { item } = Astro.props;
-const { Content } = await render(item);
+const cuerpo = await aHtml(item.cuerpo);
+const fecha = new Date(`${item.fecha}T00:00:00`);
+const imagen =
+  item.imageUrl && item.imageWidth && item.imageHeight
+    ? { url: item.imageUrl, alt: item.imageAlt ?? "", ancho: item.imageWidth, alto: item.imageHeight }
+    : null;
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: item.data.title,
-  datePublished: item.data.date.toISOString(),
-  image: new URL(item.data.image.src, Astro.site).toString(),
+  headline: item.titulo,
+  datePublished: fecha.toISOString(),
+  // La URL del almacén ya es absoluta: a diferencia del Markdown de antes, no
+  // hay que envolverla con `new URL(..., Astro.site)`.
+  image: item.imageUrl ?? undefined,
   publisher: {
     "@type": "Organization",
     name: site.name,
@@ -27,26 +61,38 @@ const jsonLd = {
 };
 ---
 <MarketingLayout
-  title={item.data.title}
-  description={item.data.excerpt}
+  title={item.titulo}
+  description={item.excerpt}
   type="article"
   jsonLd={jsonLd}
 >
   <article class="mx-auto max-w-3xl px-4 sm:px-6 py-12">
     <nav aria-label="Breadcrumb" class="text-xs text-[color:var(--color-ink-muted)] uppercase tracking-widest mb-4">
-      <a href="/">Inicio</a> · <a href="/noticias">Noticias</a> · <span>{item.data.title}</span>
+      <a href="/">Inicio</a> · <a href="/noticias">Noticias</a> · <span>{item.titulo}</span>
     </nav>
 
-    <p class="numeracion">{formatDate(item.data.date)}</p>
-    <h1 class="text-4xl sm:text-5xl mt-2">{item.data.title}</h1>
-    <p class="text-lg text-[color:var(--color-ink-muted)] mt-4">{item.data.excerpt}</p>
+    <p class="numeracion">{formatDate(fecha)}</p>
+    <h1 class="text-4xl sm:text-5xl mt-2">{item.titulo}</h1>
+    <p class="text-lg text-[color:var(--color-ink-muted)] mt-4">{item.excerpt}</p>
 
     <div class="mt-8 rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
-      <Image src={item.data.image} alt={item.data.imageAlt} widths={[600, 900, 1200]} sizes="(min-width:768px) 720px, 100vw" class="w-full h-auto" />
+      {imagen ? (
+        <Image
+          src={imagen.url}
+          alt={imagen.alt}
+          width={imagen.ancho}
+          height={imagen.alto}
+          widths={[600, 900, 1200]}
+          sizes="(min-width:768px) 720px, 100vw"
+          class="w-full h-auto"
+        />
+      ) : (
+        <div class="w-full aspect-[16/10] flex items-center justify-center bg-[color:var(--color-latte)]" aria-hidden="true">
+          <span class="numeracion">Foto pendiente</span>
+        </div>
+      )}
     </div>
 
-    <div class="prose prose-stone mt-8 max-w-none [&_p]:my-4 text-[color:var(--color-ink)]">
-      <Content />
-    </div>
+    <div class="prose prose-stone mt-8 max-w-none [&_p]:my-4 text-[color:var(--color-ink)]" set:html={cuerpo} />
   </article>
 </MarketingLayout>

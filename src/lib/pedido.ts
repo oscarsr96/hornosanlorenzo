@@ -1,4 +1,3 @@
-import { getCollection } from "astro:content";
 import { z } from "zod";
 import {
   isDateAllowed,
@@ -10,12 +9,13 @@ import {
   MIN_ORDER_CENTS,
 } from "~/lib/entrega";
 import { stores, type StoreId } from "~/data/stores";
+import { productosParaPedido } from "~/lib/db/productos";
 
 /**
  * Modelo de pedido del lado del servidor.
  *
  * El navegador solo manda referencias y cantidades: los precios se recalculan
- * aquí a partir de la colección de contenido, que es la única fuente de verdad.
+ * aquí a partir de la tabla `productos`, que es la única fuente de verdad.
  * Nunca se confía en un importe que venga del cliente.
  */
 
@@ -119,32 +119,63 @@ export async function priceOrder(
     throw new OrderError("El teléfono de contacto no parece válido.");
   }
 
-  const catalog = await getCollection("products");
-  const bySlug = new Map(catalog.map((p) => [p.id, p]));
+  // La fuente de verdad del precio es la tabla `productos`. Se piden solo los
+  // slugs del carrito, no el catálogo entero: son 98 fichas y aquí hacen falta
+  // dos o tres.
+  const bySlug = await productosParaPedido(payload.items.map((i) => i.slug));
 
   const lines: PricedLine[] = [];
   for (const item of payload.items) {
     const product = bySlug.get(item.slug);
-    if (!product) {
+    if (!product || !product.activo) {
+      // Mismo mensaje para «no existe» y «desactivado»: para quien compra son
+      // lo mismo, y distinguirlo solo serviría para adivinar qué hay detrás.
       throw new OrderError(`El producto «${item.slug}» ya no está disponible.`);
     }
 
-    if (product.data.consultar || product.data.priceCents === undefined) {
+    // El de «consultar» va antes que el de «agotado»: un producto sin precio
+    // de venta online no es de los que vuelven a haber, así que decirle al
+    // cliente que «vuelva a intentarlo» sería engañoso. Con los dos a la vez,
+    // el mensaje correcto es el que no invita a reintentar algo que nunca
+    // podrá comprarse por aquí.
+    if (product.consultar || product.priceCents === null) {
       throw new OrderError(
-        `«${product.data.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
+        `«${product.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
       );
     }
 
-    let unitPriceCents = product.data.priceCents;
+    if (product.agotado) {
+      throw new OrderError(
+        `«${product.name}» se ha agotado. Quítalo del carrito y vuelve a intentarlo.`,
+      );
+    }
+
+    let unitPriceCents = product.priceCents;
     let variantLabel: string | undefined;
 
+    // Con variantes, elegir una es OBLIGATORIO, no opcional. Mientras la
+    // carta vivía en los 98 Markdown, `priceCents` era siempre igual al
+    // tamaño más barato y omitir `variantId` solo perdía la etiqueta. El
+    // panel (tarea 19) desacopló los dos campos: son casillas distintas del
+    // formulario, y nada en él sugiere que el «Precio» de arriba siga
+    // importando cuando hay tamaños. Así que subir «Pequeña» de 16,50 a
+    // 18,00 y dejar el base en 16,50 basta para que una petición sin
+    // `variantId` se cobre al precio viejo. Y peor que el dinero: la línea
+    // llega a /admin/pedidos como «1× Bombón Noir» SIN tamaño, y el obrador
+    // no puede saber cuál de las tres tartas tiene que hacer.
+    if (product.variantes.length > 0 && !item.variantId) {
+      throw new OrderError(
+        `Elige un tamaño para «${product.name}»: sin él no podemos ponerle precio ni saber cuál preparar.`,
+      );
+    }
+
     if (item.variantId) {
-      const variant = product.data.variants?.find(
-        (v) => v.id === item.variantId,
+      const variant = product.variantes.find(
+        (v) => v.variantId === item.variantId,
       );
       if (!variant) {
         throw new OrderError(
-          `La opción elegida de «${product.data.name}» ya no está disponible.`,
+          `La opción elegida de «${product.name}» ya no está disponible.`,
         );
       }
       unitPriceCents = variant.priceCents;
@@ -153,7 +184,7 @@ export async function priceOrder(
 
     lines.push({
       slug: item.slug,
-      name: product.data.name,
+      name: product.name,
       variantLabel,
       qty: item.qty,
       unitPriceCents,

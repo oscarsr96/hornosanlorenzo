@@ -2,6 +2,12 @@ import type { APIRoute } from "astro";
 import Stripe from "stripe";
 import { enviarCorreo } from "~/lib/email/enviar";
 import { site } from "~/data/site";
+import {
+  marcarPagado,
+  marcarAvisado,
+  crearPedidoReconstruido,
+  type PedidoAnotado,
+} from "~/lib/db/pedidos";
 
 // Stripe llama a esta ruta: nunca se prerenderiza.
 export const prerender = false;
@@ -50,11 +56,21 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response("unpaid", { status: 200 });
   }
 
+  const anotado = await anotarPago(stripe, session);
+
+  if (yaAvisado(anotado)) {
+    // Reintento de un aviso que ya salió. El pedido está pagado y anotado:
+    // responder 200 corta la cadena de reintentos.
+    return new Response("ya avisado", { status: 200 });
+  }
+
   try {
-    await notify(stripe, session);
+    const avisado = await notify(stripe, session);
+    if (avisado && anotado) await marcarAvisado(anotado.id);
   } catch (err) {
     // Devolver 500 hace que Stripe reintente, que es lo que queremos si el
     // correo falla: el cobro ya está hecho y el obrador tiene que enterarse.
+    // Como `notificado_en` sigue nulo, el reintento volverá a intentarlo.
     console.error("[webhook] no se pudo avisar del pedido", err);
     return new Response("notification failed", { status: 500 });
   }
@@ -62,7 +78,100 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response("ok", { status: 200 });
 };
 
-export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
+/**
+ * Deja constancia del cobro. Se hace ANTES de avisar a nadie: el aviso puede
+ * fallar y reintentarse, pero un cobro sin rastro no se recupera.
+ *
+ * Devuelve null si no se pudo escribir nada. Que Postgres esté caído no puede
+ * impedir que el obrador se entere de un pedido pagado: en ese caso se sigue
+ * adelante con el correo, que es lo que hace el sitio desde el primer día.
+ */
+export async function anotarPago(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+): Promise<PedidoAnotado | null> {
+  const pedidoId = session.metadata?.pedidoId || null;
+
+  try {
+    const anotado = await marcarPagado({ pedidoId, sessionId: session.id });
+    if (anotado) return anotado;
+
+    // No estaba: el checkout no pudo escribirlo. Se reconstruye con lo que
+    // da Stripe —sin slugs y sin desglose de envío— y queda marcado como
+    // reconstruido para que en el panel no parezca un pedido completo.
+    const items = await stripe.checkout.sessions.listLineItems(session.id, {
+      limit: 50,
+    });
+    const m = session.metadata ?? {};
+    return await crearPedidoReconstruido({
+      stripeSessionId: session.id,
+      // La modalidad y el día de verdad, que ya venían en los metadatos y
+      // antes no se pasaban: la fila se escribía con 'recogida' y la fecha de
+      // hoy, y el panel las enseñaba como si fueran ciertas.
+      mode: modoDeEntrega(m.entregaModo),
+      fechaEntrega: fechaDeEntrega(m.entregaFecha),
+      slot: franjaDeEntrega(m.entregaFranja),
+      storeId: m.entregaTienda || null,
+      address: m.entregaDireccion || null,
+      postalCode: cpDeEntrega(m.entregaCP),
+      email: session.customer_details?.email ?? "",
+      telefono: m.telefono ?? "",
+      nombre: m.nombre || null,
+      notas: m.notas || null,
+      totalCents: session.amount_total ?? 0,
+      lineas: items.data.map((i) => ({
+        nombre: i.description ?? "",
+        qty: i.quantity ?? 1,
+        // Stripe da el importe de la línea; el unitario es lo que guardamos.
+        unitPriceCents: Math.round((i.amount_total ?? 0) / (i.quantity || 1)),
+      })),
+    });
+  } catch (err) {
+    console.error(
+      "[webhook] no se pudo anotar el pedido en la base de datos:",
+      err instanceof Error ? err.message : err,
+    );
+    return null;
+  }
+}
+
+/**
+ * Los metadatos de Stripe son texto libre: llegan tal y como los escribió
+ * `checkout.ts`, pero una sesión vieja —o creada de otra manera— puede no
+ * traerlos. Cada campo se valida antes de escribirlo y, si no cuadra, se
+ * queda en null: en el panel se verá como «sin datos», que es la verdad,
+ * en vez de un valor por defecto que se lee como un hecho.
+ */
+export function modoDeEntrega(v: unknown): "domicilio" | "recogida" | null {
+  return v === "domicilio" || v === "recogida" ? v : null;
+}
+
+export function fechaDeEntrega(v: unknown): string | null {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+}
+
+export function franjaDeEntrega(v: unknown): "morning" | "afternoon" | null {
+  return v === "morning" || v === "afternoon" ? v : null;
+}
+
+/** `postal_code` es `char(5)`: un valor a medias ahí ensucia más que ayuda. */
+export function cpDeEntrega(v: unknown): string | null {
+  return typeof v === "string" && /^\d{5}$/.test(v) ? v : null;
+}
+
+/**
+ * Si ya consta avisado, este aviso de Stripe es un reintento de uno que salió
+ * bien: no hay que volver a mandar el correo. Función aparte y pura para
+ * poder fijarla en una prueba sin montar la petición firmada entera.
+ */
+export function yaAvisado(anotado: PedidoAnotado | null): boolean {
+  return Boolean(anotado?.notificadoEn);
+}
+
+export async function notify(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+): Promise<boolean> {
   const apiKey = import.meta.env.RESEND_API_KEY;
   const to = import.meta.env.ORDER_NOTIFICATION_EMAIL;
   const from = import.meta.env.ORDER_FROM_EMAIL;
@@ -110,7 +219,7 @@ export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
   // este registro.
   if (!apiKey || !to || !from) {
     console.warn("[webhook] correo no configurado; pedido:\n" + resumen);
-    return;
+    return false;
   }
 
   const obrador = await enviarCorreo({
@@ -123,7 +232,7 @@ export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
     // Mismo motivo que el bloque de arriba: sin aviso al obrador, no se
     // manda la confirmación al cliente.
     console.warn("[webhook] no se pudo avisar al obrador; pedido:\n" + resumen);
-    return;
+    return false;
   }
 
   if (cliente) {
@@ -153,4 +262,6 @@ export async function notify(stripe: Stripe, session: Stripe.Checkout.Session) {
       );
     }
   }
+
+  return true;
 }

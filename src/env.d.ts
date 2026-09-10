@@ -4,6 +4,8 @@ interface ImportMetaEnv {
   readonly PUBLIC_SITE_URL: string;
   readonly DATABASE_URL: string;
   readonly BETTER_AUTH_SECRET: string;
+  readonly VERCEL_BYPASS_TOKEN: string;
+  readonly BLOB_READ_WRITE_TOKEN: string;
 }
 
 interface ImportMeta {

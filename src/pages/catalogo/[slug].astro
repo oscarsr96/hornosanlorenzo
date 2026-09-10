@@ -1,21 +1,54 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, render } from "astro:content";
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import AddToCart from "~/islands/AddToCart.tsx";
-import { categoryById } from "~/data/categories";
-import { seccionById } from "~/data/secciones";
+import { categoryById, isCategoryId } from "~/data/categories";
+import { seccionById, isSeccionId } from "~/data/secciones";
+import { obtenerProducto } from "~/lib/db/productos";
+import { SIN_CACHE } from "~/lib/lectura-publica";
+import { aHtml } from "~/lib/markdown";
 
-export async function getStaticPaths() {
-  const products = await getCollection("products");
-  return products.map((p) => ({ params: { slug: p.id }, props: { product: p } }));
+// Lee de la base de datos: bajo demanda, con la caché ISR delante
+// (`astro.config.mjs`) y el panel invalidándola al guardar.
+export const prerender = false;
+
+const { slug } = Astro.params;
+// `soloActivo`: una ficha desactivada tampoco se ve escribiendo su URL.
+let product: Awaited<ReturnType<typeof obtenerProducto>> = null;
+let fallo = false;
+try {
+  product = slug ? await obtenerProducto(slug, { soloActivo: true }) : null;
+} catch (error) {
+  // Un fallo de Postgres aquí no puede convertirse en un 500: se trata como
+  // si la ficha no existiera, igual que un slug inventado.
+  fallo = true;
+  console.error(
+    "No se pudo cargar el producto:",
+    error instanceof Error ? error.message : error,
+  );
 }
+// El 404 de un slug que no existe SÍ puede cachearse (y el panel invalida
+// esta ruta al crear la ficha). El de un fallo de la base de datos no: sería
+// una ficha real convertida en «no existe» para siempre, porque una entrada
+// de ISR solo se refresca al invalidar, al desplegar o al caducar.
+// `astro check` avisa de que esta variable «no se usa»: el .tsx que genera
+// para diagnosticar no incluye el `return` del frontmatter, así que no ve
+// la única línea que la lee. Es un falso positivo del comprobador, no
+// código muerto — comprobado quitando el `return` y viendo desaparecer el
+// aviso. El resumen de `pnpm check` sigue en 0 errores y 0 avisos.
+const cabeceras404 = fallo ? SIN_CACHE : undefined;
+if (!product) return new Response("No encontrado", { status: 404, headers: cabeceras404 });
 
-const { product } = Astro.props;
-const { Content } = await render(product);
-const cat = categoryById(product.data.category);
-const seccion = product.data.seccion ? seccionById(product.data.seccion) : null;
-const eyebrow = seccion?.label ?? cat.label;
+const cuerpo = await aHtml(product.cuerpo);
+// `category`/`seccion` son texto libre en la base de datos (sin CHECK ni FK):
+// el compilador ya no puede garantizar que existan en `categories.ts`/
+// `secciones.ts`. `isCategoryId`/`isSeccionId` son la comprobación en tiempo
+// de ejecución; sin ellas, un valor inválido tira `categoryById`/
+// `seccionById` (que asumen que existe) y con él toda la página.
+const cat = isCategoryId(product.category) ? categoryById(product.category) : null;
+const seccion =
+  product.seccion && isSeccionId(product.seccion) ? seccionById(product.seccion) : null;
+const eyebrow = seccion?.label ?? cat?.label ?? "";
 
 const allergensLabel: Record<string, string> = {
   gluten: "gluten",
@@ -27,22 +60,34 @@ const allergensLabel: Record<string, string> = {
   sulfitos: "sulfitos",
 };
 
+// Solo se arma el objeto de imagen cuando los tres datos están presentes:
+// sin `!`, y sin arriesgarse a pintar un `<Image>` a medio completar.
+const imagen =
+  product.imageUrl && product.imageWidth && product.imageHeight
+    ? { url: product.imageUrl, alt: product.imageAlt ?? product.name, ancho: product.imageWidth, alto: product.imageHeight }
+    : null;
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: product.data.name,
-  description: product.data.shortDescription,
-  ...(product.data.image
-    ? { image: new URL(product.data.image.src, Astro.site).toString() }
-    : {}),
-  category: cat.label,
-  ...(product.data.priceCents !== undefined && !product.data.consultar
+  name: product.name,
+  description: product.shortDescription,
+  // La URL del almacén ya es absoluta: a diferencia del Markdown de antes, no
+  // hay que envolverla con `new URL(..., Astro.site)`.
+  image: product.imageUrl ?? undefined,
+  category: cat?.label,
+  ...(product.priceCents !== null && !product.consultar
     ? {
         offers: {
           "@type": "Offer",
           priceCurrency: "EUR",
-          price: (product.data.priceCents / 100).toFixed(2),
-          availability: "https://schema.org/InStock",
+          price: (product.priceCents / 100).toFixed(2),
+          // Lo que Google enseña en los resultados de búsqueda: una ficha
+          // agotada no puede decir «en stock» aunque siga a la venta en el
+          // sitio (se ve, pero sin botón de añadir).
+          availability: product.agotado
+            ? "https://schema.org/OutOfStock"
+            : "https://schema.org/InStock",
         },
       }
     : {}),
@@ -54,27 +99,29 @@ const breadcrumbs = {
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Inicio", item: new URL("/", Astro.site).toString() },
     { "@type": "ListItem", position: 2, name: "Catálogo", item: new URL("/catalogo", Astro.site).toString() },
-    { "@type": "ListItem", position: 3, name: product.data.name },
+    { "@type": "ListItem", position: 3, name: product.name },
   ],
 };
 ---
 <MarketingLayout
-  title={product.data.name}
-  description={product.data.shortDescription}
+  title={product.name}
+  description={product.shortDescription}
   type="product"
   jsonLd={[jsonLd, breadcrumbs]}
 >
   <section class="mx-auto max-w-6xl px-4 sm:px-6 py-10">
     <nav aria-label="Breadcrumb" class="text-xs text-[color:var(--color-ink-muted)] uppercase tracking-widest mb-6">
-      <a href="/">Inicio</a> · <a href="/catalogo">Catálogo</a> · <span>{product.data.name}</span>
+      <a href="/">Inicio</a> · <a href="/catalogo">Catálogo</a> · <span>{product.name}</span>
     </nav>
 
     <div class="grid gap-10 md:grid-cols-2">
       <div class="self-start rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
-        {product.data.image ? (
+        {imagen ? (
           <Image
-            src={product.data.image}
-            alt={product.data.imageAlt ?? product.data.name}
+            src={imagen.url}
+            alt={imagen.alt}
+            width={imagen.ancho}
+            height={imagen.alto}
             widths={[600, 900, 1200]}
             sizes="(min-width:768px) 600px, 100vw"
             class="w-full h-auto"
@@ -91,14 +138,25 @@ const breadcrumbs = {
 
       <div>
         <p class="numeracion">{eyebrow}</p>
-        <h1 class="text-4xl sm:text-5xl mt-2">{product.data.name}</h1>
+        <h1 class="text-4xl sm:text-5xl mt-2">{product.name}</h1>
         {seccion?.nota && (
           <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">{seccion.nota}</p>
         )}
-        <p class="text-lg text-[color:var(--color-ink-muted)] mt-3">{product.data.shortDescription}</p>
+        <p class="text-lg text-[color:var(--color-ink-muted)] mt-3">{product.shortDescription}</p>
 
         <div class="mt-6 max-w-md">
-          {product.data.consultar || product.data.priceCents === undefined ? (
+          {/* El de «consultar» va antes que el de «agotado»: mismo orden y misma razón que en
+              `~/lib/pedido.ts` (que además lo cubre con una prueba de regresión dedicada). Un
+              producto sin precio de venta online no es de los que «vuelven a salir del horno»,
+              así que con los dos flags a la vez el mensaje correcto es el que no promete una
+              reposición que nunca va a llegar por aquí. No reordenar por prolijidad: son estados
+              independientes (el panel de la tarea 19 los deja marcar por separado), así que ese
+              caso es alcanzable de verdad, no solo teórico.
+
+              La tarjeta del catálogo (`ProductCard.astro`) sí mira `agotado` primero, y no es
+              una contradicción: allí no se escoge un mensaje entre dos, se enseñan los dos a la
+              vez («Consultar» de precio + etiqueta «Agotado hoy»). Está explicado en su sitio. */}
+          {product.consultar || product.priceCents === null ? (
             <div>
               <p class="font-[family-name:var(--font-display)] text-3xl text-[color:var(--color-ink-muted)]">
                 Precio a consultar
@@ -109,28 +167,36 @@ const breadcrumbs = {
               </p>
               <a href="/contacto" class="btn btn-primario mt-4">Preguntar por este producto</a>
             </div>
+          ) : product.agotado ? (
+            <div>
+              <p class="font-[family-name:var(--font-display)] text-3xl text-[color:var(--color-ink-muted)]">
+                Agotado hoy
+              </p>
+              <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+                Se ha terminado. Llámanos y te decimos cuándo vuelve a salir del horno.
+              </p>
+              <a href="/contacto" class="btn btn-primario mt-4">Preguntar por este producto</a>
+            </div>
           ) : (
             <AddToCart
               client:load
-              slug={product.id}
-              name={product.data.name}
-              unitPriceCents={product.data.priceCents}
-              unit={product.data.unit}
-              variants={product.data.variants}
+              slug={product.slug}
+              name={product.name}
+              unitPriceCents={product.priceCents}
+              unit={product.unit ?? undefined}
+              variants={product.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
             />
           )}
         </div>
 
-        {product.data.allergens.length > 0 && (
+        {product.allergens.length > 0 && (
           <div class="mt-8">
             <p class="numeracion">Alérgenos</p>
-            <p class="mt-1 text-sm">Contiene: {product.data.allergens.map((a) => allergensLabel[a]).join(", ")}.</p>
+            <p class="mt-1 text-sm">Contiene: {product.allergens.map((a) => allergensLabel[a] ?? a).join(", ")}.</p>
           </div>
         )}
 
-        <article class="mt-8 prose prose-stone max-w-none [&_p]:my-3 text-[color:var(--color-ink)]">
-          <Content />
-        </article>
+        <article class="mt-8 prose prose-stone max-w-none [&_p]:my-3 text-[color:var(--color-ink)]" set:html={cuerpo} />
       </div>
     </div>
   </section>

@@ -1,7 +1,18 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import CatalogoGrid from "~/components/CatalogoGrid.astro";
+import { catalogoPublico } from "~/lib/lectura-publica";
 import { tiendaOnlineNav } from "~/data/navigation";
+
+// Lee el catálogo de la base de datos: bajo demanda, con la caché ISR delante
+// y el panel invalidándola al guardar.
+export const prerender = false;
+
+// La lectura va aquí y no dentro de `CatalogoGrid`: si Postgres falla, hay
+// que marcar la respuesta como `no-store` para que la página vacía no se
+// quede guardada en la caché, y eso solo funciona desde el frontmatter de la
+// página (el porqué, en `~/lib/lectura-publica.ts`).
+const productos = await catalogoPublico(Astro.response);
 ---
 <MarketingLayout
   title="Tienda Online"
@@ -38,6 +49,7 @@ import { tiendaOnlineNav } from "~/data/navigation";
   </section>
 
   <CatalogoGrid
+    productos={productos}
     porGrupo
     eyebrow="Todo el catálogo"
     title="O búscalo aquí."
