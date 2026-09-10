@@ -11,8 +11,15 @@
  * el guardado por eso sería cambiar un problema pequeño por uno grande.
  */
 
+/**
+ * El sitemap de contenido se arma leyendo las dos tablas y también va por
+ * ISR, así que sin esto una ficha o una noticia nueva no llega a los
+ * buscadores hasta el siguiente despliegue: entra en las dos listas.
+ */
+const SITEMAP = "/sitemap-contenido.xml";
+
 /** Lo que hay que refrescar cuando cambia una noticia. */
-export const RUTAS_NOTICIAS = ["/", "/noticias"];
+export const RUTAS_NOTICIAS = ["/", "/noticias", SITEMAP];
 
 /** Lo que hay que refrescar cuando cambia un producto. */
 export const RUTAS_CATALOGO = [
@@ -21,6 +28,7 @@ export const RUTAS_CATALOGO = [
   "/catalogo/dulce",
   "/catalogo/salado",
   "/catalogo/top-ventas",
+  SITEMAP,
 ];
 
 export async function invalidar(rutas: string[]): Promise<void> {
@@ -38,10 +46,23 @@ export async function invalidar(rutas: string[]): Promise<void> {
   await Promise.all(
     rutas.map(async (ruta) => {
       try {
-        await fetch(new URL(ruta, base), {
+        const respuesta = await fetch(new URL(ruta, base), {
           method: "HEAD",
           headers: { "x-prerender-revalidate": token },
         });
+        // `fetch` solo rechaza si la petición no llega a hacerse: un token
+        // que no coincide con el del despliegue devuelve 401 y una ruta mal
+        // escrita 404, y las dos se resuelven como cualquier otra respuesta.
+        // Sin mirar el estado, la invalidación podía llevar meses sin hacer
+        // nada —el aviso de `astro.config.mjs` es exactamente ese— y lo
+        // único visible sería que el panel «tarda» en verse. Ahora deja
+        // rastro, que es lo máximo que puede hacer sin tirar el guardado.
+        if (!respuesta.ok) {
+          console.error(
+            `[cache] Vercel rechazó la invalidación de ${ruta}: ${respuesta.status}. ` +
+              "Comprueba que VERCEL_BYPASS_TOKEN es el mismo en la construcción y en ejecución.",
+          );
+        }
       } catch (err) {
         console.error(
           `[cache] no se pudo invalidar ${ruta}:`,

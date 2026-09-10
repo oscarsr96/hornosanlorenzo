@@ -156,7 +156,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     const producto = await crearProducto(parsed.data);
-    await invalidar(RUTAS_CATALOGO);
+    // También su propia página, igual que en el PUT: alguien pudo pedir esa
+    // URL antes de que la ficha existiera y dejar un 404 cacheado que
+    // sobreviviría a su creación.
+    await invalidar([...RUTAS_CATALOGO, `/catalogo/${producto.slug}`]);
     return json({ producto }, 201);
   } catch (error) {
     if (error instanceof ProductoError)

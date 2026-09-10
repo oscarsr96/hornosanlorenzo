@@ -127,9 +127,12 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     return json({ error: "Falta la noticia a borrar." }, 400);
 
   try {
-    const borradas = await borrarNoticia(id);
-    if (!borradas) return json({ error: "Esa noticia ya no existe." }, 404);
-    await invalidar(RUTAS_NOTICIAS);
+    const slug = await borrarNoticia(id);
+    if (!slug) return json({ error: "Esa noticia ya no existe." }, 404);
+    // Su propia página también, igual que en el PUT: si no, la noticia
+    // desaparece de los listados y del carrusel de la home pero sigue viva
+    // en `/noticias/<slug>`, que es la URL que la gente comparte.
+    await invalidar([...RUTAS_NOTICIAS, `/noticias/${slug}`]);
     return json({ ok: true });
   } catch (error) {
     console.error("[admin/noticias] no se pudo borrar:", error);

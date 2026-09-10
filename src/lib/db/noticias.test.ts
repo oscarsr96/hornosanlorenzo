@@ -92,8 +92,11 @@ describeSiHayBD("repositorio de noticias", () => {
     // La URL ya compartida (`/noticias/torrijas-2026`) tiene que seguir
     // funcionando aunque el título haya cambiado.
     expect(cambiada?.slug).toBe("torrijas-2026");
-    expect(await repo.borrarNoticia(noticia.id)).toBe(1);
-    expect(await repo.borrarNoticia(noticia.id)).toBe(0);
+    // Devuelve el slug, no un recuento: el endpoint lo necesita para
+    // invalidar la propia página de la noticia (`/noticias/<slug>`), que si
+    // no se queda viva y compartible después de borrarla.
+    expect(await repo.borrarNoticia(noticia.id)).toBe("torrijas-2026");
+    expect(await repo.borrarNoticia(noticia.id)).toBeNull();
   });
 
   it("las publicadas salen de la más reciente a la más antigua", async () => {

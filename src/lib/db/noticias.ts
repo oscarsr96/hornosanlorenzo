@@ -142,9 +142,18 @@ export async function actualizarNoticia(
   }
 }
 
-export async function borrarNoticia(id: string): Promise<number> {
-  const { rowCount } = await pool.query("delete from noticias where id = $1", [
-    id,
-  ]);
-  return rowCount ?? 0;
+/**
+ * Devuelve el slug de la noticia borrada, o null si no había ninguna con ese
+ * id. El slug hace falta arriba: una noticia borrada tiene que desaparecer
+ * también de SU PROPIA página (`/noticias/<slug>`), no solo de los listados,
+ * y esa ruta solo se puede invalidar sabiendo cuál era. Con un simple
+ * recuento, la promoción con el precio mal se quedaba viva en su URL —
+ * compartida e indexada— hasta el siguiente despliegue.
+ */
+export async function borrarNoticia(id: string): Promise<string | null> {
+  const { rows } = await pool.query<{ slug: string }>(
+    "delete from noticias where id = $1 returning slug",
+    [id],
+  );
+  return rows[0]?.slug ?? null;
 }
