@@ -1,19 +1,17 @@
 import { pool } from "~/lib/db/pool";
 import { slugify } from "~/lib/slug";
+import { NoticiaError, traduce } from "~/lib/db/noticiasErrores";
+
+// Reexportado para que quien ya importaba `NoticiaError` desde aquí (tests,
+// y las tareas 11-18 que la citan por nombre) lo siga encontrando sin
+// cambiar nada: vive en `noticiasErrores.ts` únicamente para que las
+// pruebas de la traducción puedan importarla sin arrastrar `~/lib/db/pool`
+// (ver el comentario de ese fichero). Mismo patrón que `direcciones.ts`.
+export { NoticiaError };
 
 /**
  * Noticias. Único sitio con SQL de noticias; hacia fuera, camelCase.
  */
-
-export class NoticiaError extends Error {
-  constructor(
-    message: string,
-    readonly status = 400,
-  ) {
-    super(message);
-    this.name = "NoticiaError";
-  }
-}
 
 export type Noticia = {
   id: string;
@@ -54,22 +52,6 @@ const CAMPOS = `
   image_height as "imageHeight",
   tags, publicada
 `;
-
-/**
- * Traduce los errores de Postgres a algo que se le puede enseñar a quien está
- * escribiendo la noticia. Mismo criterio que `direccionesErrores.ts`: el texto
- * de un índice único no sale nunca a la pantalla.
- */
-function traduce(err: unknown): never {
-  if (err instanceof NoticiaError) throw err;
-  if (typeof err === "object" && err && "code" in err && err.code === "23505") {
-    throw new NoticiaError(
-      "Ya hay una noticia con ese título. Cámbialo un poco.",
-      409,
-    );
-  }
-  throw err;
-}
 
 export async function listarNoticias({
   soloPublicadas,

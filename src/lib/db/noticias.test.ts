@@ -47,32 +47,51 @@ describeSiHayBD("repositorio de noticias", () => {
       status: 409,
     });
     // El mensaje no puede escupir el nombre del índice de Postgres.
-    await expect(repo.crearNoticia(datos())).rejects.toThrow(/ya hay una noticia/i);
+    await expect(repo.crearNoticia(datos())).rejects.toThrow(
+      /ya hay una noticia/i,
+    );
   });
 
   it("una noticia sin publicar no sale en la web pero sí en el panel", async () => {
-    await repo.crearNoticia(datos({ titulo: "Borrador de San Valentín", publicada: false }));
+    await repo.crearNoticia(
+      datos({ titulo: "Borrador de San Valentín", publicada: false }),
+    );
 
     const publicas = await repo.listarNoticias({ soloPublicadas: true });
-    expect(publicas.map((n) => n.titulo)).not.toContain("Borrador de San Valentín");
+    expect(publicas.map((n) => n.titulo)).not.toContain(
+      "Borrador de San Valentín",
+    );
 
     const todas = await repo.listarNoticias({ soloPublicadas: false });
     expect(todas.map((n) => n.titulo)).toContain("Borrador de San Valentín");
 
     // Y tampoco se puede llegar a ella por su URL adivinando el slug.
     expect(
-      await repo.obtenerNoticia("borrador-de-san-valentin", { soloPublicada: true }),
+      await repo.obtenerNoticia("borrador-de-san-valentin", {
+        soloPublicada: true,
+      }),
     ).toBeNull();
-    expect(await repo.obtenerNoticia("borrador-de-san-valentin")).not.toBeNull();
+    expect(
+      await repo.obtenerNoticia("borrador-de-san-valentin"),
+    ).not.toBeNull();
   });
 
-  it("actualiza y borra", async () => {
+  it("actualiza y borra, y el slug no se recalcula aunque cambie el título", async () => {
     const noticia = await repo.crearNoticia(datos({ titulo: "Torrijas 2026" }));
+    expect(noticia.slug).toBe("torrijas-2026");
     const cambiada = await repo.actualizarNoticia(noticia.id, {
-      ...datos({ titulo: "Torrijas 2026" }),
+      // Título distinto a propósito: si `actualizarNoticia` recalculara el
+      // slug a partir de él, esta prueba lo detectaría. Con el mismo
+      // título de antes (como estaba escrita esta prueba) un slug
+      // recalculado por error habría dado el mismo valor y habría pasado
+      // igual.
+      ...datos({ titulo: "Torrijas de Semana Santa 2026" }),
       excerpt: "Solo en Semana Santa.",
     });
     expect(cambiada?.excerpt).toBe("Solo en Semana Santa.");
+    // La URL ya compartida (`/noticias/torrijas-2026`) tiene que seguir
+    // funcionando aunque el título haya cambiado.
+    expect(cambiada?.slug).toBe("torrijas-2026");
     expect(await repo.borrarNoticia(noticia.id)).toBe(1);
     expect(await repo.borrarNoticia(noticia.id)).toBe(0);
   });
