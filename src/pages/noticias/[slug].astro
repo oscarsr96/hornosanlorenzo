@@ -4,6 +4,7 @@ import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import { formatDate } from "~/lib/format";
 import { site } from "~/data/site";
 import { obtenerNoticia } from "~/lib/db/noticias";
+import { SIN_CACHE } from "~/lib/lectura-publica";
 import { aHtml } from "~/lib/markdown";
 
 // Lee de la base de datos: bajo demanda, con la caché ISR delante
@@ -13,17 +14,29 @@ export const prerender = false;
 const { slug } = Astro.params;
 // `soloPublicada`: un borrador no se ve escribiendo su URL a mano.
 let item: Awaited<ReturnType<typeof obtenerNoticia>> = null;
+let fallo = false;
 try {
   item = slug ? await obtenerNoticia(slug, { soloPublicada: true }) : null;
 } catch (error) {
   // Un fallo de Postgres aquí no puede convertirse en un 500: se trata como
   // si la noticia no existiera, igual que un slug inventado.
+  fallo = true;
   console.error(
     "No se pudo cargar la noticia:",
     error instanceof Error ? error.message : error,
   );
 }
-if (!item) return new Response("No encontrado", { status: 404 });
+// Mismo criterio que en la ficha de producto: el 404 de un slug inventado se
+// puede cachear, el de un fallo de la base de datos no — se quedaría fijo y
+// una noticia publicada seguiría dando «no encontrado» hasta el siguiente
+// despliegue.
+// `astro check` avisa de que esta variable «no se usa»: el .tsx que genera
+// para diagnosticar no incluye el `return` del frontmatter, así que no ve
+// la única línea que la lee. Es un falso positivo del comprobador, no
+// código muerto — comprobado quitando el `return` y viendo desaparecer el
+// aviso. El resumen de `pnpm check` sigue en 0 errores y 0 avisos.
+const cabeceras404 = fallo ? SIN_CACHE : undefined;
+if (!item) return new Response("No encontrado", { status: 404, headers: cabeceras404 });
 
 const cuerpo = await aHtml(item.cuerpo);
 const fecha = new Date(`${item.fecha}T00:00:00`);

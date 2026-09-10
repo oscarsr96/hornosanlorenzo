@@ -1,12 +1,20 @@
 ---
 import ProductCard from "~/components/ProductCard.astro";
 import CategoryFilter from "~/islands/CategoryFilter.tsx";
-import { listarProductos, type Producto } from "~/lib/db/productos";
+import type { Producto } from "~/lib/db/productos";
 import { grupoCategories, grupoOfCategory, grupoLabel, type GrupoId, type CategoryId } from "~/data/categories";
 import { secciones, seccionById, isSeccionId } from "~/data/secciones";
 import { stores } from "~/data/stores";
 
 interface Props {
+  /**
+   * El catálogo activo, ya leído por la página con `catalogoPublico`. La
+   * lectura NO se hace aquí: cuando falla hay que marcar la respuesta como
+   * `no-store` para que la página vacía no se quede cacheada, y una cabecera
+   * puesta desde el frontmatter de un componente llega tarde (el porqué, con
+   * detalle, en `~/lib/lectura-publica.ts`).
+   */
+  productos: Producto[];
   grupo?: GrupoId | null;
   eyebrow: string;
   title: string;
@@ -20,6 +28,7 @@ interface Props {
   porGrupo?: boolean;
 }
 const {
+  productos,
   grupo = null,
   eyebrow,
   title,
@@ -32,20 +41,9 @@ const {
 
 const allowed = grupo ? grupoCategories[grupo] : null;
 
-// Solo los activos: una ficha desactivada desde el panel desaparece de la
-// web. `listarProductos` ya los devuelve en el orden de la carta.
-let todos: Producto[] = [];
-try {
-  todos = await listarProductos({ soloActivos: true });
-} catch (error) {
-  // Un fallo de Postgres deja el catálogo vacío, no una página rota.
-  console.error(
-    "No se pudo cargar el catálogo:",
-    error instanceof Error ? error.message : error,
-  );
-}
-
-const products = todos
+// Llegan ya filtrados por `activo` y en el orden de la carta: una ficha
+// desactivada desde el panel desaparece de la web.
+const products = productos
   .filter((p) => (destacados ? p.destacado : true))
   .filter((p) => !allowed || allowed.includes(p.category as CategoryId));
 
@@ -59,7 +57,14 @@ const bloques = porSeccion
       .filter((b) => b.items.length > 0)
   : [];
 
-/** Productos sin sección: en modo carta se listan al final. */
+/**
+ * Productos sin sección: en modo carta se listan al final, en su propio
+ * bloque. No es un caso raro reservado a datos mal metidos: el selector de
+ * sección del panel abre en «— Ninguna —» y guarda `null`, así que una ficha
+ * nueva nace sin sección por defecto. Cuando este bloque no se pintaba,
+ * aparecía en /catalogo pero NO en /catalogo/dulce, que es justo donde el
+ * menú del sitio manda a quien busca tartas.
+ */
 const sueltos = porSeccion ? products.filter((p) => !p.seccion) : products;
 
 /** Gamas presentes en el listado, para los chips del filtro. */
@@ -158,6 +163,44 @@ function seccionLabelDe(seccion: string | null): string | undefined {
           </div>
         </div>
       ))}
+
+      {sueltos.length > 0 && (
+        /* `data-seccion` con un valor que no es ningún id de `secciones.ts`:
+           el filtro lo usa para esconder el bloque entero cuando ninguno de
+           sus productos queda visible (`[data-seccion]:not([data-product])`),
+           y al no estar entre los chips nunca puede seleccionarse. */
+        <div data-seccion="sin-seccion">
+          <div class="filete pb-3">
+            <p class="numeracion">Y además</p>
+            <h2 class="font-[family-name:var(--font-display)] text-2xl sm:text-3xl mt-1">
+              Otras referencias
+            </h2>
+          </div>
+          <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {sueltos.map((p) => (
+              <div
+                data-product
+                data-category={p.category}
+                data-grupo={grupoOfCategory(p.category as CategoryId)}
+                data-search={`${p.name} ${p.shortDescription}`}
+              >
+                <ProductCard
+                  slug={p.slug}
+                  name={p.name}
+                  category={p.category as CategoryId}
+                  imagen={imagenDe(p)}
+                  shortDescription={p.shortDescription}
+                  priceCents={p.priceCents ?? undefined}
+                  consultar={p.consultar}
+                  agotado={p.agotado}
+                  unit={p.unit ?? undefined}
+                  variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   ) : (
     <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

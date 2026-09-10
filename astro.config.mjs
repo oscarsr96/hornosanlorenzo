@@ -22,6 +22,20 @@ export default defineConfig({
       // de ejecución en Vercel: aquí se lee al construir, y `src/lib/cache.ts`
       // al invalidar. Si no coinciden, la invalidación se ignora en silencio.
       bypassToken: process.env.VERCEL_BYPASS_TOKEN,
+      // Sin esto el adaptador escribe `expiration: false` en el
+      // `prerender-config.json` (su valor por defecto): una entrada cacheada
+      // NUNCA caduca por tiempo y solo se refresca al invalidar o al
+      // desplegar. Eso convierte cualquier respuesta degradada en la verdad
+      // permanente del sitio: si Postgres parpadea justo cuando alguien pide
+      // /catalogo/dulce por primera vez, la página vacía que devuelve el
+      // `try/catch` se guarda y todo el mundo ve la tienda vacía hasta el
+      // siguiente despliegue, con un 200 que no dispara ninguna alarma.
+      // Diez minutos es la red debajo: la invalidación bajo demanda sigue
+      // dando al obrador el cambio al instante, esto solo garantiza que
+      // ningún error se quede a vivir. Va junto con el `no-store` que ponen
+      // las páginas al degradar (`~/lib/lectura-publica.ts`): con la red
+      // sola, la tienda seguiría vacía diez minutos por cada parpadeo.
+      expiration: 600,
       // Ninguna página con sesión puede entrar en una caché compartida: lo
       // que se guardara ahí se le serviría a la siguiente persona. Esta lista
       // es una medida de seguridad, no de rendimiento.

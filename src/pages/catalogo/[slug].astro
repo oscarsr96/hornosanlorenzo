@@ -5,6 +5,7 @@ import AddToCart from "~/islands/AddToCart.tsx";
 import { categoryById, isCategoryId } from "~/data/categories";
 import { seccionById, isSeccionId } from "~/data/secciones";
 import { obtenerProducto } from "~/lib/db/productos";
+import { SIN_CACHE } from "~/lib/lectura-publica";
 import { aHtml } from "~/lib/markdown";
 
 // Lee de la base de datos: bajo demanda, con la caché ISR delante
@@ -14,17 +15,29 @@ export const prerender = false;
 const { slug } = Astro.params;
 // `soloActivo`: una ficha desactivada tampoco se ve escribiendo su URL.
 let product: Awaited<ReturnType<typeof obtenerProducto>> = null;
+let fallo = false;
 try {
   product = slug ? await obtenerProducto(slug, { soloActivo: true }) : null;
 } catch (error) {
   // Un fallo de Postgres aquí no puede convertirse en un 500: se trata como
   // si la ficha no existiera, igual que un slug inventado.
+  fallo = true;
   console.error(
     "No se pudo cargar el producto:",
     error instanceof Error ? error.message : error,
   );
 }
-if (!product) return new Response("No encontrado", { status: 404 });
+// El 404 de un slug que no existe SÍ puede cachearse (y el panel invalida
+// esta ruta al crear la ficha). El de un fallo de la base de datos no: sería
+// una ficha real convertida en «no existe» para siempre, porque una entrada
+// de ISR solo se refresca al invalidar, al desplegar o al caducar.
+// `astro check` avisa de que esta variable «no se usa»: el .tsx que genera
+// para diagnosticar no incluye el `return` del frontmatter, así que no ve
+// la única línea que la lee. Es un falso positivo del comprobador, no
+// código muerto — comprobado quitando el `return` y viendo desaparecer el
+// aviso. El resumen de `pnpm check` sigue en 0 errores y 0 avisos.
+const cabeceras404 = fallo ? SIN_CACHE : undefined;
+if (!product) return new Response("No encontrado", { status: 404, headers: cabeceras404 });
 
 const cuerpo = await aHtml(product.cuerpo);
 // `category`/`seccion` son texto libre en la base de datos (sin CHECK ni FK):

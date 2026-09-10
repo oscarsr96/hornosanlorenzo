@@ -6,7 +6,8 @@ import ProductCard from "~/components/ProductCard.astro";
 import ServiceCard from "~/components/ServiceCard.astro";
 import StoreCard from "~/components/StoreCard.astro";
 import SectionLabel from "~/components/SectionLabel.astro";
-import { listarProductos, type Producto } from "~/lib/db/productos";
+import type { Producto } from "~/lib/db/productos";
+import { catalogoPublico } from "~/lib/lectura-publica";
 import type { CategoryId } from "~/data/categories";
 import { services } from "~/data/services";
 import { stores } from "~/data/stores";
@@ -17,16 +18,10 @@ import { tradicion } from "~/data/tradicion";
 // y el panel invalidándola al guardar.
 export const prerender = false;
 
-let productsAll: Producto[] = [];
-try {
-  productsAll = await listarProductos({ soloActivos: true });
-} catch (error) {
-  // Un fallo de Postgres deja la home sin destacados, no una página rota.
-  console.error(
-    "No se pudieron cargar los destacados:",
-    error instanceof Error ? error.message : error,
-  );
-}
+// Un fallo de Postgres deja la home sin destacados, no una página rota — y
+// marca la respuesta como `no-store` para que esa home sin destacados no se
+// quede cacheada (`~/lib/lectura-publica.ts`).
+const productsAll: Producto[] = await catalogoPublico(Astro.response);
 // `listarProductos` ya devuelve en el orden de la carta.
 const featured = productsAll.filter((p) => p.destacado).slice(0, 6);
 
