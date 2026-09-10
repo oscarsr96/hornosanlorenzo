@@ -1,0 +1,48 @@
+---
+// src/layouts/AdminLayout.astro
+import BaseLayout from "~/layouts/BaseLayout.astro";
+
+interface Props {
+  titulo: string;
+}
+const { titulo } = Astro.props;
+
+// Aquí NO se comprueba la sesión: eso lo hace el middleware, que es quien
+// puede cortar la petición de verdad. Este layout solo pinta.
+//
+// Datos de clientes y pedidos: ni caché compartida ni disco del navegador.
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const secciones = [
+  { href: "/admin/pedidos", label: "Pedidos" },
+  { href: "/admin/clientes", label: "Clientes" },
+];
+const actual = Astro.url.pathname;
+---
+<BaseLayout title={`${titulo} — Panel`} description="Panel de administración" noindex>
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+    <header class="filete pb-4">
+      <p class="numeracion">Panel</p>
+      <h1 class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl mt-1">{titulo}</h1>
+    </header>
+
+    <nav class="mt-6 flex flex-wrap gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)]">
+      {secciones.map((s) => (
+        <a
+          href={s.href}
+          class:list={[
+            "px-4 py-2 text-sm font-semibold bg-[color:var(--color-leche)] hover:bg-[color:var(--color-latte)] transition-colors",
+            actual === s.href && "bg-[color:var(--color-latte)] text-[color:var(--color-moka)]",
+          ]}
+          aria-current={actual === s.href ? "page" : undefined}
+        >
+          {s.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="mt-8">
+      <slot />
+    </div>
+  </div>
+</BaseLayout>

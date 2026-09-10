@@ -1,5 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
 import { auth } from "~/lib/auth/server";
+import { guardiaAdmin } from "~/lib/auth/guardia";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   // Las páginas prerenderizadas se generan en build, sin petición real: no
@@ -31,6 +32,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     );
     context.locals.usuario = null;
   }
+
+  // El panel se cierra aquí y no en cada página: un componente `.astro` no
+  // puede cortar una petición devolviendo una Response, y una comprobación
+  // repetida en cada fichero es una comprobación que algún día falta en el
+  // fichero nuevo. Si `getSession` falló arriba, `usuario` es null y esto
+  // manda a /acceso, que es el fallo seguro.
+  const corte = guardiaAdmin({
+    usuario: context.locals.usuario,
+    pathname: context.url.pathname,
+  });
+  if (corte) return corte;
 
   return next();
 });
