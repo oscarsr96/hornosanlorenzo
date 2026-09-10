@@ -67,6 +67,13 @@ export default defineConfig({
       ],
     },
   }),
+  // Las fotos del panel viven en Vercel Blob: sin esto, `<Image>` no las
+  // optimiza (y ni siquiera las sirve, según el caso).
+  image: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
+    ],
+  },
   trailingSlash: "never",
   // «Hostelería y Empresas» pasó a ser «A quién servimos»: la URL vieja puede
   // estar compartida por ahí fuera, así que se redirige en vez de romperse.
