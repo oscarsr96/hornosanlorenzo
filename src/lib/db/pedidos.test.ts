@@ -124,4 +124,36 @@ describeSiHayBD("repositorio de pedidos", () => {
     expect(ids.indexOf(nuevo)).toBeLessThan(ids.indexOf(viejo));
     expect(lista.every((p) => p.lineas.length > 0)).toBe(true);
   });
+
+  it("crearPedidoReconstruido es idempotente: dos entregas del mismo webhook no duplican las líneas", async () => {
+    const datos = {
+      stripeSessionId: "cs_test_reconstruido",
+      email: "cliente@example.com",
+      telefono: "666123456",
+      nombre: "Ana",
+      notas: null,
+      totalCents: 4270,
+      lineas: [
+        { nombre: "Tarta de queso", qty: 2, unitPriceCents: 1850 },
+        { nombre: "Croissant", qty: 3, unitPriceCents: 190 },
+      ],
+    };
+
+    await repo.crearPedidoReconstruido(datos);
+    await repo.crearPedidoReconstruido(datos);
+
+    const { rows: pedidos } = await pool.query(
+      "select count(*)::int as n from pedidos where stripe_session_id = $1",
+      [datos.stripeSessionId],
+    );
+    expect(pedidos[0].n).toBe(1);
+
+    const { rows: lineas } = await pool.query(
+      `select count(*)::int as n from lineas_pedido l
+        join pedidos p on p.id = l.pedido_id
+       where p.stripe_session_id = $1`,
+      [datos.stripeSessionId],
+    );
+    expect(lineas[0].n).toBe(2);
+  });
 });

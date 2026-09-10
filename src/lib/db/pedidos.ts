@@ -180,6 +180,14 @@ export async function crearPedidoReconstruido(
     );
     const id = rows[0].id;
 
+    // Idempotencia frente a entregas repetidas del webhook: si dos avisos de
+    // Stripe llegan mientras la base seguía caída, el segundo `insert` de
+    // arriba entra por la rama `on conflict` y devuelve el mismo `id` que el
+    // primero. Sin este borrado previo, cada entrega añadiría su propia
+    // copia de las líneas; borrando primero, la segunda transacción sustituye
+    // las líneas por un juego idéntico en vez de sumarlas.
+    await cliente.query("delete from lineas_pedido where pedido_id = $1", [id]);
+
     for (const [i, linea] of datos.lineas.entries()) {
       await cliente.query(
         `insert into lineas_pedido (pedido_id, nombre, qty, unit_price_cents, orden)
