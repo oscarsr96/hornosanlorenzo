@@ -1,4 +1,3 @@
-import { getCollection } from "astro:content";
 import { z } from "zod";
 import {
   isDateAllowed,
@@ -10,12 +9,13 @@ import {
   MIN_ORDER_CENTS,
 } from "~/lib/entrega";
 import { stores, type StoreId } from "~/data/stores";
+import { productosParaPedido } from "~/lib/db/productos";
 
 /**
  * Modelo de pedido del lado del servidor.
  *
  * El navegador solo manda referencias y cantidades: los precios se recalculan
- * aquí a partir de la colección de contenido, que es la única fuente de verdad.
+ * aquí a partir de la tabla `productos`, que es la única fuente de verdad.
  * Nunca se confía en un importe que venga del cliente.
  */
 
@@ -119,32 +119,42 @@ export async function priceOrder(
     throw new OrderError("El teléfono de contacto no parece válido.");
   }
 
-  const catalog = await getCollection("products");
-  const bySlug = new Map(catalog.map((p) => [p.id, p]));
+  // La fuente de verdad del precio es la tabla `productos`. Se piden solo los
+  // slugs del carrito, no el catálogo entero: son 98 fichas y aquí hacen falta
+  // dos o tres.
+  const bySlug = await productosParaPedido(payload.items.map((i) => i.slug));
 
   const lines: PricedLine[] = [];
   for (const item of payload.items) {
     const product = bySlug.get(item.slug);
-    if (!product) {
+    if (!product || !product.activo) {
+      // Mismo mensaje para «no existe» y «desactivado»: para quien compra son
+      // lo mismo, y distinguirlo solo serviría para adivinar qué hay detrás.
       throw new OrderError(`El producto «${item.slug}» ya no está disponible.`);
     }
 
-    if (product.data.consultar || product.data.priceCents === undefined) {
+    if (product.agotado) {
       throw new OrderError(
-        `«${product.data.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
+        `«${product.name}» se ha agotado. Quítalo del carrito y vuelve a intentarlo.`,
       );
     }
 
-    let unitPriceCents = product.data.priceCents;
+    if (product.consultar || product.priceCents === null) {
+      throw new OrderError(
+        `«${product.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
+      );
+    }
+
+    let unitPriceCents = product.priceCents;
     let variantLabel: string | undefined;
 
     if (item.variantId) {
-      const variant = product.data.variants?.find(
-        (v) => v.id === item.variantId,
+      const variant = product.variantes.find(
+        (v) => v.variantId === item.variantId,
       );
       if (!variant) {
         throw new OrderError(
-          `La opción elegida de «${product.data.name}» ya no está disponible.`,
+          `La opción elegida de «${product.name}» ya no está disponible.`,
         );
       }
       unitPriceCents = variant.priceCents;
@@ -153,7 +163,7 @@ export async function priceOrder(
 
     lines.push({
       slug: item.slug,
-      name: product.data.name,
+      name: product.name,
       variantLabel,
       qty: item.qty,
       unitPriceCents,
