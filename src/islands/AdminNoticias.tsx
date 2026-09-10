@@ -1,0 +1,550 @@
+import { useState } from "react";
+import { formatDate } from "~/lib/format";
+
+/**
+ * Misma forma que `Noticia` de `~/lib/db/noticias`, redefinida aquí en vez
+ * de importada: ese módulo arrastra `~/lib/db/pool` (Postgres), que no
+ * tiene sentido meter en el bundle de una isla de cliente. Mismo patrón que
+ * `CheckoutFlow.tsx` con `Direccion`.
+ */
+export type Noticia = {
+  id: string;
+  slug: string;
+  titulo: string;
+  excerpt: string;
+  cuerpo: string;
+  fecha: string;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  tags: string[];
+  publicada: boolean;
+};
+
+type Props = {
+  noticiasIniciales: Noticia[];
+};
+
+// Mismos tokens y patrón de campo/error que `CuentaDirecciones.tsx`: nada
+// nuevo aquí, solo se reutiliza lo que ya fija el panel para campos,
+// errores y botones. El manual de marca prohíbe esquinas redondeadas y
+// sombras, de ahí el `borderRadius: 0` explícito.
+const label: React.CSSProperties = {
+  fontSize: 11,
+  textTransform: "uppercase",
+  letterSpacing: "0.18em",
+  color: "var(--color-ink-muted)",
+  fontWeight: 500,
+};
+
+const field: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  padding: "0.75rem 1rem",
+  border: "1px solid var(--color-avellana)",
+  borderRadius: 0,
+  fontSize: 14,
+  fontFamily: "inherit",
+  background: "var(--color-leche)",
+  marginTop: 8,
+};
+
+const MENSAJE_GENERICO = "Algo ha fallado. Inténtalo de nuevo.";
+
+/** Fecha de hoy en formato `YYYY-MM-DD`, para precargar el formulario. */
+function hoyISO(): string {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+type FormularioNoticia = {
+  titulo: string;
+  fecha: string;
+  excerpt: string;
+  cuerpo: string;
+  tagsTexto: string;
+  imageUrl: string | null;
+  imageAlt: string;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  publicada: boolean;
+};
+
+const FORMULARIO_VACIO: FormularioNoticia = {
+  titulo: "",
+  fecha: hoyISO(),
+  excerpt: "",
+  cuerpo: "",
+  tagsTexto: "",
+  imageUrl: null,
+  imageAlt: "",
+  imageWidth: null,
+  imageHeight: null,
+  publicada: false,
+};
+
+function formularioDesdeNoticia(n: Noticia): FormularioNoticia {
+  return {
+    titulo: n.titulo,
+    fecha: n.fecha,
+    excerpt: n.excerpt,
+    cuerpo: n.cuerpo,
+    tagsTexto: n.tags.join(", "),
+    imageUrl: n.imageUrl,
+    imageAlt: n.imageAlt ?? "",
+    imageWidth: n.imageWidth,
+    imageHeight: n.imageHeight,
+    publicada: n.publicada,
+  };
+}
+
+async function llamarNoticias(
+  method: "POST" | "PUT" | "DELETE",
+  body: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string; noticia?: Noticia }> {
+  try {
+    const respuesta = await fetch("/api/admin/noticias", {
+      method,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const cuerpo = await respuesta.json().catch(() => null);
+    if (!respuesta.ok) {
+      return { ok: false, error: cuerpo?.error ?? MENSAJE_GENERICO };
+    }
+    return { ok: true, noticia: cuerpo?.noticia };
+  } catch {
+    return {
+      ok: false,
+      error: "No hemos podido conectar. Comprueba tu conexión.",
+    };
+  }
+}
+
+export default function AdminNoticias({ noticiasIniciales }: Props) {
+  const [noticias, setNoticias] = useState(noticiasIniciales);
+  const [abierto, setAbierto] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [formulario, setFormulario] =
+    useState<FormularioNoticia>(FORMULARIO_VACIO);
+  const [errorServidor, setErrorServidor] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [ocupada, setOcupada] = useState<string | null>(null);
+
+  function abrirNueva() {
+    setFormulario(FORMULARIO_VACIO);
+    setEditandoId(null);
+    setErrorServidor(null);
+    setMensaje(null);
+    setAbierto(true);
+  }
+
+  function abrirEditar(n: Noticia) {
+    setFormulario(formularioDesdeNoticia(n));
+    setEditandoId(n.id);
+    setErrorServidor(null);
+    setMensaje(null);
+    setAbierto(true);
+  }
+
+  function cerrar() {
+    setAbierto(false);
+    setEditandoId(null);
+  }
+
+  function actualizaCampo<K extends keyof FormularioNoticia>(
+    campo: K,
+    valor: FormularioNoticia[K],
+  ) {
+    setFormulario((actual) => ({ ...actual, [campo]: valor }));
+  }
+
+  async function onFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichero = e.target.files?.[0];
+    e.target.value = ""; // permite volver a elegir el mismo fichero
+    if (!fichero) return;
+
+    setErrorServidor(null);
+    setSubiendoFoto(true);
+
+    const cuerpo = new FormData();
+    cuerpo.append("foto", fichero);
+    cuerpo.append("carpeta", "noticias");
+
+    try {
+      const respuesta = await fetch("/api/admin/imagen", {
+        method: "POST",
+        body: cuerpo,
+      });
+      const datos = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) {
+        setErrorServidor(datos?.error ?? MENSAJE_GENERICO);
+      } else {
+        setFormulario((actual) => ({
+          ...actual,
+          imageUrl: datos.url,
+          imageWidth: datos.ancho,
+          imageHeight: datos.alto,
+        }));
+      }
+    } catch {
+      setErrorServidor("No hemos podido conectar. Comprueba tu conexión.");
+    } finally {
+      setSubiendoFoto(false);
+    }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // Mientras la foto sube, guardar dejaría la noticia sin ella: la subida
+    // manda la URL final al estado, y hasta que no llega no hay nada que
+    // enviar todavía.
+    if (guardando || subiendoFoto) return;
+
+    setErrorServidor(null);
+    setMensaje(null);
+    setGuardando(true);
+
+    const datos = {
+      titulo: formulario.titulo.trim(),
+      excerpt: formulario.excerpt.trim(),
+      cuerpo: formulario.cuerpo,
+      fecha: formulario.fecha,
+      imageUrl: formulario.imageUrl,
+      imageAlt: formulario.imageAlt.trim() || null,
+      imageWidth: formulario.imageWidth,
+      imageHeight: formulario.imageHeight,
+      tags: formulario.tagsTexto
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      publicada: formulario.publicada,
+    };
+
+    const resultado = editandoId
+      ? await llamarNoticias("PUT", { id: editandoId, ...datos })
+      : await llamarNoticias("POST", datos);
+
+    setGuardando(false);
+    if (!resultado.ok || !resultado.noticia) {
+      setErrorServidor(resultado.error ?? MENSAJE_GENERICO);
+      return;
+    }
+
+    // Se refresca la lista con lo que ha devuelto el servidor —el `slug` y
+    // el `id` los decide él— y no con lo que tenía el formulario.
+    const guardada = resultado.noticia;
+    setNoticias((actuales) =>
+      actuales.some((n) => n.id === guardada.id)
+        ? actuales.map((n) => (n.id === guardada.id ? guardada : n))
+        : [guardada, ...actuales],
+    );
+    setMensaje("Guardado. En la web se ve en unos segundos.");
+    cerrar();
+  }
+
+  async function onBorrar(n: Noticia) {
+    if (ocupada) return;
+    if (!window.confirm(`¿Borrar «${n.titulo}»? No se puede deshacer.`)) return;
+
+    setErrorServidor(null);
+    setMensaje(null);
+    setOcupada(n.id);
+
+    const resultado = await llamarNoticias("DELETE", { id: n.id });
+
+    setOcupada(null);
+    if (!resultado.ok) {
+      setErrorServidor(resultado.error ?? MENSAJE_GENERICO);
+      return;
+    }
+
+    setNoticias((actuales) => actuales.filter((x) => x.id !== n.id));
+    if (editandoId === n.id) cerrar();
+  }
+
+  return (
+    <div style={{ maxWidth: "40rem" }}>
+      {mensaje && (
+        <p
+          role="status"
+          style={{
+            marginBottom: 16,
+            padding: "0.75rem 1rem",
+            border: "1px solid var(--color-avellana)",
+            background: "var(--color-latte)",
+            fontSize: 13,
+          }}
+        >
+          {mensaje}
+        </p>
+      )}
+
+      {!abierto && (
+        <button
+          type="button"
+          className="btn btn-primario"
+          onClick={abrirNueva}
+          style={{ border: "none" }}
+        >
+          Escribir una noticia
+        </button>
+      )}
+
+      {!abierto && noticias.length === 0 && (
+        <p style={{ marginTop: 16, color: "var(--color-ink-muted)" }}>
+          Todavía no hay ninguna noticia escrita.
+        </p>
+      )}
+
+      {!abierto && noticias.length > 0 && (
+        <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0" }}>
+          {noticias.map((n) => (
+            <li
+              key={n.id}
+              style={{
+                border: "1px solid var(--color-avellana)",
+                padding: "0.75rem 1rem",
+                marginTop: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => abrirEditar(n)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  flex: 1,
+                }}
+              >
+                <p className="numeracion">
+                  {n.publicada ? "Publicada" : "Borrador"} ·{" "}
+                  {formatDate(new Date(`${n.fecha}T00:00:00`))}
+                </p>
+                <p style={{ marginTop: 4, fontWeight: 600 }}>{n.titulo}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => onBorrar(n)}
+                disabled={ocupada === n.id}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 13,
+                  textDecoration: "underline",
+                  color: "var(--color-teja)",
+                  cursor: ocupada === n.id ? "not-allowed" : "pointer",
+                  opacity: ocupada === n.id ? 0.6 : 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Borrar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {abierto && (
+        <form onSubmit={onSubmit} noValidate>
+          <div>
+            <label style={label} htmlFor="an-titulo">
+              Título
+            </label>
+            <input
+              id="an-titulo"
+              value={formulario.titulo}
+              onChange={(e) => actualizaCampo("titulo", e.target.value)}
+              required
+              minLength={3}
+              maxLength={140}
+              style={field}
+            />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-fecha">
+              Fecha
+            </label>
+            <input
+              id="an-fecha"
+              type="date"
+              value={formulario.fecha}
+              onChange={(e) => actualizaCampo("fecha", e.target.value)}
+              required
+              style={field}
+            />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-excerpt">
+              Entradilla ({formulario.excerpt.length}/240)
+            </label>
+            <textarea
+              id="an-excerpt"
+              value={formulario.excerpt}
+              onChange={(e) =>
+                actualizaCampo("excerpt", e.target.value.slice(0, 240))
+              }
+              required
+              minLength={10}
+              maxLength={240}
+              rows={2}
+              style={{ ...field, resize: "vertical" }}
+            />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-cuerpo">
+              Cuerpo (Markdown)
+            </label>
+            <textarea
+              id="an-cuerpo"
+              value={formulario.cuerpo}
+              onChange={(e) => actualizaCampo("cuerpo", e.target.value)}
+              rows={10}
+              style={{ ...field, resize: "vertical", fontFamily: "monospace" }}
+            />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-tags">
+              Etiquetas (separadas por comas)
+            </label>
+            <input
+              id="an-tags"
+              value={formulario.tagsTexto}
+              onChange={(e) => actualizaCampo("tagsTexto", e.target.value)}
+              placeholder="roscón, temporada, obrador"
+              style={field}
+            />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-foto">
+              Foto
+            </label>
+            <input
+              id="an-foto"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={onFoto}
+              disabled={subiendoFoto}
+              style={{ marginTop: 8 }}
+            />
+            {subiendoFoto && (
+              <p
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                Subiendo la foto…
+              </p>
+            )}
+            {formulario.imageUrl && !subiendoFoto && (
+              <img
+                src={formulario.imageUrl}
+                alt=""
+                style={{ marginTop: 8, maxWidth: 200, display: "block" }}
+              />
+            )}
+          </div>
+
+          {formulario.imageUrl && (
+            <div style={{ marginTop: 16 }}>
+              <label style={label} htmlFor="an-alt">
+                Texto alternativo de la foto
+              </label>
+              <input
+                id="an-alt"
+                value={formulario.imageAlt}
+                onChange={(e) => actualizaCampo("imageAlt", e.target.value)}
+                placeholder="Qué se ve en la foto"
+                maxLength={200}
+                style={field}
+              />
+            </div>
+          )}
+
+          <div
+            style={{
+              marginTop: 16,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <input
+              id="an-publicada"
+              type="checkbox"
+              checked={formulario.publicada}
+              onChange={(e) => actualizaCampo("publicada", e.target.checked)}
+            />
+            <label htmlFor="an-publicada" style={{ fontSize: 14 }}>
+              Publicada
+            </label>
+          </div>
+
+          {errorServidor && (
+            <p
+              role="alert"
+              style={{
+                marginTop: 16,
+                padding: "0.75rem 1rem",
+                border: "1px solid var(--color-teja)",
+                color: "var(--color-teja)",
+                fontSize: 13,
+              }}
+            >
+              {errorServidor}
+            </p>
+          )}
+
+          <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
+            <button
+              type="submit"
+              className="btn btn-primario"
+              disabled={guardando || subiendoFoto}
+              style={{
+                border: "none",
+                opacity: guardando || subiendoFoto ? 0.6 : 1,
+                cursor: guardando || subiendoFoto ? "not-allowed" : "pointer",
+              }}
+            >
+              {guardando ? "Guardando…" : "Guardar"}
+            </button>
+            <button
+              type="button"
+              onClick={cerrar}
+              disabled={guardando}
+              style={{
+                background: "none",
+                border: "1px solid var(--color-avellana)",
+                padding: "0.75rem 1.25rem",
+                fontSize: 14,
+                cursor: guardando ? "not-allowed" : "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,23 @@
+---
+// src/pages/admin/noticias.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import AdminNoticias from "~/islands/AdminNoticias.tsx";
+import { listarNoticias, type Noticia } from "~/lib/db/noticias";
+
+export const prerender = false;
+
+let noticiasIniciales: Noticia[] = [];
+try {
+  noticiasIniciales = await listarNoticias({ soloPublicadas: false });
+} catch (error) {
+  // La isla sabe recargar la lista por su cuenta: mejor entrar con la lista
+  // vacía y poder reintentar que ver un 500 al abrir el panel.
+  console.error(
+    "No se pudieron cargar las noticias del panel:",
+    error instanceof Error ? error.message : error,
+  );
+}
+---
+<AdminLayout titulo="Noticias">
+  <AdminNoticias client:load noticiasIniciales={noticiasIniciales} />
+</AdminLayout>
