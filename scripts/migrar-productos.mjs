@@ -143,15 +143,24 @@ for (const fichero of ficheros) {
         dif.push("«temporada» distinto");
       if (f.orden !== (data.order ?? 100))
         dif.push(`orden: ${f.orden} ≠ ${data.order ?? 100}`);
+      // Comprobación en los dos sentidos: mientras los Markdown sigan siendo
+      // la fuente de verdad (hasta la tarea 20), una foto se puede quitar de
+      // una ficha sin volver a volcarla, y entonces la base se queda con un
+      // image_url viejo que --verificar tiene que señalar igual que la falta
+      // de foto en el otro sentido.
       if (data.image && !f.image_url) dif.push("sin foto");
+      if (!data.image && f.image_url)
+        dif.push("foto de más: no está en el Markdown");
       if ((f.image_alt ?? null) !== (data.imageAlt ?? null))
         dif.push("texto alternativo distinto");
       // Las 98 fichas comparten 8 fotos: si un resize saliera mal, las
       // dimensiones estarían mal en todas las fichas que usan esa foto a la
       // vez, así que se comparan aunque la URL ya coincida. Se recalculan
       // con el mismo `resize` que usa el volcado —no a mano: el redondeo de
-      // sharp no tiene por qué coincidir con una cuenta hecha aparte.
-      if (data.image) {
+      // sharp no tiene por qué coincidir con una cuenta hecha aparte. Si no
+      // hay foto guardada, "sin foto" ya lo dice: comparar dimensiones aquí
+      // solo añadiría un «null×null ≠ …» redundante sobre la misma causa.
+      if (data.image && f.image_url) {
         const ruta = data.image.replace(/^(\.\.\/)+/, "");
         try {
           const esperado = await dimensionesEsperadas(ruta);
@@ -184,6 +193,15 @@ for (const fichero of ficheros) {
           if (vs[i].variant_id !== v.id || vs[i].price_cents !== v.priceCents) {
             dif.push(
               `variante ${v.id}: ${vs[i].price_cents} ≠ ${v.priceCents}`,
+            );
+          }
+          // `label` es el texto que ve el cliente en el selector de tamaño:
+          // se escribe en la base (`insert into variantes (... label ...)`)
+          // pero no rompe ningún constraint si sale mal, así que si no se
+          // compara aquí la verificación no lo detectaría nunca.
+          if (vs[i].variant_id !== v.id || vs[i].label !== v.label) {
+            dif.push(
+              `variante ${v.id}: etiqueta «${vs[i].label}» ≠ «${v.label}»`,
             );
           }
         }
