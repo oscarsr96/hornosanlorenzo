@@ -153,4 +153,26 @@ describe("guardia y validación de /api/admin/productos", () => {
     } as never);
     expect(r.status).toBe(400);
   });
+
+  it("dos variantes con el mismo identificador tampoco: se rechaza antes de llegar a Postgres", async () => {
+    const { POST } = await import("~/pages/api/admin/productos");
+    const r = await POST({
+      request: peticionProducto({
+        name: "Tarta",
+        category: "tartas",
+        shortDescription: "Una tarta.",
+        priceCents: 1000,
+        consultar: false,
+        allergens: [],
+        variantes: [
+          { variantId: "grande", label: "Grande", priceCents: 2000 },
+          { variantId: "grande", label: "Extra grande", priceCents: 3000 },
+        ],
+      }),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(400);
+    const cuerpo = await r.json();
+    expect(cuerpo.error).toMatch(/identificador/i);
+  });
 });

@@ -1036,8 +1036,11 @@ export default function AdminProductos({ productosIniciales }: Props) {
                 }}
               >
                 <div style={{ flex: "1 1 8rem" }}>
-                  <label style={label}>Identificador</label>
+                  <label style={label} htmlFor={`ap-variante-${idx}-id`}>
+                    Identificador
+                  </label>
                   <input
+                    id={`ap-variante-${idx}-id`}
                     value={v.variantId}
                     onChange={(e) =>
                       actualizaVariante(idx, "variantId", e.target.value)
@@ -1048,8 +1051,11 @@ export default function AdminProductos({ productosIniciales }: Props) {
                   />
                 </div>
                 <div style={{ flex: "1 1 10rem" }}>
-                  <label style={label}>Etiqueta</label>
+                  <label style={label} htmlFor={`ap-variante-${idx}-label`}>
+                    Etiqueta
+                  </label>
                   <input
+                    id={`ap-variante-${idx}-label`}
                     value={v.label}
                     onChange={(e) =>
                       actualizaVariante(idx, "label", e.target.value)
@@ -1060,8 +1066,11 @@ export default function AdminProductos({ productosIniciales }: Props) {
                   />
                 </div>
                 <div style={{ flex: "0 1 7rem" }}>
-                  <label style={label}>Precio (€)</label>
+                  <label style={label} htmlFor={`ap-variante-${idx}-precio`}>
+                    Precio (€)
+                  </label>
                   <input
+                    id={`ap-variante-${idx}-precio`}
                     type="text"
                     inputMode="decimal"
                     value={v.priceEuros}

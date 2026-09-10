@@ -79,7 +79,23 @@ const esquema = z
     message:
       "Escribe qué se ve en la foto: hace falta para quien no puede verla.",
     path: ["imageAlt"],
-  });
+  })
+  // La base de datos ya lo impide con `unique (producto_id, variant_id)`
+  // (migración 007), pero dejar que llegue hasta ahí solo consigue que
+  // `traduce()` tenga que reconocer esa violación por su nombre de
+  // restricción — mejor cortarlo aquí, con un mensaje que dice qué ha
+  // pasado en vez de esperar al error de Postgres.
+  .refine(
+    (d) => {
+      const ids = d.variantes.map((v) => v.variantId);
+      return new Set(ids).size === ids.length;
+    },
+    {
+      message:
+        "Dos variantes no pueden compartir identificador. Cámbialo en una de ellas.",
+      path: ["variantes"],
+    },
+  );
 
 async function cuerpoJSON(request: Request): Promise<unknown> {
   try {
@@ -89,9 +105,36 @@ async function cuerpoJSON(request: Request): Promise<unknown> {
   }
 }
 
-/** El primer mensaje de zod, que ya está escrito en español y para leerse. */
-const primerError = (error: z.ZodError) =>
-  error.issues[0]?.message ?? "Faltan datos de la ficha.";
+/**
+ * Nombre en español de cada campo de una variante, para el mensaje de
+ * `primerError` cuando el problema está dentro de `variantes`: sin esto,
+ * un identificador o un precio en blanco devuelven el mensaje genérico de
+ * zod («Too small: expected string to have >=1 characters»), que no dice
+ * ni qué variante ni qué campo hay que arreglar.
+ */
+const CAMPO_VARIANTE: Record<string, string> = {
+  variantId: "un identificador",
+  label: "una etiqueta",
+  priceCents: "un precio mayor que cero",
+  orden: "un orden válido",
+};
+
+/**
+ * El primer mensaje de zod, que ya está escrito en español y para leerse —
+ * salvo dentro de `variantes`, donde el mensaje por defecto no dice ni la
+ * variante ni el campo, y aquí se construye uno que sí lo dice.
+ */
+const primerError = (error: z.ZodError) => {
+  const issue = error.issues[0];
+  if (!issue) return "Faltan datos de la ficha.";
+  const [raiz, indice, campo] = issue.path;
+  if (raiz === "variantes" && typeof indice === "number") {
+    const humano =
+      typeof campo === "string" ? (CAMPO_VARIANTE[campo] ?? "un dato") : null;
+    if (humano) return `La variante ${indice + 1} necesita ${humano}.`;
+  }
+  return issue.message;
+};
 
 export const GET: APIRoute = async ({ locals }) => {
   if (!esAdmin(locals.usuario)) return noEncontrado();
