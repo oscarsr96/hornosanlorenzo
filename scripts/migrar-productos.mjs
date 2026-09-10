@@ -2,13 +2,22 @@
  * Vuelca `src/content/products/*.md` a las tablas `productos` y `variantes`,
  * subiendo las fotos al almacén.
  *
- *   pnpm migrar:productos              vuelca
+ *   pnpm migrar:productos              vuelca (solo con la tabla vacía)
  *   pnpm migrar:productos --verificar  no escribe: compara ficha a ficha
+ *   pnpm migrar:productos --forzar     vuelca PISANDO lo que haya
  *
- * Idempotente: el slug es el nombre del fichero, así que las URLs de siempre
- * no cambian y volver a ejecutarlo actualiza en vez de duplicar. El
- * `on conflict` no toca `activo`/`agotado`: si el obrador marcó una ficha
+ * Repetible, que no es lo mismo que idempotente. El slug es el nombre del
+ * fichero, así que las URLs de siempre no cambian y volver a ejecutarlo
+ * actualiza en vez de duplicar; pero el `on conflict` SOBREESCRIBE nombre,
+ * categoría, sección, precio, descripción, cuerpo, alérgenos, orden y fotos
+ * con lo que diga el Markdown, y borra y reescribe todas las variantes. Lo
+ * único que respeta es `activo`/`agotado`: si el obrador marcó una ficha
  * como agotada, repetir el volcado no la resucita.
+ *
+ * Es decir: es idempotente frente a SÍ MISMO, no frente al panel. En cuanto
+ * el obrador edita una ficha desde `/admin/productos`, repetir el volcado la
+ * revierte. Por eso se niega a escribir sobre una tabla con filas salvo con
+ * `--forzar`.
  *
  * Importa `@vercel/blob` y `sharp` directamente en vez de pasar por
  * `src/lib/storage` porque esto es un script de Node suelto, fuera del build
@@ -29,6 +38,7 @@ import sharp from "sharp";
 
 const DIR = "src/content/products";
 const soloVerificar = process.argv.includes("--verificar");
+const forzar = process.argv.includes("--forzar");
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -92,6 +102,52 @@ async function dimensionesEsperadas(ruta) {
   dimensionesCache.set(ruta, esperado);
   return esperado;
 }
+
+
+/**
+ * Guardia de un solo uso. El `on conflict (slug) do update` de más abajo
+ * pisa nombre, categoría, sección, precio, descripción, cuerpo, alérgenos,
+ * orden y fotos con lo que diga el Markdown, y borra y reescribe TODAS las
+ * variantes. Eso está bien mientras la base de datos sea un volcado del
+ * repositorio; deja de estarlo en cuanto el obrador empieza a editar desde
+ * el panel — que es el plan explícito de `tasks/todo.md`: los alérgenos de
+ * las 98 fichas se meten desde ahí.
+ *
+ * Tres meses después de arrancar, `pnpm migrar:productos` sin más (para
+ * añadir una ficha que se quedó fuera, o de memoria queriendo escribir
+ * `--verificar`) revierte todo eso a los Markdown de septiembre en segundos,
+ * con un alegre «98 ficha(s) volcadas» y sin preguntar nada. Por eso: si la
+ * tabla tiene filas, no se escribe salvo que se pida a gritos con
+ * `--forzar`.
+ */
+async function rechazaSiYaHayDatos(cliente, tabla, comando) {
+  const { rows } = await cliente.query(
+    `select count(*)::int as n from ${tabla}`,
+  );
+  const n = rows[0].n;
+  if (n === 0 || forzar) return;
+
+  console.error(
+    [
+      `La tabla \`${tabla}\` ya tiene ${n} fila(s).`,
+      "",
+      "Este volcado las SOBREESCRIBE con lo que digan los Markdown: nombre,",
+      "categoría, sección, precio, descripción, cuerpo, alérgenos, orden,",
+      "fotos y variantes. Todo lo que se haya editado desde el panel desde",
+      "el volcado inicial se perdería sin aviso.",
+      "",
+      "Si lo que quieres es comprobar que la base de datos cuadra con los",
+      `Markdown:   ${comando} --verificar`,
+      "",
+      "Si de verdad quieres volver a volcar y pisar las ediciones del panel,",
+      `hazlo a propósito:   ${comando} --forzar`,
+    ].join("\n"),
+  );
+  await cliente.end();
+  process.exit(1);
+}
+
+if (!soloVerificar) await rechazaSiYaHayDatos(cliente, "productos", "pnpm migrar:productos");
 
 const ficheros = (await readdir(DIR)).filter((f) => f.endsWith(".md")).sort();
 let escritos = 0;

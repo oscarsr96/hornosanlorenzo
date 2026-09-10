@@ -2,12 +2,17 @@
  * Vuelca las noticias de `src/content/noticias/*.md` a la tabla `noticias`,
  * subiendo sus fotos al almacén.
  *
- *   pnpm migrar:noticias              vuelca (y sube fotos)
+ *   pnpm migrar:noticias              vuelca (solo con la tabla vacía)
  *   pnpm migrar:noticias --verificar  no escribe: solo compara y avisa
+ *   pnpm migrar:noticias --forzar     vuelca PISANDO lo que haya
  *
- * Se puede ejecutar las veces que haga falta: cada noticia se identifica por
- * su slug —el nombre del fichero, para que las URLs de siempre no cambien— y
- * se actualiza en vez de duplicarse.
+ * Se puede repetir: cada noticia se identifica por su slug —el nombre del
+ * fichero, para que las URLs de siempre no cambien— y se actualiza en vez de
+ * duplicarse. Pero «se actualiza» quiere decir que el `on conflict`
+ * SOBREESCRIBE título, excerpt, cuerpo, fecha, foto, etiquetas y hasta
+ * `publicada` con lo que diga el Markdown. Cualquier noticia escrita desde
+ * el panel se revierte, y una despublicada a mano vuelve a publicarse. Por
+ * eso se niega a escribir sobre una tabla con filas salvo con `--forzar`.
  *
  * Importa `@vercel/blob` directamente en vez de pasar por `src/lib/storage`
  * porque esto es un script de Node suelto, fuera del build de Astro, y no
@@ -23,6 +28,7 @@ import sharp from "sharp";
 
 const DIR = "src/content/noticias";
 const soloVerificar = process.argv.includes("--verificar");
+const forzar = process.argv.includes("--forzar");
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -61,6 +67,48 @@ async function subeFoto(ruta) {
   });
   return { url, ancho: salida.info.width, alto: salida.info.height };
 }
+
+/**
+ * Guardia de un solo uso. El `on conflict (slug) do update` de más abajo
+ * pisa título, excerpt, cuerpo, fecha, foto, etiquetas y `publicada` con lo que
+ * diga el Markdown. Eso está bien mientras la base de datos sea un volcado del
+ * repositorio; deja de estarlo en cuanto el obrador empieza a editar desde
+ * el panel — que es justo para lo que se hizo `/admin/noticias`.
+ *
+ * Tres meses después de arrancar, `pnpm migrar:noticias` sin más (o de
+ * memoria, queriendo escribir `--verificar`) revierte las noticias del panel
+ * a los Markdown de septiembre y vuelve a publicar lo despublicado, sin
+ * preguntar nada. Por eso: si la tabla tiene filas, no se escribe salvo que
+ * se pida a gritos con `--forzar`.
+ */
+async function rechazaSiYaHayDatos(cliente, tabla, comando) {
+  const { rows } = await cliente.query(
+    `select count(*)::int as n from ${tabla}`,
+  );
+  const n = rows[0].n;
+  if (n === 0 || forzar) return;
+
+  console.error(
+    [
+      `La tabla \`${tabla}\` ya tiene ${n} fila(s).`,
+      "",
+      "Este volcado las SOBREESCRIBE con lo que digan los Markdown: título,",
+      "excerpt, cuerpo, fecha, foto, etiquetas y hasta `publicada`. Todo lo",
+      "que se haya escrito desde el panel desde el volcado inicial se",
+      "perdería sin aviso.",
+      "",
+      "Si lo que quieres es comprobar que la base de datos cuadra con los",
+      `Markdown:   ${comando} --verificar`,
+      "",
+      "Si de verdad quieres volver a volcar y pisar las ediciones del panel,",
+      `hazlo a propósito:   ${comando} --forzar`,
+    ].join("\n"),
+  );
+  await cliente.end();
+  process.exit(1);
+}
+
+if (!soloVerificar) await rechazaSiYaHayDatos(cliente, "noticias", "pnpm migrar:noticias");
 
 const ficheros = (await readdir(DIR)).filter((f) => f.endsWith(".md")).sort();
 let escritas = 0;
