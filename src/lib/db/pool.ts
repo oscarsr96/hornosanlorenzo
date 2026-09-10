@@ -16,4 +16,14 @@ if (!connectionString) {
   );
 }
 
-export const pool = new Pool({ connectionString, max: 3 });
+// `connectionTimeoutMillis`: sin esto, un `pool.connect()`/`pool.query()`
+// que no puede conseguir hueco se queda esperando para siempre, no falla.
+// Es defensa en profundidad: si algún día se reintroduce un interbloqueo
+// (varias funciones reteniendo un cliente mientras esperan otro del mismo
+// pool agotado — el bug que corrigió la tarea 14), el sitio no se cuelga en
+// silencio, lanza un error a los diez segundos que sí queda en los logs.
+export const pool = new Pool({
+  connectionString,
+  max: 3,
+  connectionTimeoutMillis: 10_000,
+});

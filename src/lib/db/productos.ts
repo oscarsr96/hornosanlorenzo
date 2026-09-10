@@ -98,16 +98,32 @@ export async function listarProductos({
   return rows;
 }
 
-export async function obtenerProducto(
+/**
+ * La consulta que arma un `Producto` a partir de su slug, parametrizada por
+ * quién la ejecuta: el pool (uso normal, vía `obtenerProducto`) o un
+ * `PoolClient` ya abierto. Existe para que `crearProducto` y
+ * `actualizarProducto` puedan releer la fila recién escrita con el mismo
+ * cliente que ya tienen reservado — ver el comentario en esas dos
+ * funciones sobre por qué esa lectura no puede pasar por `pool`.
+ */
+async function buscaPorSlug(
+  ejecutor: import("pg").Pool | import("pg").PoolClient,
   slug: string,
   { soloActivo = false }: { soloActivo?: boolean } = {},
 ): Promise<Producto | null> {
-  const { rows } = await pool.query<Producto>(
+  const { rows } = await ejecutor.query<Producto>(
     `select ${CAMPOS} from productos p
       where p.slug = $1 ${soloActivo ? "and p.activo" : ""}`,
     [slug],
   );
   return rows[0] ?? null;
+}
+
+export async function obtenerProducto(
+  slug: string,
+  opts: { soloActivo?: boolean } = {},
+): Promise<Producto | null> {
+  return buscaPorSlug(pool, slug, opts);
 }
 
 /**
@@ -205,7 +221,14 @@ export async function crearProducto(datos: DatosProducto): Promise<Producto> {
     );
     await guardaVariantes(cliente, rows[0].id, datos.variantes);
     await cliente.query("commit");
-    return (await obtenerProducto(rows[0].slug))!;
+    // Se relee con `cliente`, no con `obtenerProducto` (que usa `pool`):
+    // `cliente` ya tiene una conexión reservada del pool, y `pool.query`
+    // pediría una segunda. Con varias escrituras a la vez y el pool a
+    // tope (`max: 3` en `pool.ts`), cada `cliente` quedaría esperando un
+    // hueco para esta lectura mientras él mismo ocupa uno de los que
+    // faltan — interbloqueo, no solo lentitud. `connectionTimeoutMillis`
+    // en `pool.ts` es la segunda barrera, por si esto se reintroduce.
+    return (await buscaPorSlug(cliente, rows[0].slug))!;
   } catch (err) {
     await cliente.query("rollback");
     traduce(err);
@@ -245,7 +268,10 @@ export async function actualizarProducto(
 
     await guardaVariantes(cliente, id, datos.variantes);
     await cliente.query("commit");
-    return await obtenerProducto(rows[0].slug);
+    // Mismo motivo que en `crearProducto`: releer con `cliente`, no con
+    // `obtenerProducto`/`pool`, para no pedir una segunda conexión
+    // mientras esta sigue reservada.
+    return await buscaPorSlug(cliente, rows[0].slug);
   } catch (err) {
     await cliente.query("rollback");
     traduce(err);

@@ -87,6 +87,25 @@ describeSiHayBD("repositorio de productos", () => {
     expect(cambiado?.variantes[0].variantId).toBe("grande");
   });
 
+  it("el slug no se recalcula al editar, aunque cambie el nombre", async () => {
+    const producto = await repo.crearProducto(
+      datos({ name: "Torta de aceite" }),
+    );
+    expect(producto.slug).toBe("torta-de-aceite");
+
+    // Nombre distinto a propósito: si `actualizarProducto` recalculara el
+    // slug a partir de él, esta prueba lo detectaría. Con el mismo nombre
+    // de antes, un slug recalculado por error habría dado el mismo valor
+    // y habría pasado igual (el fallo real que se le escapó a la tarea 14
+    // la primera vez).
+    const cambiado = await repo.actualizarProducto(producto.id, {
+      ...datos({ name: "Torta de aceite de oliva virgen extra" }),
+      variantes: [],
+    });
+
+    expect(cambiado?.slug).toBe("torta-de-aceite");
+  });
+
   it("no deja guardar una ficha sin precio y sin «consultar»", async () => {
     await expect(
       repo.crearProducto(
@@ -117,16 +136,24 @@ describeSiHayBD("repositorio de productos", () => {
     const agotado = await repo.crearProducto(
       datos({ name: "Se acabó", agotado: true }),
     );
+    // La otra mitad del contrato del docstring: `priceOrder` (tarea 16)
+    // también necesita poder decir «ya no está disponible» de un producto
+    // desactivado, no solo «se ha agotado» de uno agotado.
+    const desactivado = await repo.crearProducto(
+      datos({ name: "Retirada del pedido", activo: false }),
+    );
 
     const mapa = await repo.productosParaPedido([
       vendible.slug,
       agotado.slug,
+      desactivado.slug,
       "no-existe",
     ]);
 
-    expect(mapa.size).toBe(2);
+    expect(mapa.size).toBe(3);
     expect(mapa.get(vendible.slug)?.agotado).toBe(false);
     expect(mapa.get(agotado.slug)?.agotado).toBe(true);
+    expect(mapa.get(desactivado.slug)?.activo).toBe(false);
     expect(mapa.get("no-existe")).toBeUndefined();
   });
 
