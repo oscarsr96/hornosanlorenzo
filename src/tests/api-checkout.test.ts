@@ -13,6 +13,14 @@ vi.mock("~/lib/pedido", async (original) => ({
   priceOrder,
 }));
 
+// El `original()` de arriba carga el `pedido.ts` real para quedarse con sus
+// otros exports (`OrderError`, `destinationLabel`...), y ese módulo importa
+// ahora `~/lib/db/productos`, que a su vez abre el pool de Postgres al
+// cargarse. Esta prueba nunca llama a `productosParaPedido` —`priceOrder`
+// está doblado entero, así que no llega ni a usarse— pero sin este doble el
+// fichero fallaría al cargar en cualquier entorno sin `DATABASE_URL`.
+vi.mock("~/lib/db/productos", () => ({ productosParaPedido: vi.fn() }));
+
 const sessionsCreate = vi.fn();
 vi.mock("stripe", () => ({
   default: class {

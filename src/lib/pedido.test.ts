@@ -201,6 +201,24 @@ describe("priceOrder — estados de venta", () => {
     );
   });
 
+  it("agotado y a consultar a la vez: gana el mensaje de consultar, no el de agotado", async () => {
+    // Un producto sin precio de venta online no es de los que «vuelven a
+    // haber»: decirle al cliente que lo reintente sería engañoso. El orden
+    // de las comprobaciones importa, así que se fija aquí y no queda como
+    // un detalle incidental de la implementación.
+    productosParaPedido.mockResolvedValue(
+      catalogo({
+        ...SENCILLO,
+        consultar: true,
+        priceCents: null,
+        agotado: true,
+      }),
+    );
+    await expect(priceOrder(pedidoBase(), { now: AHORA })).rejects.toThrow(
+      /se encarga hablando con el obrador/i,
+    );
+  });
+
   it("el precio sale del catálogo, nunca de lo que mande el navegador", async () => {
     // El payload no tiene ni un campo de precio, y aun así el total es exacto.
     const order = await priceOrder(pedidoBase(), { now: AHORA });

@@ -133,15 +133,20 @@ export async function priceOrder(
       throw new OrderError(`El producto «${item.slug}» ya no está disponible.`);
     }
 
-    if (product.agotado) {
-      throw new OrderError(
-        `«${product.name}» se ha agotado. Quítalo del carrito y vuelve a intentarlo.`,
-      );
-    }
-
+    // El de «consultar» va antes que el de «agotado»: un producto sin precio
+    // de venta online no es de los que vuelven a haber, así que decirle al
+    // cliente que «vuelva a intentarlo» sería engañoso. Con los dos a la vez,
+    // el mensaje correcto es el que no invita a reintentar algo que nunca
+    // podrá comprarse por aquí.
     if (product.consultar || product.priceCents === null) {
       throw new OrderError(
         `«${product.name}» se encarga hablando con el obrador: no tiene precio de venta online.`,
+      );
+    }
+
+    if (product.agotado) {
+      throw new OrderError(
+        `«${product.name}» se ha agotado. Quítalo del carrito y vuelve a intentarlo.`,
       );
     }
 
