@@ -1,9 +1,9 @@
 ---
 import ProductCard from "~/components/ProductCard.astro";
 import CategoryFilter from "~/islands/CategoryFilter.tsx";
-import { getCollection } from "astro:content";
-import { grupoCategories, grupoOfCategory, grupoLabel, type GrupoId } from "~/data/categories";
-import { secciones, seccionById } from "~/data/secciones";
+import { listarProductos, type Producto } from "~/lib/db/productos";
+import { grupoCategories, grupoOfCategory, grupoLabel, type GrupoId, type CategoryId } from "~/data/categories";
+import { secciones, seccionById, type SeccionId } from "~/data/secciones";
 import { stores } from "~/data/stores";
 
 interface Props {
@@ -32,30 +32,49 @@ const {
 
 const allowed = grupo ? grupoCategories[grupo] : null;
 
-const products = (await getCollection("products"))
-  .filter((p) => (destacados ? p.data.featured : true))
-  .filter((p) => !allowed || allowed.includes(p.data.category))
-  .sort((a, b) => a.data.order - b.data.order);
+// Solo los activos: una ficha desactivada desde el panel desaparece de la
+// web. `listarProductos` ya los devuelve en el orden de la carta.
+let todos: Producto[] = [];
+try {
+  todos = await listarProductos({ soloActivos: true });
+} catch (error) {
+  // Un fallo de Postgres deja el catálogo vacío, no una página rota.
+  console.error(
+    "No se pudo cargar el catálogo:",
+    error instanceof Error ? error.message : error,
+  );
+}
+
+const products = todos
+  .filter((p) => (destacados ? p.destacado : true))
+  .filter((p) => !allowed || allowed.includes(p.category as CategoryId));
 
 /** Solo las secciones que tienen producto, en el orden de la carta. */
 const bloques = porSeccion
   ? secciones
       .map((s) => ({
         seccion: s,
-        items: products.filter((p) => p.data.seccion === s.id),
+        items: products.filter((p) => p.seccion === s.id),
       }))
       .filter((b) => b.items.length > 0)
   : [];
 
 /** Productos sin sección: en modo carta se listan al final. */
-const sueltos = porSeccion ? products.filter((p) => !p.data.seccion) : products;
+const sueltos = porSeccion ? products.filter((p) => !p.seccion) : products;
 
 /** Gamas presentes en el listado, para los chips del filtro. */
 const gamas = porGrupo
-  ? ([...new Set(products.map((p) => grupoOfCategory(p.data.category)))]
+  ? ([...new Set(products.map((p) => grupoOfCategory(p.category as CategoryId)))]
       .filter((g): g is GrupoId => g !== null)
       .map((g) => ({ id: g, label: grupoLabel[g] })))
   : undefined;
+
+/** La foto solo se pinta si tiene URL y las dos medidas: si falta alguna,
+    la tarjeta cae al placeholder «Foto pendiente» en vez de romperse. */
+function imagenDe(p: Producto): { url: string; alt: string; ancho: number; alto: number } | null {
+  if (!p.imageUrl || !p.imageWidth || !p.imageHeight) return null;
+  return { url: p.imageUrl, alt: p.imageAlt ?? p.name, ancho: p.imageWidth, alto: p.imageHeight };
+}
 ---
 <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
   <p class="numeracion">{eyebrow}</p>
@@ -103,23 +122,23 @@ const gamas = porGrupo
             {b.items.map((p) => (
               <div
                 data-product
-                data-category={p.data.category}
-                data-grupo={grupoOfCategory(p.data.category)}
-                data-seccion={p.data.seccion}
-                data-search={`${p.data.name} ${p.data.shortDescription} ${b.seccion.label}`}
+                data-category={p.category}
+                data-grupo={grupoOfCategory(p.category as CategoryId)}
+                data-seccion={p.seccion}
+                data-search={`${p.name} ${p.shortDescription} ${b.seccion.label}`}
               >
                 <ProductCard
-                  slug={p.id}
-                  name={p.data.name}
-                  category={p.data.category}
+                  slug={p.slug}
+                  name={p.name}
+                  category={p.category as CategoryId}
                   seccionLabel={seccionById(b.seccion.id).label}
-                  image={p.data.image}
-                  imageAlt={p.data.imageAlt}
-                  shortDescription={p.data.shortDescription}
-                  priceCents={p.data.priceCents}
-                  consultar={p.data.consultar}
-                  unit={p.data.unit}
-                  variants={p.data.variants}
+                  imagen={imagenDe(p)}
+                  shortDescription={p.shortDescription}
+                  priceCents={p.priceCents ?? undefined}
+                  consultar={p.consultar}
+                  agotado={p.agotado}
+                  unit={p.unit ?? undefined}
+                  variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
                 />
               </div>
             ))}
@@ -132,23 +151,23 @@ const gamas = porGrupo
       {sueltos.map((p) => (
         <div
           data-product
-          data-category={p.data.category}
-          data-grupo={grupoOfCategory(p.data.category)}
-          data-seccion={p.data.seccion}
-          data-search={`${p.data.name} ${p.data.shortDescription} ${p.data.seccion ? seccionById(p.data.seccion).label : ""}`}
+          data-category={p.category}
+          data-grupo={grupoOfCategory(p.category as CategoryId)}
+          data-seccion={p.seccion}
+          data-search={`${p.name} ${p.shortDescription} ${p.seccion ? seccionById(p.seccion as SeccionId).label : ""}`}
         >
           <ProductCard
-            slug={p.id}
-            name={p.data.name}
-            category={p.data.category}
-            seccionLabel={p.data.seccion ? seccionById(p.data.seccion).label : undefined}
-            image={p.data.image}
-            imageAlt={p.data.imageAlt}
-            shortDescription={p.data.shortDescription}
-            priceCents={p.data.priceCents}
-            consultar={p.data.consultar}
-            unit={p.data.unit}
-            variants={p.data.variants}
+            slug={p.slug}
+            name={p.name}
+            category={p.category as CategoryId}
+            seccionLabel={p.seccion ? seccionById(p.seccion as SeccionId).label : undefined}
+            imagen={imagenDe(p)}
+            shortDescription={p.shortDescription}
+            priceCents={p.priceCents ?? undefined}
+            consultar={p.consultar}
+            agotado={p.agotado}
+            unit={p.unit ?? undefined}
+            variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
           />
         </div>
       ))}

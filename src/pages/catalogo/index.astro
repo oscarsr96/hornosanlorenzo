@@ -2,6 +2,10 @@
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import CatalogoGrid from "~/components/CatalogoGrid.astro";
 import { tiendaOnlineNav } from "~/data/navigation";
+
+// Lee el catálogo de la base de datos: bajo demanda, con la caché ISR delante
+// y el panel invalidándola al guardar.
+export const prerender = false;
 ---
 <MarketingLayout
   title="Tienda Online"

@@ -10,12 +10,14 @@ interface Props {
   category: CategoryId;
   /** Etiqueta de la sección de la carta; manda sobre la categoría. */
   seccionLabel?: string;
-  image?: ImageMetadata;
-  imageAlt?: string;
+  /** Foto del almacén con sus medidas, o nada si la ficha aún no tiene. */
+  imagen?: { url: string; alt: string; ancho: number; alto: number } | null;
   shortDescription: string;
   priceCents?: number;
   /** La carta no da precio: se consulta con el obrador. */
   consultar?: boolean;
+  /** Se ve en la carta, pero hoy no se puede comprar. */
+  agotado?: boolean;
   unit?: string;
   variants?: { id: string; label: string; priceCents: number }[];
 }
@@ -25,11 +27,11 @@ const {
   name,
   category,
   seccionLabel,
-  image,
-  imageAlt,
+  imagen = null,
   shortDescription,
   priceCents,
   consultar = false,
+  agotado = false,
   unit,
   variants,
 } = Astro.props;
@@ -42,10 +44,12 @@ const sinPrecio = consultar || priceCents === undefined;
 <article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:scale-[1.02] transition-transform duration-200">
   <a href={`/catalogo/${slug}`} class="block">
     <div class="aspect-[4/3] overflow-hidden">
-      {image ? (
+      {imagen ? (
         <Image
-          src={image}
-          alt={imageAlt ?? name}
+          src={imagen.url}
+          alt={imagen.alt}
+          width={imagen.ancho}
+          height={imagen.alto}
           widths={[300, 600, 900]}
           sizes="(min-width:1024px) 360px, (min-width:640px) 50vw, 100vw"
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -67,7 +71,16 @@ const sinPrecio = consultar || priceCents === undefined;
     </h3>
     <p class="text-sm text-[color:var(--color-ink-muted)] mt-1 line-clamp-2">{shortDescription}</p>
     <div class="mt-4">
-      {sinPrecio ? (
+      {agotado ? (
+        /* Visible pero no comprable: se ve el precio (o «Consultar»), sin
+           botón de añadir. Esta rama va antes que las demás a propósito. */
+        <div class="flex items-center justify-between">
+          <p class="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink-muted)]">
+            {sinPrecio ? "Consultar" : formatPriceCents(priceCents!)}
+          </p>
+          <span class="numeracion">Agotado hoy</span>
+        </div>
+      ) : sinPrecio ? (
         <div class="flex items-center justify-between">
           <p class="font-[family-name:var(--font-display)] text-xl font-semibold text-[color:var(--color-ink-muted)]">
             Consultar
