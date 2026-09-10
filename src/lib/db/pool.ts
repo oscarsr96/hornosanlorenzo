@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 /**
  * Único punto de conexión a Postgres. Nada más en el proyecto debe importar
@@ -27,3 +27,23 @@ export const pool = new Pool({
   max: 3,
   connectionTimeoutMillis: 10_000,
 });
+
+/**
+ * Quién ejecuta una consulta: el pool, o un cliente ya reservado dentro de
+ * una transacción.
+ *
+ * Se exportan desde aquí porque la spec §5.3 dice que este es el ÚNICO
+ * módulo que sabe qué driver hay debajo, y eso incluye los tipos: un
+ * `import("pg").PoolClient` suelto en otro fichero desaparece al compilar,
+ * pero mientras esté ahí es una pista de `pg` fuera de su sitio y una cosa
+ * más que tocar el día de la mudanza a Cloud SQL.
+ */
+export type Ejecutor = Pool | PoolClient;
+
+/**
+ * Un cliente reservado del pool. A propósito NO es `Ejecutor`: quien pide
+ * esto necesita que las consultas vayan todas por la MISMA conexión (un
+ * `begin`/`commit` sirve de poco si cada consulta sale por una distinta),
+ * así que no puede aceptar el pool.
+ */
+export type ClienteEnTransaccion = PoolClient;

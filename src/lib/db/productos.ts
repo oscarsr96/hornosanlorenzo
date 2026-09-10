@@ -1,4 +1,8 @@
-import { pool } from "~/lib/db/pool";
+import {
+  pool,
+  type Ejecutor,
+  type ClienteEnTransaccion,
+} from "~/lib/db/pool";
 import { slugify } from "~/lib/slug";
 import { ProductoError, traduce } from "~/lib/db/productosErrores";
 
@@ -107,7 +111,7 @@ export async function listarProductos({
  * funciones sobre por qué esa lectura no puede pasar por `pool`.
  */
 async function buscaPorSlug(
-  ejecutor: import("pg").Pool | import("pg").PoolClient,
+  ejecutor: Ejecutor,
   slug: string,
   { soloActivo = false }: { soloActivo?: boolean } = {},
 ): Promise<Producto | null> {
@@ -167,7 +171,7 @@ export async function productosParaPedido(
  * vez de dos.
  */
 async function guardaVariantes(
-  cliente: import("pg").PoolClient,
+  cliente: ClienteEnTransaccion,
   productoId: string,
   variantes: Variante[],
 ): Promise<void> {
