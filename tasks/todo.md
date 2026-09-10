@@ -1,6 +1,19 @@
 # Pendientes — Horno San Lorenzo
 
 ## Bloquea encender los cobros
+- [ ] **RGPD de las cuentas.** La política de privacidad dice literalmente que
+      solo regula el formulario de contacto, y ese formulario recoge menos datos
+      y tiene más garantías que el alta de cuenta (que no tiene ni casilla de
+      consentimiento ni enlace). Faltan: encargados del tratamiento (Neon,
+      Resend, Stripe), plazo de conservación y **borrado de cuenta a petición**,
+      que hoy no existe ni técnicamente. Bloquea que se registre el primer
+      cliente real, no el despliegue
+- [ ] **Probar una restauración de copia de seguridad**, no solo confiar en que
+      Neon las hace: restaurar un volcado a una base vacía y ver que arranca
+- [ ] **Separar la base de datos de desarrollo de la de producción.**
+      `DATABASE_URL` apunta a la misma rama de Neon en local y en Vercel. Hoy da
+      igual porque está vacía; en cuanto haya un cliente, cualquier prueba local
+      escribe sobre datos reales. La rama `pruebas` ya existe y es gratis
 - [ ] **`DATABASE_URL` y `BETTER_AUTH_SECRET` en Vercel antes de fusionar
       `feat/base-de-datos-y-acceso` a `main`.** `src/middleware.ts` corre en
       todas las peticiones y importa `~/lib/auth/server`, que crea el pool de
@@ -59,6 +72,16 @@
       hoy marcadas `consultar: true`
 
 ## Coherencia y deuda
+- [ ] Variables del entorno **preview** en Vercel (`DATABASE_URL`,
+      `BETTER_AUTH_SECRET`): no se pudieron poner con el CLI v50 instalado, que
+      pide confirmación interactiva. Sin ellas los despliegues de rama fallan al
+      construir y los pull requests salen en rojo. Se arregla desde el panel o
+      actualizando el CLI
+- [ ] Comprobar en un despliegue real que el límite de intentos identifica la IP
+      del cliente y no cae en el contador global. Es la única defensa contra
+      fuerza bruta que hay
+- [ ] Decidir y documentar cómo se crea el **primer administrador**: hoy es un
+      `update` a mano sobre la columna `rol`
 - [ ] **Firma en versión clara.** La cabecera es teja y el logo es moka: hoy se
       invierte a blanco por CSS (`[filter:brightness(0)_invert(1)]` en
       `Header.astro`), lo que aplana el acento teja del «desde 1986». Pedir al
