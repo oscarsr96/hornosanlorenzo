@@ -1,0 +1,68 @@
+---
+// src/pages/admin/clientes.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import { listarClientes, type Cliente } from "~/lib/db/clientes";
+import { formatDate } from "~/lib/format";
+import { ROL_ADMIN } from "~/lib/auth/guardia";
+
+export const prerender = false;
+
+let clientes: Cliente[] = [];
+let fallo = false;
+try {
+  clientes = await listarClientes();
+} catch (error) {
+  fallo = true;
+  console.error(
+    "No se pudieron cargar los clientes:",
+    error instanceof Error ? error.message : error,
+  );
+}
+---
+<AdminLayout titulo="Clientes">
+  {fallo && (
+    <p class="border-l-2 border-[color:var(--color-caramelo)] pl-3 py-2 text-sm">
+      Ahora mismo no se pueden leer los clientes. Vuelve a intentarlo en un momento.
+    </p>
+  )}
+
+  {!fallo && clientes.length === 0 && (
+    <p class="text-[color:var(--color-ink-muted)]">Todavía no se ha registrado nadie.</p>
+  )}
+
+  {clientes.length > 0 && (
+    <div class="overflow-x-auto border border-[color:var(--color-avellana)]">
+      <table class="w-full text-sm">
+        <thead class="bg-[color:var(--color-latte)] text-left">
+          <tr>
+            <th class="p-3 font-semibold">Nombre</th>
+            <th class="p-3 font-semibold">Correo</th>
+            <th class="p-3 font-semibold">Teléfono</th>
+            <th class="p-3 font-semibold">Pedidos</th>
+            <th class="p-3 font-semibold">Alta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {clientes.map((c) => (
+            <tr class="border-t border-[color:var(--color-line)]">
+              <td class="p-3">
+                {c.nombre}
+                {c.rol === ROL_ADMIN && (
+                  <span class="numeracion ml-2">Admin</span>
+                )}
+              </td>
+              <td class="p-3"><a href={`mailto:${c.email}`} class="underline">{c.email}</a></td>
+              <td class="p-3">
+                {c.telefono
+                  ? <a href={`tel:${c.telefono}`} class="underline whitespace-nowrap">{c.telefono}</a>
+                  : <span class="text-[color:var(--color-ink-muted)]">—</span>}
+              </td>
+              <td class="p-3">{c.pedidos}</td>
+              <td class="p-3 text-[color:var(--color-ink-muted)] whitespace-nowrap">{formatDate(c.creadoEn)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</AdminLayout>
