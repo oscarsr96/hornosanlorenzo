@@ -1,6 +1,7 @@
 ---
 // src/pages/admin/pedidos.astro
 import AdminLayout from "~/layouts/AdminLayout.astro";
+import PedidoEstado from "~/islands/PedidoEstado.tsx";
 import { listarPedidos, type PedidoConLineas } from "~/lib/db/pedidos";
 import { formatPriceCents, formatDateISO } from "~/lib/format";
 import { MODE_COPY, ENTREGA_DOMICILIO_COPY } from "~/lib/entrega";
@@ -8,12 +9,29 @@ import { stores } from "~/data/stores";
 
 export const prerender = false;
 
+// Filtros por URL (`?entrega=YYYY-MM-DD&entrada=YYYY-MM-DD`). Esta página se
+// sirve en servidor y fuera de la caché (está excluida del ISR en
+// `astro.config.mjs`), así que aquí sí se pueden leer parámetros; en las
+// páginas públicas no, que son estáticas. Solo se acepta la forma de fecha:
+// cualquier otra cosa se ignora en vez de llegar a la consulta.
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const leeFecha = (clave: string): string | undefined => {
+  const v = Astro.url.searchParams.get(clave) ?? "";
+  return FECHA.test(v) ? v : undefined;
+};
+const filtroEntrega = leeFecha("entrega");
+const filtroEntrada = leeFecha("entrada");
+const hayFiltro = Boolean(filtroEntrega || filtroEntrada);
+
 // Igual que en `cuenta.astro`: un fallo de Postgres no puede dejar el panel
 // en un 500. Se enseña el aviso y el resto del panel sigue navegable.
 let pedidos: PedidoConLineas[] = [];
 let fallo = false;
 try {
-  pedidos = await listarPedidos(100);
+  pedidos = await listarPedidos(100, {
+    fechaEntrega: filtroEntrega,
+    fechaEntrada: filtroEntrada,
+  });
 } catch (error) {
   fallo = true;
   console.error(
@@ -57,9 +75,26 @@ function franja(p: PedidoConLineas): string {
     </p>
   )}
 
+  <form method="get" class="mb-6 flex flex-wrap items-end gap-4 border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)] p-4">
+    <div>
+      <label for="f-entrega" class="numeracion block">Día de entrega</label>
+      <input id="f-entrega" type="date" name="entrega" value={filtroEntrega ?? ""} class="mt-2 block border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <div>
+      <label for="f-entrada" class="numeracion block">Día en que entró</label>
+      <input id="f-entrada" type="date" name="entrada" value={filtroEntrada ?? ""} class="mt-2 block border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <button type="submit" class="btn btn-primario">Filtrar</button>
+    {hayFiltro && (
+      <a href="/admin/pedidos" class="text-sm underline underline-offset-4 text-[color:var(--color-ink-muted)]">Quitar filtros</a>
+    )}
+  </form>
+
   {!fallo && pedidos.length === 0 && (
     <p class="text-[color:var(--color-ink-muted)]">
-      Todavía no ha entrado ningún pedido por la web.
+      {hayFiltro
+        ? "No hay pedidos para esas fechas."
+        : "Todavía no ha entrado ningún pedido por la web."}
     </p>
   )}
 
@@ -77,13 +112,16 @@ function franja(p: PedidoConLineas): string {
           </p>
         </div>
 
-        {p.estado === "sin_pago" && (
-          /* Anotado con Stripe sin configurar: no se ha cobrado. Tiene que
-             cantar, porque en la lista va mezclado con los pagados. */
-          <p class="mt-2 inline-block bg-[color:var(--color-teja)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-leche)]">
-            Sin pagar: anotado sin cobro, llamar para confirmar
-          </p>
-        )}
+        {/* Estado y botón de cobrar a mano. «Pagado por Stripe» es el que
+            tiene referencia de Stripe; el resto lo pone (y lo deshace) el
+            obrador. Un «Sin pagar» tiene que cantar: va mezclado con los
+            pagados. */}
+        <PedidoEstado
+          client:load
+          pedidoId={p.id}
+          estadoInicial={p.estado}
+          deStripe={p.stripeSessionId !== null}
+        />
 
         <p class="mt-2 text-sm">
           {p.nombre ?? "Sin nombre"} ·

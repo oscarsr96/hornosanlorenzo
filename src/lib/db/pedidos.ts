@@ -264,7 +264,40 @@ export async function marcarAvisado(pedidoId: string): Promise<void> {
  * líneas. Una sola consulta con agregación en vez de N+1: son pocos pedidos,
  * pero el patrón importa más que el volumen de hoy.
  */
-export async function listarPedidos(limite = 100): Promise<PedidoConLineas[]> {
+/**
+ * Cambia el estado desde el panel: «cobrado en tienda» (sin_pago → pagado) o
+ * deshacerlo (pagado → sin_pago). Devuelve false si el pedido no admite ese
+ * cambio: un `iniciado` es un carrito abandonado camino de Stripe, y un
+ * pagado CON referencia de Stripe lo cobró Stripe, así que no se puede
+ * «des-cobrar» desde aquí. Lo decide el `where`, no una lectura previa:
+ * dos admins pulsando a la vez no pueden dejarlo en un estado imposible.
+ */
+export async function cambiarEstadoAMano(
+  pedidoId: string,
+  estado: "pagado" | "sin_pago",
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    estado === "pagado"
+      ? `update pedidos set estado = 'pagado'
+          where id = $1 and estado = 'sin_pago'`
+      : `update pedidos set estado = 'sin_pago'
+          where id = $1 and estado = 'pagado' and stripe_session_id is null`,
+    [pedidoId],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+export type FiltrosPedidos = {
+  /** Día para el que se quiere el pedido (`YYYY-MM-DD`). */
+  fechaEntrega?: string;
+  /** Día en que entró el pedido (`YYYY-MM-DD`), en hora de Madrid. */
+  fechaEntrada?: string;
+};
+
+export async function listarPedidos(
+  limite = 100,
+  { fechaEntrega, fechaEntrada }: FiltrosPedidos = {},
+): Promise<PedidoConLineas[]> {
   const { rows } = await pool.query<PedidoConLineas>(
     `select p.id,
             p.user_id           as "userId",
@@ -299,9 +332,12 @@ export async function listarPedidos(limite = 100): Promise<PedidoConLineas[]> {
             ) as lineas
        from pedidos p
       where p.estado in ('pagado', 'sin_pago')
+        and ($2::date is null or p.fecha_entrega = $2::date)
+        and ($3::date is null
+             or (p.created_at at time zone 'Europe/Madrid')::date = $3::date)
       order by p.created_at desc
       limit $1`,
-    [limite],
+    [limite, fechaEntrega ?? null, fechaEntrada ?? null],
   );
   return rows;
 }

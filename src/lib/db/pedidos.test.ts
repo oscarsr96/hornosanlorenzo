@@ -11,7 +11,7 @@ describeSiHayBD("repositorio de pedidos", () => {
   let pool: import("pg").Pool;
   let repo: typeof import("~/lib/db/pedidos");
 
-  const pedidoDePrueba = () => ({
+  const pedidoDePrueba = (extraPayload: { dateISO?: string } = {}) => ({
     lines: [
       {
         slug: "tarta-de-queso",
@@ -42,6 +42,7 @@ describeSiHayBD("repositorio de pedidos", () => {
       phone: "666123456",
       name: "Ana",
       notes: "Sin azúcar por encima",
+      ...extraPayload,
     },
   });
 
@@ -137,6 +138,72 @@ describeSiHayBD("repositorio de pedidos", () => {
     expect(lista.find((p) => p.id === iniciado)).toBeUndefined();
     // Los pagados siguen llevando su estado, para que el panel distinga.
     expect(lista.filter((p) => p.estado === "pagado").length).toBeGreaterThan(0);
+  });
+
+  describe("cambiar el estado desde el panel", () => {
+    it("un pedido sin pago se marca como cobrado, y se puede deshacer", async () => {
+      const id = await repo.crearPedidoIniciado(pedidoDePrueba() as never, {
+        estado: "sin_pago",
+      });
+      expect(await repo.cambiarEstadoAMano(id, "pagado")).toBe(true);
+      expect((await repo.listarPedidos(50)).find((p) => p.id === id)?.estado).toBe("pagado");
+
+      expect(await repo.cambiarEstadoAMano(id, "sin_pago")).toBe(true);
+      expect((await repo.listarPedidos(50)).find((p) => p.id === id)?.estado).toBe("sin_pago");
+    });
+
+    it("un pedido cobrado por Stripe no se puede devolver a sin pago", async () => {
+      const id = await repo.crearPedidoIniciado(pedidoDePrueba() as never);
+      await repo.marcarPagado({ pedidoId: id, sessionId: "cs_test_intocable" });
+      expect(await repo.cambiarEstadoAMano(id, "sin_pago")).toBe(false);
+      expect((await repo.listarPedidos(50)).find((p) => p.id === id)?.estado).toBe("pagado");
+    });
+
+    it("un carrito abandonado (iniciado) no se puede marcar como cobrado a mano", async () => {
+      const id = await repo.crearPedidoIniciado(pedidoDePrueba() as never);
+      expect(await repo.cambiarEstadoAMano(id, "pagado")).toBe(false);
+      const { rows } = await pool.query("select estado from pedidos where id = $1", [id]);
+      expect(rows[0].estado).toBe("iniciado");
+    });
+
+    it("un id que no existe devuelve false, no revienta", async () => {
+      expect(
+        await repo.cambiarEstadoAMano("00000000-0000-0000-0000-000000000000", "pagado"),
+      ).toBe(false);
+    });
+  });
+
+  describe("filtros del panel", () => {
+    it("filtra por día de entrega y por día de entrada, y se pueden combinar", async () => {
+      await pool.query("delete from pedidos");
+      const entregaHoy = await repo.crearPedidoIniciado(
+        pedidoDePrueba({ dateISO: "2026-09-20" }) as never,
+        { estado: "sin_pago" },
+      );
+      const entregaOtro = await repo.crearPedidoIniciado(
+        pedidoDePrueba({ dateISO: "2026-09-21" }) as never,
+        { estado: "sin_pago" },
+      );
+      // Entró ayer: se fuerza `created_at`, que el repositorio no deja elegir.
+      await pool.query(
+        "update pedidos set created_at = created_at - interval '1 day' where id = $1",
+        [entregaOtro],
+      );
+      const hoy = new Date().toISOString().slice(0, 10);
+      const ayer = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+      const porEntrega = await repo.listarPedidos(50, { fechaEntrega: "2026-09-20" });
+      expect(porEntrega.map((p) => p.id)).toEqual([entregaHoy]);
+
+      const porEntrada = await repo.listarPedidos(50, { fechaEntrada: ayer });
+      expect(porEntrada.map((p) => p.id)).toEqual([entregaOtro]);
+
+      const combinado = await repo.listarPedidos(50, {
+        fechaEntrega: "2026-09-21",
+        fechaEntrada: hoy,
+      });
+      expect(combinado).toEqual([]);
+    });
   });
 
   it("crearPedidoReconstruido es idempotente: dos entregas del mismo webhook no duplican las líneas", async () => {

@@ -24,6 +24,9 @@ vi.mock("~/lib/db/productos", () => ({
   actualizarProducto: vi.fn(),
   ProductoError: class extends Error {},
 }));
+vi.mock("~/lib/db/pedidos", () => ({
+  cambiarEstadoAMano: vi.fn().mockResolvedValue(true),
+}));
 
 const cliente = { id: "u1", email: "a@b.c", name: "Ana", rol: "cliente" };
 const admin = { id: "u2", email: "c@d.e", name: "Carmen", rol: "admin" };
@@ -207,5 +210,48 @@ describe("guardia y validación de /api/admin/productos", () => {
     expect(r.status).toBe(400);
     const cuerpo = await r.json();
     expect(cuerpo.error).toMatch(/identificador/i);
+  });
+});
+
+describe("guardia y validación de PATCH /api/admin/pedidos", () => {
+  const patch = (body: unknown) =>
+    new Request("https://x.test/api/admin/pedidos", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  const cuerpo = { id: "b560ca67-4e60-460a-93d8-2395ebfe2133", estado: "pagado" };
+
+  it("sin sesión o con sesión de cliente, 404", async () => {
+    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    expect((await PATCH({ request: patch(cuerpo), locals: { usuario: null } } as never)).status).toBe(404);
+    expect((await PATCH({ request: patch(cuerpo), locals: { usuario: cliente } } as never)).status).toBe(404);
+    const { cambiarEstadoAMano } = await import("~/lib/db/pedidos");
+    expect(cambiarEstadoAMano).not.toHaveBeenCalled();
+  });
+
+  it("solo admite `pagado` o `sin_pago`: nadie marca un pedido como `iniciado` desde el panel", async () => {
+    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const r = await PATCH({
+      request: patch({ ...cuerpo, estado: "iniciado" }),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(400);
+  });
+
+  it("con admin y datos válidos, cambia el estado y devuelve el nuevo", async () => {
+    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const r = await PATCH({ request: patch(cuerpo), locals: { usuario: admin } } as never);
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ estado: "pagado" });
+    const { cambiarEstadoAMano } = await import("~/lib/db/pedidos");
+    expect(cambiarEstadoAMano).toHaveBeenCalledWith(cuerpo.id, "pagado");
+  });
+
+  it("si el pedido no admite ese cambio (Stripe, iniciado, no existe), 409 y lo dice", async () => {
+    const { cambiarEstadoAMano } = await import("~/lib/db/pedidos");
+    vi.mocked(cambiarEstadoAMano).mockResolvedValueOnce(false);
+    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const r = await PATCH({ request: patch(cuerpo), locals: { usuario: admin } } as never);
+    expect(r.status).toBe(409);
   });
 });
