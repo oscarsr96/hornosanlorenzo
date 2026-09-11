@@ -66,3 +66,20 @@ comando pegado no puede producir esa salida, alguien lo verá. Un `vi.mock` que
 ninguna prueba usa es una prueba que se pensó y no se escribió, no decoración.
 Y «no verificado» es gratis; decirlo cuesta menos que perder la credibilidad
 del resto del informe.
+
+## Las pruebas de base de datos comparten tablas y corren a la vez
+
+Un `delete from productos` en `noticias.test.ts` pasó tres veces en verde y
+era una carrera con `productos.test.ts`; al añadir `estadisticas.test.ts`,
+que borraba `pedidos` y `user` enteras, cayeron once pruebas de tres
+ficheros que no había tocado.
+
+**Why:** Vitest ejecuta cada fichero en un worker distinto contra la MISMA
+rama de Neon. Un borrado de tabla entera es un borrado de las filas de otro
+fichero en mitad de su prueba; que pase depende del orden de llegada.
+
+**How to apply:** cada fichero limpia solo lo suyo, por una marca propia
+(correo `@stats.test`, nombre con sufijo, día de entrega en 2031, fecha de
+entrada en 2021), y afirma con `toContain`, no con `toEqual` sobre la tabla
+entera. Antes de dar por buena una prueba nueva de base de datos, correr la
+suite completa tres veces seguidas.

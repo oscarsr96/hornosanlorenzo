@@ -11,6 +11,7 @@ describeSiHayBD("repositorio de pedidos", () => {
   let pool: import("pg").Pool;
   let repo: typeof import("~/lib/db/pedidos");
 
+  const CORREO = "pedidos@prueba.test";
   const pedidoDePrueba = (extraPayload: { dateISO?: string } = {}) => ({
     lines: [
       {
@@ -38,7 +39,7 @@ describeSiHayBD("repositorio de pedidos", () => {
       dateISO: "2026-09-20",
       slot: "morning" as const,
       storeId: "alcobendas",
-      email: "cliente@example.com",
+      email: CORREO,
       phone: "666123456",
       name: "Ana",
       notes: "Sin azúcar por encima",
@@ -51,11 +52,13 @@ describeSiHayBD("repositorio de pedidos", () => {
     const { Pool } = await import("pg");
     pool = new Pool({ connectionString: URL_PRUEBAS, max: 2 });
     repo = await import("~/lib/db/pedidos");
-    await pool.query("delete from pedidos");
+    await pool.query("delete from pedidos where email = $1", [CORREO]);
   });
 
   afterAll(async () => {
-    await pool.query("delete from pedidos");
+    // Solo lo de este fichero: `estadisticas.test.ts` comparte la tabla y
+    // corre a la vez. Borrar toda la tabla era una carrera.
+    await pool.query("delete from pedidos where email = $1", [CORREO]);
     await pool.end();
   });
 
@@ -175,13 +178,13 @@ describeSiHayBD("repositorio de pedidos", () => {
 
   describe("filtros del panel", () => {
     it("filtra por día de entrega y por día de entrada, y se pueden combinar", async () => {
-      await pool.query("delete from pedidos");
+      // Días de entrega que no usa ninguna otra prueba: la tabla se comparte.
       const entregaHoy = await repo.crearPedidoIniciado(
-        pedidoDePrueba({ dateISO: "2026-09-20" }) as never,
+        pedidoDePrueba({ dateISO: "2031-01-05" }) as never,
         { estado: "sin_pago" },
       );
       const entregaOtro = await repo.crearPedidoIniciado(
-        pedidoDePrueba({ dateISO: "2026-09-21" }) as never,
+        pedidoDePrueba({ dateISO: "2031-01-06" }) as never,
         { estado: "sin_pago" },
       );
       // Entró ayer: se fuerza `created_at`, que el repositorio no deja elegir.
@@ -192,14 +195,15 @@ describeSiHayBD("repositorio de pedidos", () => {
       const hoy = new Date().toISOString().slice(0, 10);
       const ayer = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
-      const porEntrega = await repo.listarPedidos(50, { fechaEntrega: "2026-09-20" });
+      const porEntrega = await repo.listarPedidos(50, { fechaEntrega: "2031-01-05" });
       expect(porEntrega.map((p) => p.id)).toEqual([entregaHoy]);
 
       const porEntrada = await repo.listarPedidos(50, { fechaEntrada: ayer });
-      expect(porEntrada.map((p) => p.id)).toEqual([entregaOtro]);
+      expect(porEntrada.map((p) => p.id)).toContain(entregaOtro);
+      expect(porEntrada.map((p) => p.id)).not.toContain(entregaHoy);
 
       const combinado = await repo.listarPedidos(50, {
-        fechaEntrega: "2026-09-21",
+        fechaEntrega: "2031-01-06",
         fechaEntrada: hoy,
       });
       expect(combinado).toEqual([]);

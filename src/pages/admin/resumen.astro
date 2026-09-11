@@ -1,0 +1,207 @@
+---
+// src/pages/admin/resumen.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import { resumen, type Resumen } from "~/lib/db/estadisticas";
+import { formatPriceCents, formatDateISO } from "~/lib/format";
+import { stores } from "~/data/stores";
+
+export const prerender = false;
+
+// El rango va por el día en que ENTRÓ el pedido, en hora de Madrid. «Hoy»
+// se calcula en esa zona y no con `new Date()` a secas: el servidor de
+// Vercel vive en UTC y a partir de las 22:00 ya sería mañana para él.
+function hoyEnMadrid(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+}
+function sumaDias(iso: string, dias: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+const hoy = hoyEnMadrid();
+const atajos = [
+  { id: "hoy", label: "Hoy", desde: hoy, hasta: hoy },
+  { id: "7", label: "Últimos 7 días", desde: sumaDias(hoy, -6), hasta: hoy },
+  { id: "mes", label: "Este mes", desde: `${hoy.slice(0, 7)}-01`, hasta: hoy },
+  { id: "30", label: "Últimos 30 días", desde: sumaDias(hoy, -29), hasta: hoy },
+] as const;
+
+// Mismo criterio que los filtros de /admin/pedidos: solo se acepta la forma
+// de fecha, y esta página se sirve en servidor fuera del ISR, así que aquí
+// sí se leen parámetros. Por defecto, el mes en curso.
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const lee = (clave: string) => {
+  const v = Astro.url.searchParams.get(clave) ?? "";
+  return FECHA.test(v) ? v : undefined;
+};
+let desde = lee("desde") ?? atajos[2].desde;
+let hasta = lee("hasta") ?? atajos[2].hasta;
+if (desde > hasta) [desde, hasta] = [hasta, desde];
+const atajoActivo = atajos.find((a) => a.desde === desde && a.hasta === hasta)?.id;
+
+let datos: Resumen | null = null;
+let fallo = false;
+try {
+  datos = await resumen({ desde, hasta });
+} catch (error) {
+  fallo = true;
+  console.error(
+    "No se pudo calcular el resumen:",
+    error instanceof Error ? error.message : error,
+  );
+}
+
+const nombreTienda = (id: string) => stores.find((s) => s.id === id)?.shortName ?? id;
+const rangoLegible = desde === hasta ? formatDateISO(desde) : `${formatDateISO(desde)} — ${formatDateISO(hasta)}`;
+const kpi = "bg-[color:var(--color-leche)] p-5";
+const cifra = "font-[family-name:var(--font-display)] text-3xl mt-2";
+---
+<AdminLayout titulo="Resumen">
+  <form method="get" class="flex flex-wrap items-end gap-4 border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)] p-4">
+    <div>
+      <label for="r-desde" class="numeracion block">Desde</label>
+      <input id="r-desde" type="date" name="desde" value={desde} max={hoy} class="mt-2 block border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <div>
+      <label for="r-hasta" class="numeracion block">Hasta</label>
+      <input id="r-hasta" type="date" name="hasta" value={hasta} max={hoy} class="mt-2 block border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <button type="submit" class="btn btn-primario">Ver</button>
+    <div class="flex flex-wrap gap-2 sm:ml-auto">
+      {atajos.map((a) => (
+        <a
+          href={`/admin/resumen?desde=${a.desde}&hasta=${a.hasta}`}
+          class:list={[
+            "px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] border border-[color:var(--color-avellana)] hover:bg-[color:var(--color-latte)] transition-colors",
+            atajoActivo === a.id && "bg-[color:var(--color-latte)] text-[color:var(--color-moka)]",
+          ]}
+          aria-current={atajoActivo === a.id ? "true" : undefined}
+        >
+          {a.label}
+        </a>
+      ))}
+    </div>
+  </form>
+
+  <p class="numeracion mt-6">Pedidos entrados entre {rangoLegible}</p>
+
+  {fallo && (
+    <p class="mt-4 border-l-2 border-[color:var(--color-caramelo)] pl-3 py-2 text-sm">
+      Ahora mismo no se pueden calcular las cifras. Vuelve a intentarlo en un momento.
+    </p>
+  )}
+
+  {datos && (
+    <>
+      <ul class="mt-4 grid gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)] sm:grid-cols-2 lg:grid-cols-4">
+        <li class={kpi}>
+          <p class="numeracion">Pedidos</p>
+          <p class={cifra}>{datos.pedidos.total}</p>
+          <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">
+            {datos.pedidos.cobrados} cobrados · {datos.pedidos.sinPagar} sin pagar
+            {datos.pedidos.abandonados > 0 && ` · ${datos.pedidos.abandonados} carritos abandonados`}
+          </p>
+        </li>
+        <li class={kpi}>
+          <p class="numeracion">Recaudación</p>
+          <p class={cifra}>{formatPriceCents(datos.recaudacionCents)}</p>
+          <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">Stripe y cobrado en tienda</p>
+        </li>
+        <li class={kpi}>
+          <p class="numeracion">Pendiente de cobro</p>
+          <p class:list={[cifra, datos.pendienteCents > 0 && "text-[color:var(--color-teja)]"]}>
+            {formatPriceCents(datos.pendienteCents)}
+          </p>
+          <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">Pedidos anotados sin pagar</p>
+        </li>
+        <li class={kpi}>
+          <p class="numeracion">Ticket medio</p>
+          <p class={cifra}>{formatPriceCents(datos.ticketMedioCents)}</p>
+          <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">Por pedido con importe</p>
+        </li>
+      </ul>
+
+      <div class="mt-8 grid gap-8 lg:grid-cols-2">
+        <section>
+          <h2 class="numeracion">Top productos</h2>
+          {datos.topProductos.length === 0 ? (
+            <p class="mt-3 text-sm text-[color:var(--color-ink-muted)]">Nada vendido en el rango.</p>
+          ) : (
+            <table class="mt-3 w-full text-sm">
+              <thead>
+                <tr class="text-left numeracion">
+                  <th class="py-2 font-medium">Producto</th>
+                  <th class="py-2 font-medium text-right">Unidades</th>
+                  <th class="py-2 font-medium text-right">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datos.topProductos.map((p) => (
+                  <tr class="border-t border-[color:var(--color-line)]">
+                    <td class="py-2">{p.nombre}</td>
+                    <td class="py-2 text-right tabular-nums">{p.unidades}</td>
+                    <td class="py-2 text-right tabular-nums">{formatPriceCents(p.importeCents)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section>
+          <h2 class="numeracion">Entrega y clientes</h2>
+          <dl class="mt-3 grid grid-cols-2 gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)] text-sm">
+            <div class={kpi}>
+              <dt class="numeracion">Recogida en tienda</dt>
+              <dd class="text-2xl mt-1 font-[family-name:var(--font-display)]">{datos.porModalidad.recogida}</dd>
+              {datos.porTienda.length > 0 && (
+                <dd class="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                  {datos.porTienda.map((t) => `${nombreTienda(t.storeId)} ${t.pedidos}`).join(" · ")}
+                </dd>
+              )}
+            </div>
+            <div class={kpi}>
+              <dt class="numeracion">Reparto a domicilio</dt>
+              <dd class="text-2xl mt-1 font-[family-name:var(--font-display)]">{datos.porModalidad.domicilio}</dd>
+            </div>
+            <div class={kpi}>
+              <dt class="numeracion">Clientes registrados</dt>
+              <dd class="text-2xl mt-1 font-[family-name:var(--font-display)]">{datos.clientes.total}</dd>
+            </div>
+            <div class={kpi}>
+              <dt class="numeracion">Nuevos en el rango</dt>
+              <dd class="text-2xl mt-1 font-[family-name:var(--font-display)]">{datos.clientes.nuevos}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      <section class="mt-8">
+        <h2 class="numeracion">Pedidos por día</h2>
+        {datos.porDia.length === 0 ? (
+          <p class="mt-3 text-sm text-[color:var(--color-ink-muted)]">Ningún pedido en el rango.</p>
+        ) : (
+          <table class="mt-3 w-full max-w-xl text-sm">
+            <thead>
+              <tr class="text-left numeracion">
+                <th class="py-2 font-medium">Día</th>
+                <th class="py-2 font-medium text-right">Pedidos</th>
+                <th class="py-2 font-medium text-right">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {datos.porDia.map((d) => (
+                <tr class="border-t border-[color:var(--color-line)]">
+                  <td class="py-2">{formatDateISO(d.dia)}</td>
+                  <td class="py-2 text-right tabular-nums">{d.pedidos}</td>
+                  <td class="py-2 text-right tabular-nums">{formatPriceCents(d.importeCents)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </>
+  )}
+</AdminLayout>

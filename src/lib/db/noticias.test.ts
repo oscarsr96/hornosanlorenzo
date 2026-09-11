@@ -110,7 +110,7 @@ describeSiHayBD("repositorio de noticias", () => {
   describe("producto enlazado (Este mes)", () => {
     let productos: typeof import("~/lib/db/productos");
     const ficha = (extra: Record<string, unknown> = {}) => ({
-      name: "Roscón de Reyes",
+      name: "Roscón de Reyes (noticias.test)",
       category: "tartas",
       seccion: null,
       priceCents: 2400,
@@ -135,15 +135,17 @@ describeSiHayBD("repositorio de noticias", () => {
       ...extra,
     });
 
+    // `productos` es la tabla de `productos.test.ts`, que corre a la vez:
+    // aquí solo se borra la ficha que crea esta prueba, nunca la tabla.
     beforeAll(async () => {
       productos = await import("~/lib/db/productos");
       await pool.query("delete from noticias");
-      await pool.query("delete from productos");
+      await pool.query("delete from productos where name = 'Roscón de Reyes (noticias.test)'");
     });
 
     afterAll(async () => {
       await pool.query("delete from noticias");
-      await pool.query("delete from productos");
+      await pool.query("delete from productos where name = 'Roscón de Reyes (noticias.test)'");
     });
 
     it("sin producto, la noticia sale con `producto: null` y sigue siendo una noticia", async () => {
@@ -160,7 +162,7 @@ describeSiHayBD("repositorio de noticias", () => {
       expect(n.productoId).toBe(roscon.id);
       expect(n.producto).toEqual({
         slug: roscon.slug,
-        name: "Roscón de Reyes",
+        name: "Roscón de Reyes (noticias.test)",
         priceCents: 2400,
         consultar: false,
         activo: true,
