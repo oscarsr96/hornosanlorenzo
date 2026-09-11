@@ -73,7 +73,7 @@ const isActive = (href: string) => {
       <!-- La firma es moka con acentos teja: sobre el rojo no se lee, así que
            se invierte a blanco por CSS. Provisional: pendiente de recibir del
            cliente el PNG de la firma en versión clara. -->
-      <Image
+      <Image quality={80}
         src={logoFirma}
         alt=""
         widths={[220, 320, 480, 640]}
@@ -188,7 +188,7 @@ const isActive = (href: string) => {
                     <a href={child.href} class="group/card block">
                       {photo && (
                         <div class="aspect-[4/3] overflow-hidden border border-[color:var(--color-avellana)]">
-                          <Image
+                          <Image quality={80}
                             src={photo.src}
                             alt={photo.alt}
                             widths={[200, 400]}

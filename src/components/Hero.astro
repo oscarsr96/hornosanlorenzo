@@ -40,7 +40,7 @@ const { eyebrow, title, italicTail, body, image, imageAlt, primaryCta, secondary
     <div class="relative aspect-[4/3] md:aspect-[5/4] overflow-hidden border border-[color:var(--color-avellana)]">
       {typeof image === "string"
         ? <img src={image} alt={imageAlt} width="900" height="700" class="w-full h-full object-cover" />
-        : <Image src={image} alt={imageAlt} widths={[480, 800, 1200]} sizes="(min-width:768px) 600px, 100vw" class="w-full h-full object-cover" />
+        : <Image quality={80} src={image} alt={imageAlt} widths={[480, 800, 1200]} sizes="(min-width:768px) 600px, 100vw" class="w-full h-full object-cover" />
       }
     </div>
   </div>

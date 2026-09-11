@@ -117,7 +117,7 @@ const breadcrumbs = {
     <div class="grid gap-10 md:grid-cols-2">
       <div class="self-start rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
         {imagen ? (
-          <Image
+          <Image quality={80}
             src={imagen.url}
             alt={imagen.alt}
             width={imagen.ancho}

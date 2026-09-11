@@ -65,7 +65,7 @@ const sinPrecio = consultar || priceCents === undefined;
   <a href={`/catalogo/${slug}`} class="block">
     <div class="aspect-[4/3] overflow-hidden">
       {imagen ? (
-        <Image
+        <Image quality={80}
           src={imagen.url}
           alt={imagen.alt}
           width={imagen.ancho}

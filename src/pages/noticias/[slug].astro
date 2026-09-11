@@ -77,7 +77,7 @@ const jsonLd = {
 
     <div class="mt-8 rounded-[var(--radius-card)] overflow-hidden border border-[color:var(--color-line)]">
       {imagen ? (
-        <Image
+        <Image quality={80}
           src={imagen.url}
           alt={imagen.alt}
           width={imagen.ancho}

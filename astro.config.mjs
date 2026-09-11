@@ -17,6 +17,31 @@ export default defineConfig({
   // el ISR las cachea igual que si fueran estáticas y el panel las
   // invalida al guardar (`src/lib/cache.ts`).
   adapter: vercel({
+    // Optimización de imágenes de Vercel (`/_vercel/image?url=...`) en vez del
+    // endpoint `/_image` de Astro. El endpoint de Astro, en servidor, obtiene el
+    // original haciendo `fetch` a su propio origen, y en Vercel ese origen es la
+    // URL interna del despliegue (`*-oscarsr96s-projects.vercel.app`), que está
+    // detrás de Vercel Authentication: el fetch recibe un 302 al SSO y el
+    // endpoint responde 404. Mientras la home y el catálogo eran estáticos no se
+    // notaba, porque las imágenes se generaban al construir; al pasar a ISR,
+    // TODA imagen de una página con `prerender = false` pasaba por ahí y la web
+    // salió a producción sin una sola foto (11 de septiembre de 2026).
+    imageService: true,
+    imagesConfig: {
+      // Vercel solo sirve anchos de esta lista y el adaptador redondea al más
+      // cercano: son los `widths` que ya usan los componentes, más dos grandes
+      // para las fotos de 1600 px del panel.
+      sizes: [200, 220, 300, 320, 400, 480, 600, 640, 800, 900, 1200, 1600, 1920],
+      // Repetido a propósito respecto a `image.remotePatterns` de más abajo:
+      // el adaptador (9.0.5) promete copiarlos de ahí, pero su
+      // `isAcceptedPattern` descarta todo patrón que lleve `protocol`
+      // (`!== "http" || !== "https"` es siempre cierto), y sin esta entrada
+      // Vercel se niega a optimizar las fotos de Blob. Lo que se pone aquí
+      // sí se copia tal cual al `config.json`.
+      remotePatterns: [
+        { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
+      ],
+    },
     isr: {
       // El mismo valor tiene que estar en el entorno de CONSTRUCCIÓN y en el
       // de ejecución en Vercel: aquí se lee al construir, y `src/lib/cache.ts`
