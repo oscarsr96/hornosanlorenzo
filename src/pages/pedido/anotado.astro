@@ -1,0 +1,46 @@
+---
+// Destino de «Pagar» mientras Stripe no tiene claves (`/api/checkout`, rama
+// `sin_pago`). Página aparte de `/pedido/gracias` y no un `?sin_pago=1`: el
+// sitio es estático y no lee parámetros en servidor, y lo que se dice aquí
+// no puede confundirse con «pagado» ni prometer un correo que no sale.
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import { site } from "~/data/site";
+import { stores } from "~/data/stores";
+
+const central = stores[0];
+---
+<MarketingLayout
+  title="Pedido anotado"
+  description="Hemos anotado tu pedido; te llamamos para confirmarlo."
+>
+  <section class="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
+    <p class="numeracion">Pedido anotado</p>
+    <h1 class="text-4xl sm:text-5xl mt-3">Lo tenemos. Te llamamos para confirmarlo.</h1>
+    <p class="mt-5 text-lg text-[color:var(--color-ink-muted)]">
+      El pago por la web todavía no está activo, así que no se te ha cobrado
+      nada. El obrador tiene tu pedido con el día y la franja que elegiste y te
+      llamará al teléfono que nos has dado para cerrarlo.
+    </p>
+
+    <div class="mt-10 border border-[color:var(--color-avellana)] p-6 sm:p-8 bg-[color:var(--color-leche)]">
+      <p class="numeracion">¿Necesitas cambiar algo?</p>
+      <p class="mt-3 text-sm text-[color:var(--color-ink-muted)]">
+        Escríbenos a
+        <a href={`mailto:${site.email}`} class="underline font-semibold">{site.email}</a>
+        o llama al
+        <a href={`tel:${central.phone}`} class="underline font-semibold">{central.phoneDisplay}</a>.
+      </p>
+    </div>
+
+    <div class="mt-10 flex flex-wrap gap-3">
+      <a href="/catalogo" class="btn btn-primario">Seguir en el catálogo</a>
+      <a href="/" class="btn btn-secundario">Volver al inicio</a>
+    </div>
+  </section>
+</MarketingLayout>
+
+<script>
+  // El pedido ya está anotado en el obrador: el carrito local deja de tener sentido.
+  import { clearCart } from "~/lib/cart";
+  clearCart();
+</script>

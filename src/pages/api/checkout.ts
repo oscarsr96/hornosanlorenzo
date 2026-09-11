@@ -27,16 +27,6 @@ const json = (body: unknown, status = 200) =>
 
 export const POST: APIRoute = async ({ request, url, locals }) => {
   const secret = import.meta.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    console.error("[checkout] falta STRIPE_SECRET_KEY");
-    return json(
-      {
-        error:
-          "El pago no está configurado todavía. Llámanos y te lo tomamos por teléfono.",
-      },
-      503,
-    );
-  }
 
   let raw: unknown;
   try {
@@ -61,6 +51,28 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
       return json({ error: err.message }, err.status);
     console.error("[checkout] error al valorar el pedido", err);
     return json({ error: "No hemos podido preparar el pedido." }, 500);
+  }
+
+  // Sin claves de Stripe todavía: el pedido se anota igual, con los precios
+  // que acaba de calcular el servidor, pero como `sin_pago` para que el panel
+  // lo enseñe como lo que es. Es lo que permite probar el flujo entero
+  // mientras no se cobra; en cuanto haya `STRIPE_SECRET_KEY` esta rama deja
+  // de entrar sola. Aquí un fallo de Postgres SÍ es un error: no hay cobro
+  // que salvar, y un pedido que no se apunta no le llega a nadie.
+  if (!secret) {
+    try {
+      await crearPedidoIniciado(order, { estado: "sin_pago" });
+    } catch (err) {
+      console.error(
+        "[checkout] sin Stripe y sin poder anotar el pedido:",
+        err instanceof Error ? err.message : err,
+      );
+      return json(
+        { error: "No hemos podido anotar el pedido. Inténtalo de nuevo o llámanos." },
+        500,
+      );
+    }
+    return json({ url: "/pedido/anotado" });
   }
 
   // El pedido se anota AQUÍ, con el desglose que acaba de calcular

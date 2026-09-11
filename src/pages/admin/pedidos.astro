@@ -77,6 +77,14 @@ function franja(p: PedidoConLineas): string {
           </p>
         </div>
 
+        {p.estado === "sin_pago" && (
+          /* Anotado con Stripe sin configurar: no se ha cobrado. Tiene que
+             cantar, porque en la lista va mezclado con los pagados. */
+          <p class="mt-2 inline-block bg-[color:var(--color-teja)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-leche)]">
+            Sin pagar: anotado sin cobro, llamar para confirmar
+          </p>
+        )}
+
         <p class="mt-2 text-sm">
           {p.nombre ?? "Sin nombre"} ·
           {" "}<a href={`tel:${p.telefono}`} class="underline font-semibold whitespace-nowrap">{p.telefono}</a> ·

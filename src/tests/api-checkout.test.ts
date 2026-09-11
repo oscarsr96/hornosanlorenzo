@@ -105,4 +105,46 @@ describe("POST /api/checkout", () => {
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
+
+  describe("sin STRIPE_SECRET_KEY (modo sin pago, mientras no haya claves)", () => {
+    beforeEach(() => vi.stubEnv("STRIPE_SECRET_KEY", ""));
+
+    it("anota el pedido como `sin_pago` con los precios del servidor y manda a /pedido/anotado", async () => {
+      const { POST } = await import("~/pages/api/checkout");
+      const respuesta = await POST(contexto() as never);
+
+      expect(respuesta.status).toBe(200);
+      expect(await respuesta.json()).toEqual({ url: "/pedido/anotado" });
+      expect(priceOrder).toHaveBeenCalledOnce();
+      expect(crearPedidoIniciado).toHaveBeenCalledWith(PEDIDO_VALORADO, {
+        estado: "sin_pago",
+      });
+      expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it("si Postgres falla aquí no hay cobro que salvar: 500 y el carrito se queda", async () => {
+      crearPedidoIniciado.mockRejectedValue(new Error("Connection terminated"));
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const { POST } = await import("~/pages/api/checkout");
+      const respuesta = await POST(contexto() as never);
+
+      expect(respuesta.status).toBe(500);
+      expect(errorSpy).toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it("un pedido mal formado sigue siendo 400, no se anota nada", async () => {
+      const { POST } = await import("~/pages/api/checkout");
+      const respuesta = await POST({
+        ...contexto(),
+        request: new Request("https://ejemplo.test/api/checkout", {
+          method: "POST",
+          body: "{}",
+        }),
+      } as never);
+      expect(respuesta.status).toBe(400);
+      expect(crearPedidoIniciado).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -125,6 +125,20 @@ describeSiHayBD("repositorio de pedidos", () => {
     expect(lista.every((p) => p.lineas.length > 0)).toBe(true);
   });
 
+  it("un pedido anotado sin pago (Stripe sin configurar) sale en el panel con su estado; un iniciado no", async () => {
+    const sinPago = await repo.crearPedidoIniciado(pedidoDePrueba() as never, {
+      estado: "sin_pago",
+    });
+    const iniciado = await repo.crearPedidoIniciado(pedidoDePrueba() as never);
+
+    const lista = await repo.listarPedidos(50);
+    const anotado = lista.find((p) => p.id === sinPago);
+    expect(anotado?.estado).toBe("sin_pago");
+    expect(lista.find((p) => p.id === iniciado)).toBeUndefined();
+    // Los pagados siguen llevando su estado, para que el panel distinga.
+    expect(lista.filter((p) => p.estado === "pagado").length).toBeGreaterThan(0);
+  });
+
   it("crearPedidoReconstruido es idempotente: dos entregas del mismo webhook no duplican las líneas", async () => {
     const datos = {
       stripeSessionId: "cs_test_reconstruido",

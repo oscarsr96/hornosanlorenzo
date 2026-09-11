@@ -480,35 +480,61 @@ export default function AdminNoticias({ noticiasIniciales, productos }: Props) {
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <label style={label} htmlFor="an-foto">
-              Foto
-            </label>
-            <input
-              id="an-foto"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={onFoto}
-              disabled={subiendoFoto}
-              style={{ marginTop: 8 }}
-            />
-            {subiendoFoto && (
-              <p
+            <p style={label}>Foto</p>
+            {/* El `<input type="file">` nativo es un texto gris que no parece
+                un control: el obrador no veía dónde pinchar. Se queda en el
+                DOM para el teclado y el lector de pantalla, pero oculto, y lo
+                que se ve es la etiqueta vestida de botón, que abre el mismo
+                selector al pincharla. */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              {formulario.imageUrl && !subiendoFoto && (
+                <img
+                  src={formulario.imageUrl}
+                  alt=""
+                  style={{ width: 120, height: 90, objectFit: "cover", display: "block" }}
+                />
+              )}
+              <label
+                htmlFor="an-foto"
+                className="btn btn-secundario"
                 style={{
-                  marginTop: 8,
-                  fontSize: 12,
-                  color: "var(--color-ink-muted)",
+                  cursor: subiendoFoto ? "wait" : "pointer",
+                  opacity: subiendoFoto ? 0.6 : 1,
                 }}
               >
-                Subiendo la foto…
-              </p>
-            )}
-            {formulario.imageUrl && !subiendoFoto && (
-              <img
-                src={formulario.imageUrl}
-                alt=""
-                style={{ marginTop: 8, maxWidth: 200, display: "block" }}
+                {subiendoFoto
+                  ? "Subiendo la foto…"
+                  : formulario.imageUrl
+                    ? "Cambiar foto"
+                    : "Elegir foto"}
+              </label>
+              <input
+                id="an-foto"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={onFoto}
+                disabled={subiendoFoto}
+                style={{
+                  position: "absolute",
+                  width: 1,
+                  height: 1,
+                  opacity: 0,
+                  overflow: "hidden",
+                  pointerEvents: "none",
+                }}
               />
-            )}
+              <span style={{ fontSize: 12, color: "var(--color-ink-muted)" }}>
+                JPG, PNG o WebP
+              </span>
+            </div>
           </div>
 
           {formulario.imageUrl && (

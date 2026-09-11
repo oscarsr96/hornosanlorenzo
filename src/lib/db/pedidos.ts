@@ -36,6 +36,8 @@ export type PedidoConLineas = {
   subtotalCents: number;
   envioCents: number;
   totalCents: number;
+  /** El panel solo lista `pagado` y `sin_pago`; `iniciado` es un carrito abandonado. */
+  estado: "pagado" | "sin_pago";
   reconstruido: boolean;
   createdAt: Date;
   lineas: LineaPedido[];
@@ -74,7 +76,12 @@ export type PedidoReconstruido = {
  * Va en una transacción porque un pedido sin sus líneas no es un pedido: es
  * un importe sin explicación.
  */
-export async function crearPedidoIniciado(order: PricedOrder): Promise<string> {
+export async function crearPedidoIniciado(
+  order: PricedOrder,
+  // `sin_pago`: Stripe sin configurar, el pedido se anota sin cobro para que
+  // llegue al panel (migración 010). Por defecto, `iniciado`, camino de Stripe.
+  { estado = "iniciado" }: { estado?: "iniciado" | "sin_pago" } = {},
+): Promise<string> {
   const p = order.payload;
   const cliente = await pool.connect();
   try {
@@ -83,8 +90,8 @@ export async function crearPedidoIniciado(order: PricedOrder): Promise<string> {
       `insert into pedidos (
          user_id, mode, fecha_entrega, slot, store_id, address, postal_code,
          email, telefono, nombre, notas,
-         subtotal_cents, envio_cents, total_cents
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         subtotal_cents, envio_cents, total_cents, estado
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        returning id`,
       [
         order.userId ?? null,
@@ -101,6 +108,7 @@ export async function crearPedidoIniciado(order: PricedOrder): Promise<string> {
         order.subtotalCents,
         order.shippingCents,
         order.totalCents,
+        estado,
       ],
     );
     const id = rows[0].id;
@@ -274,6 +282,7 @@ export async function listarPedidos(limite = 100): Promise<PedidoConLineas[]> {
             p.subtotal_cents as "subtotalCents",
             p.envio_cents    as "envioCents",
             p.total_cents    as "totalCents",
+            p.estado,
             p.reconstruido,
             p.created_at     as "createdAt",
             coalesce(
@@ -289,7 +298,7 @@ export async function listarPedidos(limite = 100): Promise<PedidoConLineas[]> {
               '[]'::json
             ) as lineas
        from pedidos p
-      where p.estado = 'pagado'
+      where p.estado in ('pagado', 'sin_pago')
       order by p.created_at desc
       limit $1`,
     [limite],
