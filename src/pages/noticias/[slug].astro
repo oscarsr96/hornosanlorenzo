@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
+import CompraRapida from "~/components/CompraRapida.astro";
 import { formatDate } from "~/lib/format";
 import { site } from "~/data/site";
 import { obtenerNoticia } from "~/lib/db/noticias";
@@ -39,6 +40,9 @@ const cabeceras404 = fallo ? SIN_CACHE : undefined;
 if (!item) return new Response("No encontrado", { status: 404, headers: cabeceras404 });
 
 const cuerpo = await aHtml(item.cuerpo);
+// Producto de la carta enlazado desde el panel: mismo criterio que la tarjeta
+// (`NewsCard.astro`), una ficha desactivada es como si no hubiera enlace.
+const comprable = item.producto && item.producto.activo ? item.producto : null;
 const fecha = new Date(`${item.fecha}T00:00:00`);
 const imagen =
   item.imageUrl && item.imageWidth && item.imageHeight
@@ -94,5 +98,23 @@ const jsonLd = {
     </div>
 
     <div class="prose prose-stone mt-8 max-w-none [&_p]:my-4 text-[color:var(--color-ink)]" set:html={cuerpo} />
+
+    {comprable && (
+      <aside class="mt-10 max-w-md border border-[color:var(--color-line)] bg-[color:var(--color-paper)] p-5" aria-label="Pedir este producto">
+        <p class="numeracion">Pídelo ya</p>
+        <p class="font-[family-name:var(--font-display)] text-2xl mt-1">
+          <a href={`/catalogo/${comprable.slug}`} class="hover:text-[color:var(--color-accent-dark)]">{comprable.name}</a>
+        </p>
+        <CompraRapida
+          slug={comprable.slug}
+          name={comprable.name}
+          priceCents={comprable.priceCents ?? undefined}
+          consultar={comprable.consultar}
+          agotado={comprable.agotado}
+          unit={comprable.unit ?? undefined}
+          variants={comprable.variantes}
+        />
+      </aside>
+    )}
   </article>
 </MarketingLayout>

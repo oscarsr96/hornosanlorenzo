@@ -21,6 +21,7 @@ const { items } = Astro.props;
               ? { url: n.imageUrl, alt: n.imageAlt ?? "", ancho: n.imageWidth, alto: n.imageHeight }
               : null
           }
+          producto={n.producto}
         />
       </div>
     ))}

@@ -106,4 +106,114 @@ describeSiHayBD("repositorio de noticias", () => {
     const lista = await repo.listarNoticias({ soloPublicadas: true });
     expect(lista.map((n) => n.titulo)).toEqual(["Nueva", "Vieja"]);
   });
+
+  describe("producto enlazado (Este mes)", () => {
+    let productos: typeof import("~/lib/db/productos");
+    const ficha = (extra: Record<string, unknown> = {}) => ({
+      name: "Roscón de Reyes",
+      category: "tartas",
+      seccion: null,
+      priceCents: 2400,
+      consultar: false,
+      unit: null,
+      shortDescription: "Con nata o sin rellenar.",
+      cuerpo: "",
+      allergens: [],
+      destacado: false,
+      temporada: true,
+      orden: 1,
+      imageUrl: null,
+      imageAlt: null,
+      imageWidth: null,
+      imageHeight: null,
+      activo: true,
+      agotado: false,
+      variantes: [
+        { variantId: "mediano", label: "Mediano", priceCents: 2400, orden: 0 },
+        { variantId: "grande", label: "Grande", priceCents: 3600, orden: 1 },
+      ],
+      ...extra,
+    });
+
+    beforeAll(async () => {
+      productos = await import("~/lib/db/productos");
+      await pool.query("delete from noticias");
+      await pool.query("delete from productos");
+    });
+
+    afterAll(async () => {
+      await pool.query("delete from noticias");
+      await pool.query("delete from productos");
+    });
+
+    it("sin producto, la noticia sale con `producto: null` y sigue siendo una noticia", async () => {
+      const n = await repo.crearNoticia(datos({ titulo: "San Lorenzo 2026" }));
+      expect(n.productoId).toBeNull();
+      expect(n.producto).toBeNull();
+    });
+
+    it("con producto, devuelve lo que la tarjeta necesita para pintar precio y añadir", async () => {
+      const roscon = await productos.crearProducto(ficha());
+      const n = await repo.crearNoticia(
+        datos({ titulo: "Roscón 2027", productoId: roscon.id }),
+      );
+      expect(n.productoId).toBe(roscon.id);
+      expect(n.producto).toEqual({
+        slug: roscon.slug,
+        name: "Roscón de Reyes",
+        priceCents: 2400,
+        consultar: false,
+        activo: true,
+        agotado: false,
+        unit: null,
+        variantes: [
+          { id: "mediano", label: "Mediano", priceCents: 2400 },
+          { id: "grande", label: "Grande", priceCents: 3600 },
+        ],
+      });
+      // El listado y la lectura por slug llevan lo mismo que el `returning`.
+      const [enLista] = (await repo.listarNoticias({ soloPublicadas: true })).filter(
+        (x) => x.id === n.id,
+      );
+      expect(enLista.producto?.slug).toBe(roscon.slug);
+      expect((await repo.obtenerNoticia(n.slug))?.producto?.slug).toBe(roscon.slug);
+    });
+
+    it("el precio se lee de la ficha, no se copia: cambiarlo en la carta lo cambia en Este mes", async () => {
+      const [n] = (await repo.listarNoticias({ soloPublicadas: false })).filter(
+        (x) => x.titulo === "Roscón 2027",
+      );
+      await pool.query("update productos set price_cents = 2600 where id = $1", [n.productoId]);
+      expect((await repo.obtenerNoticia(n.slug))?.producto?.priceCents).toBe(2600);
+    });
+
+    it("editar la noticia puede quitar el producto, y borrar la ficha la deja sin él", async () => {
+      const [n] = (await repo.listarNoticias({ soloPublicadas: false })).filter(
+        (x) => x.titulo === "Roscón 2027",
+      );
+      const sin = await repo.actualizarNoticia(n.id, { ...datos({ titulo: n.titulo }), productoId: null });
+      expect(sin?.producto).toBeNull();
+
+      const con = await repo.actualizarNoticia(n.id, { ...datos({ titulo: n.titulo }), productoId: n.productoId });
+      expect(con?.producto?.slug).toBeTruthy();
+
+      await pool.query("delete from productos where id = $1", [n.productoId]);
+      const huerfana = await repo.obtenerNoticia(n.slug);
+      expect(huerfana?.productoId).toBeNull();
+      expect(huerfana?.producto).toBeNull();
+    });
+
+    it("un producto que no existe no entra, y lo dice en cristiano", async () => {
+      await expect(
+        repo.crearNoticia(
+          datos({ titulo: "Fantasma", productoId: "00000000-0000-0000-0000-000000000000" }),
+        ),
+      ).rejects.toMatchObject({ name: "NoticiaError", status: 400 });
+      await expect(
+        repo.crearNoticia(
+          datos({ titulo: "Fantasma", productoId: "00000000-0000-0000-0000-000000000000" }),
+        ),
+      ).rejects.toThrow(/producto/i);
+    });
+  });
 });

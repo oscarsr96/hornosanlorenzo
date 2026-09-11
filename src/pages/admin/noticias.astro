@@ -1,14 +1,22 @@
 ---
 // src/pages/admin/noticias.astro
 import AdminLayout from "~/layouts/AdminLayout.astro";
-import AdminNoticias from "~/islands/AdminNoticias.tsx";
+import AdminNoticias, { type ProductoOpcion } from "~/islands/AdminNoticias.tsx";
 import { listarNoticias, type Noticia } from "~/lib/db/noticias";
+import { listarProductos } from "~/lib/db/productos";
 
 export const prerender = false;
 
 let noticiasIniciales: Noticia[] = [];
+// Para el desplegable «Producto de la carta»: solo id y nombre, y solo las
+// fichas activas. El resto de la ficha no tiene por qué viajar al navegador.
+let productos: ProductoOpcion[] = [];
 try {
   noticiasIniciales = await listarNoticias({ soloPublicadas: false });
+  productos = (await listarProductos({ soloActivos: true })).map((p) => ({
+    id: p.id,
+    name: p.name,
+  }));
 } catch (error) {
   // La isla sabe recargar la lista por su cuenta: mejor entrar con la lista
   // vacía y poder reintentar que ver un 500 al abrir el panel.
@@ -19,5 +27,5 @@ try {
 }
 ---
 <AdminLayout titulo="Este mes">
-  <AdminNoticias client:load noticiasIniciales={noticiasIniciales} />
+  <AdminNoticias client:load noticiasIniciales={noticiasIniciales} productos={productos} />
 </AdminLayout>

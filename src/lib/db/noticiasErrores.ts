@@ -29,17 +29,28 @@ export class NoticiaError extends Error {
  * error *es*, no por lo que le falta: solo un `NoticiaError` propio (lanzado
  * por `crearNoticia` o `actualizarNoticia`, en `noticias.ts`) se reenvía tal
  * cual, con su propio `status`. El único código de `pg` que se traduce a
- * mano es `23505`, la violación del índice único de `slug`; el texto del
- * índice de Postgres no sale nunca a la pantalla. Cualquier otra cosa —un
- * `Error` pelado sin `.code`, por ejemplo— no se confunde con un error
- * nuestro: se relanza tal cual para que quien llame decida qué hacer.
+ * mano es `23505`, la violación del índice único de `slug`, y desde que la
+ * noticia puede enlazar un producto, `23503`, la clave ajena a `productos`
+ * (el desplegable del panel apuntaba a una ficha que ya no existe). El
+ * texto del índice o de la restricción de Postgres no sale nunca a la
+ * pantalla. Cualquier otra cosa —un `Error` pelado sin `.code`, por
+ * ejemplo— no se confunde con un error nuestro: se relanza tal cual para
+ * que quien llame decida qué hacer.
  */
 export function traduce(err: unknown): never {
   if (err instanceof NoticiaError) throw err;
-  if (typeof err === "object" && err && "code" in err && err.code === "23505") {
+  const code =
+    typeof err === "object" && err && "code" in err ? err.code : undefined;
+  if (code === "23505") {
     throw new NoticiaError(
       "Ya hay una noticia con ese título. Cámbialo un poco.",
       409,
+    );
+  }
+  if (code === "23503") {
+    throw new NoticiaError(
+      "Ese producto ya no está en la carta. Elige otro o deja la noticia sin producto.",
+      400,
     );
   }
   throw err;

@@ -63,8 +63,20 @@ export default function AccesoSesion({ tono }: { tono: Tono }) {
     );
   }
 
+  // Solo un atajo visible: quién puede entrar en /admin lo decide el
+  // middleware en el servidor con la sesión, no este `rol` que viene del
+  // navegador. Va aquí, en la isla, y no en el HTML de la cabecera, porque
+  // la home y el catálogo se sirven desde una caché compartida (ISR): un
+  // botón de admin pintado en servidor se lo vería la siguiente persona.
+  const esAdmin = (data.user as { rol?: string }).rol === "admin";
+
   return (
     <div className={estilo.contenedor}>
+      {esAdmin && (
+        <a href="/admin" data-mobile-nav-link className={estilo.enlaceEnGrupo}>
+          Panel de administración
+        </a>
+      )}
       <a href="/cuenta" data-mobile-nav-link className={estilo.enlaceEnGrupo}>
         Mi cuenta
       </a>

@@ -13,6 +13,23 @@ export { NoticiaError };
  * Noticias. Único sitio con SQL de noticias; hacia fuera, camelCase.
  */
 
+/**
+ * Lo que la tarjeta de Este mes necesita del producto enlazado para pintar
+ * el precio y el botón de añadir: lo mismo que `ProductCard` recibe de la
+ * carta. Se lee de la ficha en cada consulta, nunca se copia a la noticia:
+ * un precio cambiado en el panel se ve a la vez en la carta y en Este mes.
+ */
+export type ProductoEnNoticia = {
+  slug: string;
+  name: string;
+  priceCents: number | null;
+  consultar: boolean;
+  activo: boolean;
+  agotado: boolean;
+  unit: string | null;
+  variantes: { id: string; label: string; priceCents: number }[];
+};
+
 export type Noticia = {
   id: string;
   slug: string;
@@ -26,6 +43,9 @@ export type Noticia = {
   imageHeight: number | null;
   tags: string[];
   publicada: boolean;
+  /** Producto de la carta que se puede añadir desde la noticia, si lo hay. */
+  productoId: string | null;
+  producto: ProductoEnNoticia | null;
 };
 
 export type DatosNoticia = {
@@ -39,10 +59,15 @@ export type DatosNoticia = {
   imageHeight: number | null;
   tags: string[];
   publicada: boolean;
+  /** Opcional y no obligatorio en el tipo: el volcado del Markdown no lo trae. */
+  productoId?: string | null;
   /** Solo lo usa el volcado inicial, para conservar las URLs de siempre. */
   slug?: string;
 };
 
+// `producto` es una subconsulta correlada sobre `noticias.producto_id`, con
+// el nombre de la tabla explícito para que valga igual en un `select ... from
+// noticias` que en el `returning` de un insert o un update.
 const CAMPOS = `
   id, slug, titulo, excerpt, cuerpo,
   to_char(fecha, 'YYYY-MM-DD') as fecha,
@@ -50,7 +75,20 @@ const CAMPOS = `
   image_alt    as "imageAlt",
   image_width  as "imageWidth",
   image_height as "imageHeight",
-  tags, publicada
+  tags, publicada,
+  producto_id  as "productoId",
+  (select json_build_object(
+            'slug', p.slug, 'name', p.name,
+            'priceCents', p.price_cents, 'consultar', p.consultar,
+            'activo', p.activo, 'agotado', p.agotado, 'unit', p.unit,
+            'variantes', coalesce(
+              (select json_agg(json_build_object(
+                         'id', v.variant_id, 'label', v.label,
+                         'priceCents', v.price_cents)
+                       order by v.orden)
+                 from variantes v where v.producto_id = p.id),
+              '[]'::json))
+     from productos p where p.id = noticias.producto_id) as producto
 `;
 
 export async function listarNoticias({
@@ -83,8 +121,8 @@ export async function crearNoticia(datos: DatosNoticia): Promise<Noticia> {
     const { rows } = await pool.query<Noticia>(
       `insert into noticias
          (slug, titulo, excerpt, cuerpo, fecha, image_url, image_alt,
-          image_width, image_height, tags, publicada)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          image_width, image_height, tags, publicada, producto_id)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        returning ${CAMPOS}`,
       [
         datos.slug ?? slugify(datos.titulo),
@@ -98,6 +136,7 @@ export async function crearNoticia(datos: DatosNoticia): Promise<Noticia> {
         datos.imageHeight,
         datos.tags,
         datos.publicada,
+        datos.productoId ?? null,
       ],
     );
     return rows[0];
@@ -119,7 +158,7 @@ export async function actualizarNoticia(
       `update noticias set
          titulo = $2, excerpt = $3, cuerpo = $4, fecha = $5,
          image_url = $6, image_alt = $7, image_width = $8, image_height = $9,
-         tags = $10, publicada = $11, updated_at = now()
+         tags = $10, publicada = $11, producto_id = $12, updated_at = now()
        where id = $1
        returning ${CAMPOS}`,
       [
@@ -134,6 +173,7 @@ export async function actualizarNoticia(
         datos.imageHeight,
         datos.tags,
         datos.publicada,
+        datos.productoId ?? null,
       ],
     );
     return rows[0] ?? null;

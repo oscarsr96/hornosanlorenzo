@@ -1,6 +1,8 @@
 ---
 import { Image } from "astro:assets";
+import CompraRapida from "~/components/CompraRapida.astro";
 import { formatDate } from "~/lib/format";
+import type { ProductoEnNoticia } from "~/lib/db/noticias";
 
 interface Props {
   slug: string;
@@ -13,8 +15,16 @@ interface Props {
    * guardadas al subirla, para no descargar la foto solo para medirla.
    */
   imagen: { url: string; alt: string; ancho: number; alto: number } | null;
+  /**
+   * Producto de la carta enlazado desde el panel, si lo hay: la tarjeta
+   * enseña su precio y el mismo botón de añadir que el catálogo. Una ficha
+   * desactivada se trata como si no hubiera enlace: la noticia sigue, el
+   * botón no.
+   */
+  producto?: ProductoEnNoticia | null;
 }
-const { slug, title, excerpt, date, imagen } = Astro.props;
+const { slug, title, excerpt, date, imagen, producto = null } = Astro.props;
+const comprable = producto && producto.activo ? producto : null;
 ---
 <article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)]">
   <a href={`/noticias/${slug}`} class="block">
@@ -43,5 +53,21 @@ const { slug, title, excerpt, date, imagen } = Astro.props;
     </h3>
     <p class="text-sm text-[color:var(--color-ink-muted)] mt-2 line-clamp-3">{excerpt}</p>
     <a href={`/noticias/${slug}`} class="inline-block mt-3 text-sm text-[color:var(--color-accent-dark)] font-semibold">Leer más →</a>
+    {comprable && (
+      <div class="mt-4 pt-4 border-t border-[color:var(--color-line)]">
+        <p class="numeracion">
+          <a href={`/catalogo/${comprable.slug}`} class="hover:text-[color:var(--color-accent-dark)]">{comprable.name}</a>
+        </p>
+        <CompraRapida
+          slug={comprable.slug}
+          name={comprable.name}
+          priceCents={comprable.priceCents ?? undefined}
+          consultar={comprable.consultar}
+          agotado={comprable.agotado}
+          unit={comprable.unit ?? undefined}
+          variants={comprable.variantes}
+        />
+      </div>
+    )}
   </div>
 </article>

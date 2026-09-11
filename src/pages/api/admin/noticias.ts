@@ -35,6 +35,10 @@ const esquema = z.object({
   imageHeight: z.number().int().positive().nullable().default(null),
   tags: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   publicada: z.boolean().default(false),
+  // Producto de la carta que se puede añadir desde la noticia. Solo se
+  // comprueba la forma: que exista lo decide la clave ajena, y `traduce`
+  // lo convierte en un 400 con mensaje presentable.
+  productoId: z.string().uuid().nullable().default(null),
 });
 
 async function cuerpoJSON(request: Request): Promise<unknown> {

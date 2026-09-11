@@ -20,10 +20,17 @@ export type Noticia = {
   imageHeight: number | null;
   tags: string[];
   publicada: boolean;
+  productoId: string | null;
+  /** Lo que devuelve el servidor del producto enlazado; aquí solo se enseña el nombre. */
+  producto: { slug: string; name: string } | null;
 };
+
+/** Lo justo para el desplegable «Producto de la carta». */
+export type ProductoOpcion = { id: string; name: string };
 
 type Props = {
   noticiasIniciales: Noticia[];
+  productos: ProductoOpcion[];
 };
 
 // Mismos tokens y patrón de campo/error que `CuentaDirecciones.tsx`: nada
@@ -71,6 +78,8 @@ type FormularioNoticia = {
   imageWidth: number | null;
   imageHeight: number | null;
   publicada: boolean;
+  /** `""` es «ninguno»: un `<select>` no sabe de `null`. */
+  productoId: string;
 };
 
 const FORMULARIO_VACIO: FormularioNoticia = {
@@ -84,6 +93,7 @@ const FORMULARIO_VACIO: FormularioNoticia = {
   imageWidth: null,
   imageHeight: null,
   publicada: false,
+  productoId: "",
 };
 
 function formularioDesdeNoticia(n: Noticia): FormularioNoticia {
@@ -98,6 +108,7 @@ function formularioDesdeNoticia(n: Noticia): FormularioNoticia {
     imageWidth: n.imageWidth,
     imageHeight: n.imageHeight,
     publicada: n.publicada,
+    productoId: n.productoId ?? "",
   };
 }
 
@@ -124,7 +135,7 @@ async function llamarNoticias(
   }
 }
 
-export default function AdminNoticias({ noticiasIniciales }: Props) {
+export default function AdminNoticias({ noticiasIniciales, productos }: Props) {
   const [noticias, setNoticias] = useState(noticiasIniciales);
   const [abierto, setAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -224,6 +235,7 @@ export default function AdminNoticias({ noticiasIniciales }: Props) {
         .map((t) => t.trim())
         .filter(Boolean),
       publicada: formulario.publicada,
+      productoId: formulario.productoId || null,
     };
 
     const resultado = editandoId
@@ -334,6 +346,11 @@ export default function AdminNoticias({ noticiasIniciales }: Props) {
                   {formatDate(new Date(`${n.fecha}T00:00:00`))}
                 </p>
                 <p style={{ marginTop: 4, fontWeight: 600 }}>{n.titulo}</p>
+                {n.producto && (
+                  <p className="numeracion" style={{ marginTop: 4 }}>
+                    Con producto: {n.producto.name}
+                  </p>
+                )}
               </button>
               <button
                 type="button"
@@ -431,6 +448,35 @@ export default function AdminNoticias({ noticiasIniciales }: Props) {
               placeholder="roscón, temporada, obrador"
               style={field}
             />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="an-producto">
+              Producto de la carta (se podrá añadir al carrito desde la noticia)
+            </label>
+            {/* Solo fichas activas: enlazar una desactivada dejaría la
+                noticia sin botón sin que nadie se diera cuenta. Si la
+                noticia ya apuntaba a una que después se desactivó, se
+                mantiene como opción para no perder el enlace al guardar. */}
+            <select
+              id="an-producto"
+              value={formulario.productoId}
+              onChange={(e) => actualizaCampo("productoId", e.target.value)}
+              style={field}
+            >
+              <option value="">Ninguno: solo texto</option>
+              {productos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+              {formulario.productoId &&
+                !productos.some((p) => p.id === formulario.productoId) && (
+                  <option value={formulario.productoId}>
+                    (producto desactivado: se conserva el enlace)
+                  </option>
+                )}
+            </select>
           </div>
 
           <div style={{ marginTop: 16 }}>

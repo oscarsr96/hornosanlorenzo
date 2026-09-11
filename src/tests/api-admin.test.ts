@@ -72,6 +72,39 @@ describe("guardia de los endpoints del panel", () => {
     } as never);
     expect(r.status).toBe(400);
   });
+
+  it("el producto enlazado tiene que ser un uuid o nada: un id inventado no llega a Postgres", async () => {
+    const { POST } = await import("~/pages/api/admin/noticias");
+    const r = await POST({
+      request: peticion({
+        titulo: "Roscón de Reyes 2027",
+        excerpt: "Reservas abiertas hasta el 3 de enero.",
+        fecha: "2026-12-15",
+        productoId: "roscon-de-reyes",
+      }),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(400);
+
+    const { crearNoticia } = await import("~/lib/db/noticias");
+    expect(crearNoticia).not.toHaveBeenCalled();
+  });
+
+  it("sin producto en el cuerpo, la noticia se guarda con `productoId: null`", async () => {
+    const { crearNoticia } = await import("~/lib/db/noticias");
+    vi.mocked(crearNoticia).mockResolvedValueOnce({ slug: "x" } as never);
+    const { POST } = await import("~/pages/api/admin/noticias");
+    const r = await POST({
+      request: peticion({
+        titulo: "San Lorenzo 2027",
+        excerpt: "Fiestas patronales, horario especial.",
+        fecha: "2027-08-10",
+      }),
+      locals: { usuario: admin },
+    } as never);
+    expect(r.status).toBe(201);
+    expect(vi.mocked(crearNoticia).mock.calls[0][0]).toMatchObject({ productoId: null });
+  });
 });
 
 describe("guardia del endpoint de subida de fotos", () => {
