@@ -26,6 +26,7 @@ vi.mock("~/lib/db/productos", () => ({
 }));
 vi.mock("~/lib/db/pedidos", () => ({
   cambiarEstadoAMano: vi.fn().mockResolvedValue(true),
+  listarPedidos: vi.fn().mockResolvedValue([]),
 }));
 
 const cliente = { id: "u1", email: "a@b.c", name: "Ana", rol: "cliente" };
@@ -222,7 +223,7 @@ describe("guardia y validación de PATCH /api/admin/pedidos", () => {
   const cuerpo = { id: "b560ca67-4e60-460a-93d8-2395ebfe2133", estado: "pagado" };
 
   it("sin sesión o con sesión de cliente, 404", async () => {
-    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const { PATCH } = await import("~/pages/api/admin/pedidos/index");
     expect((await PATCH({ request: patch(cuerpo), locals: { usuario: null } } as never)).status).toBe(404);
     expect((await PATCH({ request: patch(cuerpo), locals: { usuario: cliente } } as never)).status).toBe(404);
     const { cambiarEstadoAMano } = await import("~/lib/db/pedidos");
@@ -230,7 +231,7 @@ describe("guardia y validación de PATCH /api/admin/pedidos", () => {
   });
 
   it("solo admite `pagado` o `sin_pago`: nadie marca un pedido como `iniciado` desde el panel", async () => {
-    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const { PATCH } = await import("~/pages/api/admin/pedidos/index");
     const r = await PATCH({
       request: patch({ ...cuerpo, estado: "iniciado" }),
       locals: { usuario: admin },
@@ -239,7 +240,7 @@ describe("guardia y validación de PATCH /api/admin/pedidos", () => {
   });
 
   it("con admin y datos válidos, cambia el estado y devuelve el nuevo", async () => {
-    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const { PATCH } = await import("~/pages/api/admin/pedidos/index");
     const r = await PATCH({ request: patch(cuerpo), locals: { usuario: admin } } as never);
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ estado: "pagado" });
@@ -250,8 +251,36 @@ describe("guardia y validación de PATCH /api/admin/pedidos", () => {
   it("si el pedido no admite ese cambio (Stripe, iniciado, no existe), 409 y lo dice", async () => {
     const { cambiarEstadoAMano } = await import("~/lib/db/pedidos");
     vi.mocked(cambiarEstadoAMano).mockResolvedValueOnce(false);
-    const { PATCH } = await import("~/pages/api/admin/pedidos");
+    const { PATCH } = await import("~/pages/api/admin/pedidos/index");
     const r = await PATCH({ request: patch(cuerpo), locals: { usuario: admin } } as never);
     expect(r.status).toBe(409);
+  });
+});
+
+describe("guardia de GET /api/admin/pedidos/exportar", () => {
+  const ctx = (usuario: unknown, query = "") => ({
+    url: new URL(`https://x.test/api/admin/pedidos/exportar${query}`),
+    locals: { usuario },
+  });
+
+  it("sin sesión o con sesión de cliente, 404 y no se lee nada", async () => {
+    const { GET } = await import("~/pages/api/admin/pedidos/exportar");
+    expect((await GET(ctx(null) as never)).status).toBe(404);
+    expect((await GET(ctx(cliente) as never)).status).toBe(404);
+    const { listarPedidos } = await import("~/lib/db/pedidos");
+    expect(listarPedidos).not.toHaveBeenCalled();
+  });
+
+  it("con admin devuelve un .xlsx y pasa los filtros de fecha; lo que no es fecha se ignora", async () => {
+    const { GET } = await import("~/pages/api/admin/pedidos/exportar");
+    const r = await GET(ctx(admin, "?entrega=2026-09-16&entrada=ayer") as never);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-type")).toContain("spreadsheetml");
+    expect(r.headers.get("content-disposition")).toContain("pedidos-entrega-2026-09-16.xlsx");
+    const { listarPedidos } = await import("~/lib/db/pedidos");
+    expect(listarPedidos).toHaveBeenCalledWith(100, {
+      fechaEntrega: "2026-09-16",
+      fechaEntrada: undefined,
+    });
   });
 });

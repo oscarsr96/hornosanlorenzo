@@ -88,6 +88,14 @@ function franja(p: PedidoConLineas): string {
     {hayFiltro && (
       <a href="/admin/pedidos" class="text-sm underline underline-offset-4 text-[color:var(--color-ink-muted)]">Quitar filtros</a>
     )}
+    {/* Descarga los mismos pedidos que se ven, con los mismos filtros. */}
+    <a
+      href={`/api/admin/pedidos/exportar?entrega=${filtroEntrega ?? ""}&entrada=${filtroEntrada ?? ""}`}
+      class="btn btn-secundario ml-auto"
+      download
+    >
+      Exportar a Excel
+    </a>
   </form>
 
   {!fallo && pedidos.length === 0 && (
