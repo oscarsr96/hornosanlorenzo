@@ -29,39 +29,20 @@
       pedidos viviendo ahí dentro, deja de ser incómodo y pasa a ser peligroso:
       cualquier prueba local podría escribir o borrar sobre las 98 fichas
       reales, sobre una noticia publicada o sobre un pedido de un cliente.
-      Resolverlo **antes** de correr el volcado (punto siguiente) contra
-      producción, no después. La rama `pruebas` de Neon ya existe y es gratis
-- [ ] **El volcado de productos y noticias no se ha ejecutado nunca contra
-      producción, ni se ha hecho el ensayo que verifica que funciona.**
-      `pnpm migrar:productos` y `pnpm migrar:noticias` solo se han corrido en
-      este entorno de trabajo, que no tiene `BLOB_READ_WRITE_TOKEN` — así que
-      nunca se han corrido de verdad, contra ninguna base de datos real, ni han
-      subido una sola foto. Tampoco se ha hecho el ensayo que el plan llama «la
-      diferencia entre migrar y perder la carta»: volcar, romper un precio a
-      propósito, y comprobar que `pnpm migrar:productos --verificar` lo detecta.
-      Hasta que ese ensayo y el volcado real pasen en verde contra producción,
-      **`src/content/products/` y `src/content/noticias/` no se tocan**: hoy son
-      la única copia de la carta y de las noticias que existe fuera del
-      historial de git, porque las tablas `productos` y `noticias` de
-      producción están vacías
-- [ ] **Las migraciones 005, 006 y 007 no están aplicadas en producción.**
-      Producción solo tiene hasta `db/migrations/004_direcciones.sql`; las
-      tablas de pedidos (`005_pedidos.sql`), noticias (`006_noticias.sql`) y
-      productos con sus variantes (`007_productos.sql`) solo existen en este
-      entorno local. Si esta rama se despliega antes de correr `pnpm db:migrar`
-      contra producción, el checkout intenta escribir en una tabla `pedidos`
-      que no existe todavía, y falla justo en el momento de cobrar
-- [ ] **`VERCEL_BYPASS_TOKEN` y `BLOB_READ_WRITE_TOKEN` sin configurar en
-      Vercel.** El primero invalida la caché ISR cuando se guarda algo desde el
-      panel; el segundo sube y borra fotos en Vercel Blob. Sin ellos, el panel
-      deja guardar pero la web no se entera del cambio (o tarda hasta que
-      caduque la caché) y no se pueden subir fotos. Ojo en particular con
-      `VERCEL_BYPASS_TOKEN`: tiene que estar puesto en el entorno de
-      **construcción** de Vercel además del de ejecución, porque
-      `astro.config.mjs` lo lee con `process.env.VERCEL_BYPASS_TOKEN` al
-      construir. Si solo está en el entorno de ejecución, la invalidación falla
-      en silencio y nadie se entera hasta que alguien pregunta por qué un
-      precio cambiado en el panel no se ve en la web
+      Desde el 11 de septiembre de 2026 esas 98 fichas y las 5 noticias YA
+      ESTÁN en producción, así que el `.env` local apunta hoy a datos reales:
+      es lo primero que hay que hacer antes de volver a tocar código que
+      escriba en la base. La rama `pruebas` de Neon (la de
+      `DATABASE_URL_TEST`) la usan las pruebas, que borran filas: hace falta
+      una tercera rama para desarrollo, no reutilizar esa
+- [ ] **Retirar `src/content/products/` y `src/content/noticias/`** ahora
+      que el volcado ya pasó contra producción (11 de septiembre de 2026:
+      98 fichas, 5 noticias, 8 fotos en Blob, `--verificar` en verde en ambos,
+      y el ensayo de romper un precio a propósito detectado por la
+      verificación). Ya no son la única copia; en cuanto el obrador edite una
+      ficha desde el panel, el Markdown queda desactualizado y engaña. Antes
+      de borrarlos, comprobar que nada del build los importa todavía
+      (`astro:content`, `getCollection`)
 - [ ] **`DATABASE_URL` y `BETTER_AUTH_SECRET` en Vercel antes de fusionar
       `feat/base-de-datos-y-acceso` a `main`.** `src/middleware.ts` corre en
       todas las peticiones y importa `~/lib/auth/server`, que crea el pool de
@@ -153,10 +134,15 @@
 - [ ] **Nadie ha visto el panel en un navegador de verdad.** Cada pantalla
       (`/admin/pedidos`, `/admin/clientes`, `/admin/noticias`,
       `/admin/productos`) se verificó con pruebas automáticas, `curl` y la
-      salida de `pnpm build`, nunca abriéndola en un navegador. Falta la pasada
-      visual completa y, sobre todo, probar de principio a fin el flujo de subir
-      una foto real: elegir fichero, que suba a Vercel Blob, guardar la ficha y
-      comprobar que se ve cambiada en `/catalogo`
+      salida de `pnpm build`, nunca abriéndola en un navegador. Las páginas
+      PÚBLICAS sí se vieron el 11 de septiembre de 2026 en producción
+      (`/catalogo/dulce` y una ficha con foto de Blob), y eso es justo lo que
+      destapó que la web había salido sin imágenes (commit `968d5c1`). Falta
+      la pasada visual del panel y, sobre todo, probar de principio a fin el
+      flujo de subir una foto real: elegir fichero, que suba a Vercel Blob,
+      guardar la ficha, y comprobar que la invalidación con
+      `VERCEL_BYPASS_TOKEN` hace que se vea cambiada en `/catalogo` al
+      instante (el token está puesto, pero nadie lo ha visto funcionar)
 - [ ] **Firma en versión clara.** La cabecera es teja y el logo es moka: hoy se
       invierte a blanco por CSS (`[filter:brightness(0)_invert(1)]` en
       `Header.astro`), lo que aplana el acento teja del «desde 1986». Pedir al
@@ -210,5 +196,3 @@
       packs XL descontados. Necesita backend (auth + base de datos)
 - [ ] Si algún día se quieren cuentas de usuario, el alta de `/acceso` está
       montada para admitir contraseña. Hoy no la pide a propósito
-- [ ] Revisar el despliegue en producción: rutas nuevas, el PDF de la carta y
-      que las funciones de /api respondan
