@@ -148,7 +148,19 @@
       flujo de subir una foto real: elegir fichero, que suba a Vercel Blob,
       guardar la ficha, y comprobar que la invalidación con
       `VERCEL_BYPASS_TOKEN` hace que se vea cambiada en `/catalogo` al
-      instante (el token está puesto, pero nadie lo ha visto funcionar)
+      instante (el token está puesto, pero nadie lo ha visto funcionar).
+      Añadido el 11 de septiembre, también sin ver con sesión: el botón
+      «Panel de administración» de la cabecera, «Marcar como cobrado» y
+      «Deshacer» sobre el pedido de prueba, y que `pedidos.xlsx` abre bien en
+      el Excel de Oscar
+- [ ] **Borrar el pedido de prueba** «Prueba de flujo (Claude)» de producción
+      (`b560ca67-…`, 6,00 €, sin pago) cuando ya no haga falta para probar
+- [ ] `/acceso` sale con `cache-control: public, max-age=0, must-revalidate`,
+      no `no-store` como `/carrito`; visto en producción el 11 de septiembre.
+      Hoy no cachea nada porque `max-age=0`, pero la página lleva formulario
+      de sesión y debería declararse `no-store` como las demás
+- [ ] Borrar `.superpowers/` (informes SDD del plan 2): el despliegue ya está
+      confirmado y no aportan nada al repositorio
 - [ ] **Firma en versión clara.** La cabecera es teja y el logo es moka: hoy se
       invierte a blanco por CSS (`[filter:brightness(0)_invert(1)]` en
       `Header.astro`), lo que aplana el acento teja del «desde 1986». Pedir al

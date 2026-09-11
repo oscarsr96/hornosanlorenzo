@@ -44,6 +44,11 @@ Cinco formas de creer que algo está comprobado cuando no lo está:
   por cubierta la guardia de un endpoint con una prueba que nunca lo importaba,
   con el `vi.mock` necesario escrito y sin usar. Los cazó la revisión, no el
   autor.
+- El plan 2 salió a producción **sin una sola imagen** (11 de septiembre) con
+  129 pruebas, `astro check`, `pnpm build` y `curl` a las rutas en verde: el
+  endpoint `/_image` se leía a sí mismo por la URL interna del despliegue,
+  que está detrás de Vercel Authentication. Ese fallo **solo existe dentro de
+  Vercel**; lo destapó abrir el catálogo en un navegador contra producción.
 
 **Why:** todas aparecían en el recuento y ninguna protegía nada. Es peor que no
 tenerlas: dan tranquilidad falsa y nadie vuelve a mirarlas. Y un informe que
@@ -54,7 +59,9 @@ lo demás que dice ese informe.
 roja. Contar las saltadas en terminal limpia (`env -i`), no en la tuya.
 Afirmar sobre el motivo del fallo, no solo sobre su tipo. Y `pnpm build` en
 cada tarea, que ni las pruebas ni los tipos ven si el sitio se despliega.
-Al escribir un informe, pegar la **salida literal**, no un resumen: si el
+Tras desplegar, mirar producción con un navegador, no solo con `curl`: un 200
+con la página vacía de imágenes sigue siendo un 200. Al escribir un informe,
+pegar la **salida literal**, no un resumen: si el
 comando pegado no puede producir esa salida, alguien lo verá. Un `vi.mock` que
 ninguna prueba usa es una prueba que se pensó y no se escribió, no decoración.
 Y «no verificado» es gratis; decirlo cuesta menos que perder la credibilidad
