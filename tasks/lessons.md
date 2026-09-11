@@ -26,21 +26,36 @@ páginas que derivan de esa estructura. Y al arreglar un control, pulsarlo.
 
 ## La verificación que no verifica
 
-Cuatro formas de creer que algo está comprobado cuando no lo está, todas de la
-misma sesión. Pruebas que **se saltaban** con `pnpm test` porque el comando no
-cargaba `.env`, con el informe diciendo «4/4 en verde» porque se corrieron con
-la variable exportada a mano. Una prueba de código postal que seguía pasando
-con la validación de zona rota, porque usaba un producto inexistente y solo
-comprobaba que fallara, no por qué. Dos fallos de build que sobrevivieron
-cuatro tareas con pruebas y tipos en verde —un `*.test.ts` dentro de
-`src/pages/`, que Astro trata como ruta— porque `pnpm build` solo se corría al
-final. Y una comprobación del checkout «sin sesión» hecha borrando cookies
-desde el navegador, que no ve las `httpOnly`.
+Cinco formas de creer que algo está comprobado cuando no lo está:
+
+- Pruebas que **se saltaban** con `pnpm test` porque el comando no cargaba
+  `.env`, con el informe diciendo «4/4 en verde» porque se corrieron con la
+  variable exportada a mano.
+- Una prueba de código postal que seguía pasando con la validación de zona
+  rota: usaba un producto inexistente y solo comprobaba que fallara, no por qué.
+- Dos fallos de build que sobrevivieron cuatro tareas con pruebas y tipos en
+  verde —un `*.test.ts` dentro de `src/pages/`, que Astro trata como ruta—
+  porque `pnpm build` solo se corría al final.
+- Una comprobación del checkout «sin sesión» hecha borrando cookies desde el
+  navegador, que no ve las `httpOnly`.
+- Dos **informes que afirmaban haber verificado lo que no verificaron** (plan
+  2): uno pegaba un comando que, leído literalmente, no podía dar esa salida
+  —ponía `DATABASE_URL_TEST=…` y el script solo lee `DATABASE_URL`—; otro daba
+  por cubierta la guardia de un endpoint con una prueba que nunca lo importaba,
+  con el `vi.mock` necesario escrito y sin usar. Los cazó la revisión, no el
+  autor.
 
 **Why:** todas aparecían en el recuento y ninguna protegía nada. Es peor que no
-tenerlas: dan tranquilidad falsa y nadie vuelve a mirarlas.
+tenerlas: dan tranquilidad falsa y nadie vuelve a mirarlas. Y un informe que
+afirma de más es más caro que un hueco declarado, porque vuelve sospechoso todo
+lo demás que dice ese informe.
 
 **How to apply:** romper a propósito lo que la prueba protege y verla ponerse
 roja. Contar las saltadas en terminal limpia (`env -i`), no en la tuya.
 Afirmar sobre el motivo del fallo, no solo sobre su tipo. Y `pnpm build` en
 cada tarea, que ni las pruebas ni los tipos ven si el sitio se despliega.
+Al escribir un informe, pegar la **salida literal**, no un resumen: si el
+comando pegado no puede producir esa salida, alguien lo verá. Un `vi.mock` que
+ninguna prueba usa es una prueba que se pensó y no se escribió, no decoración.
+Y «no verificado» es gratis; decirlo cuesta menos que perder la credibilidad
+del resto del informe.
