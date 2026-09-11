@@ -78,7 +78,7 @@ export const mainNav: readonly NavItem[] = [
     ],
   },
   // Sin submenú de momento: entra como sección y ya se poblará.
-  { href: "/noticias", label: "Noticias" },
+  { href: "/noticias", label: "Este mes" },
 ] as const;
 
 /** Las entradas del submenú de Tienda Online, reutilizadas en /catalogo. */
@@ -92,7 +92,7 @@ export const footerNav: readonly { href: string; label: string }[] = [
   { href: "/servicios", label: "Servicios" },
   { href: "/tradicion-y-calidad", label: "Tradición y calidad" },
   { href: "/tiendas", label: "Nuestras tiendas" },
-  { href: "/noticias", label: "Noticias" },
+  { href: "/noticias", label: "Este mes" },
   { href: "/contacto", label: "Contacto" },
 ] as const;
 

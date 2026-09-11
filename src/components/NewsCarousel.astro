@@ -8,7 +8,7 @@ interface Props {
 const { items } = Astro.props;
 ---
 <div class="news-carousel" data-news-carousel>
-  <div class="news-carousel__track" data-track tabindex="0" aria-label="Noticias" role="region">
+  <div class="news-carousel__track" data-track tabindex="0" aria-label="Este mes" role="region">
     {items.map((n) => (
       <div class="news-carousel__slide" data-slide>
         <NewsCard
