@@ -87,7 +87,13 @@
       `/admin/productos`, en cuanto exista la ficha en producción (ver el punto
       del volcado, más arriba). Siguen teniendo que venir de ellos, pero ya no
       hace falta pasar por nosotros para meterlos
-- [ ] Configurar las 5 variables de Stripe y Resend en Vercel (`.env.example`)
+- [ ] Configurar las 5 variables de Stripe y Resend en Vercel (`.env.example`).
+      Hasta entonces «Pagar» anota el pedido como `sin_pago` (desde el 11 de
+      septiembre de 2026) y cualquiera puede dejar uno sin cobrar; el panel
+      lo marca «Sin pagar». Al poner la clave, la rama deja de entrar sola
+- [ ] **Falta el correo de aviso al obrador de los pedidos `sin_pago`**: el
+      webhook de Stripe avisa por Resend al cobrar, pero esta rama no pasa por
+      ahí. Hoy solo se ven entrando en `/admin/pedidos`
 - [ ] Condiciones de compra: razón social, CIF y revisión legal
 - [ ] Confirmar con el obrador gastos de envío y pedido mínimo
       (constantes en `src/lib/entrega.ts`, hoy a cero)
