@@ -1,0 +1,201 @@
+---
+// src/pages/admin/produccion.astro
+import AdminLayout from "~/layouts/AdminLayout.astro";
+import { hojaProduccion, type HojaProduccion } from "~/lib/db/produccion";
+import { formatDateISO } from "~/lib/format";
+import { stores } from "~/data/stores";
+
+export const prerender = false;
+
+// La hoja va por el día de ENTREGA: lo que hay que tener horneado ese día.
+// «Hoy» se calcula en hora de Madrid y no con `new Date()` a secas, igual
+// que en /admin/resumen: el servidor de Vercel vive en UTC y a partir de las
+// 22:00 ya sería mañana para él.
+function hoyEnMadrid(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+}
+function sumaDias(iso: string, dias: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+const hoy = hoyEnMadrid();
+const atajos = [
+  { id: "hoy", label: "Hoy", dia: hoy },
+  { id: "manana", label: "Mañana", dia: sumaDias(hoy, 1) },
+] as const;
+
+// Mismo criterio que los filtros de /admin/pedidos: solo se acepta la forma
+// de fecha, y esta página se sirve en servidor fuera del ISR, así que aquí
+// sí se leen parámetros. Por defecto, hoy.
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const pedido = Astro.url.searchParams.get("dia") ?? "";
+const dia = FECHA.test(pedido) ? pedido : hoy;
+const atajoActivo = atajos.find((a) => a.dia === dia)?.id;
+
+// Igual que en el resto del panel: un fallo de Postgres no puede dejar la
+// página en un 500. Se enseña el aviso y el panel sigue navegable.
+let hoja: HojaProduccion | null = null;
+let fallo = false;
+try {
+  hoja = await hojaProduccion(dia);
+} catch (error) {
+  fallo = true;
+  console.error(
+    "No se pudo calcular la hoja de producción:",
+    error instanceof Error ? error.message : error,
+  );
+}
+
+// La base de datos da la clave (`recogida:<tienda>` o `domicilio`); el
+// nombre de la tienda se pone aquí, que es quien conoce `stores`.
+function nombreDestino(destino: string): string {
+  if (destino === "domicilio") return "A domicilio";
+  const id = destino.replace(/^recogida:/, "");
+  const tienda = stores.find((s) => s.id === id);
+  return tienda ? `Recogida ${tienda.shortName}` : `Recogida (tienda «${id || "sin datos"}»)`;
+}
+
+const destinos = hoja?.porDestino.map((d) => d.destino) ?? [];
+const celda = "py-2 text-right tabular-nums";
+---
+<AdminLayout titulo="Producción">
+  <form method="get" class="no-imprimir flex flex-wrap items-end gap-4 border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)] p-4">
+    <div>
+      <label for="p-dia" class="numeracion block">Día de entrega</label>
+      <input id="p-dia" type="date" name="dia" value={dia} class="mt-2 block border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <button type="submit" class="btn btn-primario">Ver</button>
+    <div class="flex flex-wrap gap-2 sm:ml-auto">
+      {atajos.map((a) => (
+        <a
+          href={`/admin/produccion?dia=${a.dia}`}
+          class:list={[
+            "px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] border border-[color:var(--color-avellana)] hover:bg-[color:var(--color-latte)] transition-colors",
+            atajoActivo === a.id && "bg-[color:var(--color-latte)] text-[color:var(--color-moka)]",
+          ]}
+          aria-current={atajoActivo === a.id ? "true" : undefined}
+        >
+          {a.label}
+        </a>
+      ))}
+    </div>
+  </form>
+
+  <div class="mt-6 flex flex-wrap items-end justify-between gap-4 filete pb-3">
+    <div>
+      <p class="numeracion">Hoja de producción</p>
+      <h2 class="font-[family-name:var(--font-display)] text-2xl mt-1">{formatDateISO(dia)}</h2>
+      {hoja && (
+        <p class="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+          {hoja.totalPedidos === 1 ? "1 pedido" : `${hoja.totalPedidos} pedidos`} para este día
+        </p>
+      )}
+    </div>
+    <div class="no-imprimir flex flex-wrap gap-3 items-center">
+      <a href={`/admin/pedidos?entrega=${dia}`} class="text-sm underline underline-offset-4 text-[color:var(--color-ink-muted)]">
+        Ver los pedidos de este día
+      </a>
+      <button type="button" class="btn btn-secundario" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+  {fallo && (
+    <p class="mt-4 border-l-2 border-[color:var(--color-caramelo)] pl-3 py-2 text-sm">
+      Ahora mismo no se puede calcular la hoja. Vuelve a intentarlo en un momento.
+    </p>
+  )}
+
+  {hoja && hoja.sinDatos > 0 && (
+    <p class="mt-4 border-l-2 border-[color:var(--color-caramelo)] pl-3 py-2 text-sm">
+      {hoja.sinDatos === 1
+        ? "1 pedido de este día no dice modalidad"
+        : `${hoja.sinDatos} pedidos de este día no dicen modalidad`}
+      {" "}(reconstruidos desde Stripe): sus unidades están en la tabla pero no en
+      el desglose por destino. Míralos en
+      {" "}<a href={`/admin/pedidos?entrega=${dia}`} class="underline underline-offset-4">Pedidos</a>.
+    </p>
+  )}
+
+  {hoja && hoja.lineas.length === 0 && !fallo && (
+    <p class="mt-6 text-[color:var(--color-ink-muted)]">Nada que hornear para este día.</p>
+  )}
+
+  {hoja && hoja.lineas.length > 0 && (
+    <div class="mt-6 grid gap-8 lg:grid-cols-[2fr_1fr]">
+      <section>
+        <h3 class="numeracion">Qué hornear</h3>
+        <table class="mt-3 w-full text-sm">
+          <thead>
+            <tr class="text-left numeracion">
+              <th class="py-2 font-medium">Producto</th>
+              <th class="py-2 font-medium">Variante</th>
+              <th class="py-2 font-medium text-right">Unidades</th>
+              <th class="py-2 font-medium text-right">Pedidos</th>
+              {/* Una columna por destino con pedidos: el obrador ve de un
+                  vistazo cuánto de cada cosa va a cada tienda o al reparto. */}
+              {destinos.map((d) => (
+                <th class="py-2 pl-3 font-medium text-right">{nombreDestino(d)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {hoja.lineas.map((l) => (
+              <tr class="border-t border-[color:var(--color-line)]">
+                <td class="py-2 font-semibold">{l.nombre}</td>
+                <td class="py-2 text-[color:var(--color-ink-muted)]">{l.varianteLabel ?? "—"}</td>
+                <td class:list={[celda, "font-[family-name:var(--font-display)] text-lg"]}>{l.unidades}</td>
+                <td class:list={[celda, "text-[color:var(--color-ink-muted)]"]}>{l.pedidos}</td>
+                {destinos.map((d) => {
+                  const u = l.porDestino.find((x) => x.destino === d)?.unidades ?? 0;
+                  return (
+                    <td class:list={[celda, "pl-3", u === 0 && "text-[color:var(--color-ink-muted)]"]}>
+                      {u === 0 ? "·" : u}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h3 class="numeracion">Por destino</h3>
+        {hoja.porDestino.length === 0 ? (
+          <p class="mt-3 text-sm text-[color:var(--color-ink-muted)]">Ningún pedido con destino conocido.</p>
+        ) : (
+          <ul class="mt-3 flex flex-col gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)]">
+            {hoja.porDestino.map((d) => (
+              <li class="bg-[color:var(--color-leche)] p-4">
+                <p class="numeracion">{nombreDestino(d.destino)}</p>
+                <p class="font-[family-name:var(--font-display)] text-2xl mt-1">
+                  {d.unidades} <span class="text-sm font-normal text-[color:var(--color-ink-muted)]">unidades</span>
+                </p>
+                <p class="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                  {d.pedidos === 1 ? "1 pedido" : `${d.pedidos} pedidos`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  )}
+</AdminLayout>
+
+<style is:global>
+  /* La hoja se imprime y se cuelga en el obrador: fuera la navegación, el
+     formulario y los botones; queda el título, la fecha y las tablas. */
+  @media print {
+    .no-imprimir,
+    nav,
+    header button {
+      display: none !important;
+    }
+    body {
+      background: #fff;
+    }
+  }
+</style>
