@@ -2,7 +2,14 @@
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import CuentaDatos from "~/islands/CuentaDatos.tsx";
 import CuentaDirecciones from "~/islands/CuentaDirecciones.tsx";
+import RepetirPedido from "~/islands/RepetirPedido.tsx";
 import { listarDirecciones } from "~/lib/db/direcciones";
+import { listarPedidosDeCliente, type PedidoConLineas } from "~/lib/db/pedidos";
+import { productosParaPedido } from "~/lib/db/productos";
+import { resolverRepeticion, type Repeticion } from "~/lib/repetir-pedido";
+import { formatDateISO, formatPriceCents } from "~/lib/format";
+import { MODE_COPY } from "~/lib/entrega";
+import { stores } from "~/data/stores";
 
 // Página protegida: lee la sesión de la petición, así que no puede
 // prerenderizarse. Sin esta línea el middleware serviría la página como
@@ -30,6 +37,45 @@ try {
     error instanceof Error ? error.message : error,
   );
 }
+
+// El historial, con cada pedido ya resuelto contra el catálogo de hoy para
+// el botón de repetir: los precios que se cobraron entonces no valen, y lo
+// que ya no está en la carta hay que decirlo antes de que pulse. Se piden
+// los productos de todos los pedidos de una vez, no uno por pedido.
+// Mismo criterio que las direcciones: si Postgres falla, la sección se
+// enseña vacía y el resto de la página sigue.
+let pedidos: { pedido: PedidoConLineas; repeticion: Repeticion }[] = [];
+try {
+  const lista = await listarPedidosDeCliente(usuario.id);
+  const slugs = [
+    ...new Set(
+      lista
+        .flatMap((p) => p.lineas.map((l) => l.slug))
+        .filter((s): s is string => s !== null),
+    ),
+  ];
+  const catalogo = await productosParaPedido(slugs);
+  pedidos = lista.map((pedido) => ({
+    pedido,
+    repeticion: resolverRepeticion(pedido.lineas, catalogo),
+  }));
+} catch (error) {
+  console.error(
+    "No se pudieron cargar los pedidos del cliente, se sigue sin ellos:",
+    error instanceof Error ? error.message : error,
+  );
+}
+
+const ESTADO = { pagado: "Pagado", sin_pago: "Pendiente de pago" } as const;
+
+/** Dónde se entregó: la tienda por su id, o la dirección. */
+function destino(p: PedidoConLineas): string {
+  if (p.mode === "domicilio") {
+    return [p.address, p.postalCode?.trim()].filter(Boolean).join(" · ");
+  }
+  const tienda = stores.find((s) => s.id === p.storeId);
+  return tienda ? `${tienda.shortName} — ${tienda.address}` : "";
+}
 ---
 <MarketingLayout
   title="Mi cuenta"
@@ -50,6 +96,63 @@ try {
         email={usuario.email}
         telefono={usuario.telefono ?? ""}
       />
+    </div>
+
+    <hr class="mt-12 border-t border-[color:var(--color-avellana)]" />
+
+    <div class="mt-12">
+      <p class="numeracion">Historial</p>
+      <h2 class="text-2xl sm:text-3xl mt-2">Tus pedidos</h2>
+      <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">
+        Lo que nos has pedido por la web. Si quieres lo mismo otra vez,
+        repítelo y ajusta lo que haga falta en el carrito.
+      </p>
+
+      {pedidos.length === 0 ? (
+        <p class="mt-8 text-[color:var(--color-ink-muted)]">
+          Todavía no has hecho ningún pedido.
+          {" "}<a href="/catalogo" class="underline underline-offset-4 text-[color:var(--color-moka)]">Ver el catálogo</a>
+        </p>
+      ) : (
+        <ul class="mt-8 flex flex-col gap-px bg-[color:var(--color-avellana)]">
+          {pedidos.map(({ pedido: p, repeticion }) => (
+            <li class="bg-[color:var(--color-leche)] p-5">
+              <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                <p class="numeracion">
+                  {p.fechaEntrega ? formatDateISO(p.fechaEntrega) : "Fecha sin datos"}
+                  {p.mode && ` · ${MODE_COPY[p.mode].label}`}
+                </p>
+                <p class="font-[family-name:var(--font-display)] text-xl font-semibold">
+                  {formatPriceCents(p.totalCents)}
+                </p>
+              </div>
+
+              <p class="mt-2 text-sm">
+                <span class:list={["font-semibold", p.estado === "sin_pago" && "text-[color:var(--color-teja)]"]}>
+                  {ESTADO[p.estado]}
+                </span>
+                {destino(p) && (
+                  <span class="text-[color:var(--color-ink-muted)]"> · {destino(p)}</span>
+                )}
+              </p>
+
+              <ul class="mt-3 text-sm">
+                {p.lineas.map((l) => (
+                  <li>
+                    {l.qty} × {l.nombre}{l.varianteLabel ? ` (${l.varianteLabel})` : ""}
+                  </li>
+                ))}
+              </ul>
+
+              <RepetirPedido
+                client:load
+                items={repeticion.items}
+                noDisponibles={repeticion.noDisponibles}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
 
     <hr class="mt-12 border-t border-[color:var(--color-avellana)]" />

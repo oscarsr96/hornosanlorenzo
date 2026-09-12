@@ -359,3 +359,68 @@ export async function listarPedidos(
   );
   return rows;
 }
+
+/**
+ * La misma proyección que arma un `PedidoConLineas` en `listarPedidos`: las
+ * columnas en camelCase y las líneas agregadas en una subconsulta, en su
+ * orden. Va en una constante para que el historial del cliente devuelva
+ * exactamente lo mismo que ve el panel. `listarPedidos` conserva de momento
+ * su copia literal porque se está ampliando en paralelo (filtro de texto
+ * libre); cuando eso aterrice, debería pasar a usar esta constante.
+ */
+const PROYECCION_PEDIDO = `
+  p.id,
+  p.user_id           as "userId",
+  p.stripe_session_id as "stripeSessionId",
+  p.mode,
+  to_char(p.fecha_entrega, 'YYYY-MM-DD') as "fechaEntrega",
+  p.slot,
+  p.store_id     as "storeId",
+  p.address,
+  p.postal_code  as "postalCode",
+  p.email,
+  p.telefono,
+  p.nombre,
+  p.notas,
+  p.subtotal_cents as "subtotalCents",
+  p.envio_cents    as "envioCents",
+  p.total_cents    as "totalCents",
+  p.estado,
+  p.reconstruido,
+  p.created_at     as "createdAt",
+  coalesce(
+    (select json_agg(json_build_object(
+              'slug', l.slug,
+              'nombre', l.nombre,
+              'varianteLabel', l.variante_label,
+              'qty', l.qty,
+              'unitPriceCents', l.unit_price_cents)
+            order by l.orden)
+       from lineas_pedido l
+      where l.pedido_id = p.id),
+    '[]'::json
+  ) as lineas
+`;
+
+/**
+ * Lo que ve el cliente en /cuenta: SUS pedidos, del más reciente al más
+ * antiguo, con sus líneas. Mismo criterio de estado que el panel: un
+ * `iniciado` es un carrito abandonado camino de Stripe, no un pedido, y
+ * enseñárselo como tal solo confundiría. Los pedidos de invitado con su
+ * mismo correo no salen: sin sesión no hay forma de saber que eran suyos.
+ */
+export async function listarPedidosDeCliente(
+  userId: string,
+  limite = 20,
+): Promise<PedidoConLineas[]> {
+  const { rows } = await pool.query<PedidoConLineas>(
+    `select ${PROYECCION_PEDIDO}
+       from pedidos p
+      where p.user_id = $1
+        and p.estado in ('pagado', 'sin_pago')
+      order by p.created_at desc
+      limit $2`,
+    [userId, limite],
+  );
+  return rows;
+}
