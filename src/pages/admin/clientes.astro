@@ -7,10 +7,14 @@ import { ROL_ADMIN } from "~/lib/auth/guardia";
 
 export const prerender = false;
 
+// Búsqueda por URL (`?q=texto`), con el mismo recorte que en `pedidos.astro`:
+// va parametrizada en la consulta, el tope solo acota el patrón.
+const filtroTexto = (Astro.url.searchParams.get("q") ?? "").slice(0, 80).trim();
+
 let clientes: Cliente[] = [];
 let fallo = false;
 try {
-  clientes = await listarClientes();
+  clientes = await listarClientes(500, filtroTexto || undefined);
 } catch (error) {
   fallo = true;
   console.error(
@@ -26,8 +30,23 @@ try {
     </p>
   )}
 
+  <form method="get" class="mb-6 flex flex-wrap items-end gap-4 border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)] p-4">
+    <div class="grow basis-56">
+      <label for="f-q" class="numeracion block">Buscar</label>
+      <input id="f-q" type="search" name="q" value={filtroTexto} maxlength="80" placeholder="Nombre, correo o teléfono" class="mt-2 block w-full border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] px-3 py-2 text-sm" />
+    </div>
+    <button type="submit" class="btn btn-primario">Buscar</button>
+    {filtroTexto && (
+      <a href="/admin/clientes" class="text-sm underline underline-offset-4 text-[color:var(--color-ink-muted)]">Quitar búsqueda</a>
+    )}
+  </form>
+
   {!fallo && clientes.length === 0 && (
-    <p class="text-[color:var(--color-ink-muted)]">Todavía no se ha registrado nadie.</p>
+    <p class="text-[color:var(--color-ink-muted)]">
+      {filtroTexto
+        ? "No hay clientes que casen con esa búsqueda."
+        : "Todavía no se ha registrado nadie."}
+    </p>
   )}
 
   {clientes.length > 0 && (

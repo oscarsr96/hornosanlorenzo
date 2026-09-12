@@ -29,6 +29,53 @@ describeSiHayBD("repositorio de clientes", () => {
     await pool.end();
   });
 
+  describe("búsqueda de texto libre", () => {
+    // Marca propia, para no pisar ni depender de los usuarios de otras
+    // pruebas que corren a la vez contra la misma base.
+    const CORREO_BUSQUEDA = "buscador@prueba.test";
+    const ID = "cli-buscador";
+
+    beforeAll(async () => {
+      await pool.query(`delete from "user" where email = $1`, [CORREO_BUSQUEDA]);
+      await pool.query(
+        `insert into "user" (id, name, email, "emailVerified", "updatedAt", telefono, rol)
+         values ($1, 'Búsqueda Prueba Zeta', $2, false, now(), '699 000 111', 'cliente')`,
+        [ID, CORREO_BUSQUEDA],
+      );
+    });
+
+    afterAll(async () => {
+      await pool.query(`delete from "user" where email = $1`, [CORREO_BUSQUEDA]);
+    });
+
+    const idsQueCasan = async (texto: string) =>
+      (await repo.listarClientes(500, texto))
+        .filter((c) => c.email === CORREO_BUSQUEDA)
+        .map((c) => c.id);
+
+    it("encuentra por un trozo del nombre, sin importar mayúsculas", async () => {
+      expect(await idsQueCasan("prueba ZETA")).toContain(ID);
+    });
+
+    it("encuentra por correo", async () => {
+      expect(await idsQueCasan("BUSCADOR@prueba")).toContain(ID);
+    });
+
+    it("encuentra el teléfono con o sin los espacios con que se guardó", async () => {
+      expect(await idsQueCasan("699000111")).toContain(ID);
+      expect(await idsQueCasan("699 000")).toContain(ID);
+    });
+
+    it("no encuentra nada con un texto que no casa, y un % no es comodín", async () => {
+      expect(await idsQueCasan("ornitorrinco-zeta")).toEqual([]);
+      expect(await idsQueCasan("%")).toEqual([]);
+    });
+
+    it("sin texto devuelve el listado entero", async () => {
+      expect(await idsQueCasan("  ")).toContain(ID);
+    });
+  });
+
   it("devuelve nombre, correo y teléfono, y nunca la contraseña", async () => {
     const clientes = await repo.listarClientes();
     const ana = clientes.find((c) => c.email === "ana@prueba.test")!;
