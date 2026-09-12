@@ -210,6 +210,86 @@ describeSiHayBD("repositorio de pedidos", () => {
     });
   });
 
+  describe("búsqueda de texto libre", () => {
+    // Marca propia, distinta de la del resto del fichero: otras pruebas
+    // corren a la vez contra la misma base, así que solo se crea, se
+    // busca y se borra lo que lleva este correo. El 2034 no lo usa nadie.
+    const CORREO_BUSQUEDA = "buscador@prueba.test";
+    const NOMBRE = "Búsqueda Prueba Zeta";
+    const TELEFONO = "699000111";
+    let idBuscado: string;
+
+    beforeAll(async () => {
+      await pool.query("delete from pedidos where email = $1", [CORREO_BUSQUEDA]);
+      idBuscado = await repo.crearPedidoIniciado(
+        {
+          ...pedidoDePrueba({ dateISO: "2034-02-01" }),
+          payload: {
+            ...pedidoDePrueba({ dateISO: "2034-02-01" }).payload,
+            email: CORREO_BUSQUEDA,
+            phone: TELEFONO,
+            name: NOMBRE,
+          },
+        } as never,
+        { estado: "sin_pago" },
+      );
+    });
+
+    afterAll(async () => {
+      await pool.query("delete from pedidos where email = $1", [CORREO_BUSQUEDA]);
+    });
+
+    const idsQueCasan = async (texto: string) =>
+      (await repo.listarPedidos(50, { texto }))
+        .filter((p) => p.email === CORREO_BUSQUEDA)
+        .map((p) => p.id);
+
+    it("encuentra por un trozo del nombre, sin importar mayúsculas", async () => {
+      expect(await idsQueCasan("prueba zeta")).toContain(idBuscado);
+      expect(await idsQueCasan("  BÚSQUEDA ")).toContain(idBuscado);
+    });
+
+    it("encuentra por correo", async () => {
+      expect(await idsQueCasan("buscador@")).toContain(idBuscado);
+    });
+
+    it("encuentra el teléfono aunque se teclee con espacios", async () => {
+      expect(await idsQueCasan("699 000 111")).toContain(idBuscado);
+      expect(await idsQueCasan("699000111")).toContain(idBuscado);
+    });
+
+    it("encuentra por los primeros caracteres de la referencia", async () => {
+      expect(await idsQueCasan(idBuscado.slice(0, 8))).toContain(idBuscado);
+      expect(await idsQueCasan(idBuscado.slice(0, 8).toUpperCase())).toContain(idBuscado);
+    });
+
+    it("no encuentra nada con un texto que no casa", async () => {
+      expect(await idsQueCasan("ornitorrinco-zeta-2034")).toEqual([]);
+    });
+
+    it("un % tecleado se busca tal cual, no como comodín", async () => {
+      // Sin escape, «%» casaría con todo y este pedido saldría igualmente.
+      expect(await idsQueCasan("%")).toEqual([]);
+      expect(await idsQueCasan("z%ta")).toEqual([]);
+    });
+
+    it("con el texto vacío o solo espacios no se filtra", async () => {
+      expect(await idsQueCasan("   ")).toContain(idBuscado);
+    });
+
+    it("se combina con el filtro de fecha de entrega", async () => {
+      const ids = (
+        await repo.listarPedidos(50, { texto: NOMBRE, fechaEntrega: "2034-02-01" })
+      ).map((p) => p.id);
+      expect(ids).toContain(idBuscado);
+      const ninguno = await repo.listarPedidos(50, {
+        texto: NOMBRE,
+        fechaEntrega: "2034-02-02",
+      });
+      expect(ninguno.filter((p) => p.email === CORREO_BUSQUEDA)).toEqual([]);
+    });
+  });
+
   it("crearPedidoReconstruido es idempotente: dos entregas del mismo webhook no duplican las líneas", async () => {
     const datos = {
       stripeSessionId: "cs_test_reconstruido",

@@ -12,8 +12,8 @@ const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Los mismos pedidos que enseña `/admin/pedidos`, con sus mismos filtros
- * (`?entrega=` y `?entrada=`), en un .xlsx. Lo que no tenga forma de fecha
- * se ignora, igual que en la página.
+ * (`?entrega=`, `?entrada=` y la búsqueda `?q=`), en un .xlsx. Lo que no
+ * tenga forma de fecha se ignora, igual que en la página.
  */
 export const GET: APIRoute = async ({ url, locals }) => {
   if (!esAdmin(locals.usuario)) return noEncontrado();
@@ -24,9 +24,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
   };
   const fechaEntrega = lee("entrega");
   const fechaEntrada = lee("entrada");
+  // Mismo recorte que en la página, para que el Excel sea lo que se ve.
+  const texto = (url.searchParams.get("q") ?? "").slice(0, 80).trim() || undefined;
 
   try {
-    const pedidos = await listarPedidos(100, { fechaEntrega, fechaEntrada });
+    const pedidos = await listarPedidos(100, { fechaEntrega, fechaEntrada, texto });
     const xlsx = await pedidosAExcel(pedidos);
     const sufijo = [fechaEntrega && `entrega-${fechaEntrega}`, fechaEntrada && `entrada-${fechaEntrada}`]
       .filter(Boolean)
