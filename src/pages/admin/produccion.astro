@@ -171,7 +171,7 @@ const celda = "py-2 text-right tabular-nums";
               <li class="bg-[color:var(--color-leche)] p-4">
                 <p class="numeracion">{nombreDestino(d.destino)}</p>
                 <p class="font-[family-name:var(--font-display)] text-2xl mt-1">
-                  {d.unidades} <span class="text-sm font-normal text-[color:var(--color-ink-muted)]">unidades</span>
+                  {d.unidades} <span class="text-sm font-normal text-[color:var(--color-ink-muted)]">{d.unidades === 1 ? "unidad" : "unidades"}</span>
                 </p>
                 <p class="mt-1 text-xs text-[color:var(--color-ink-muted)]">
                   {d.pedidos === 1 ? "1 pedido" : `${d.pedidos} pedidos`}

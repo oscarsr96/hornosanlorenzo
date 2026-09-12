@@ -288,85 +288,11 @@ export async function cambiarEstadoAMano(
   return (rowCount ?? 0) > 0;
 }
 
-export type FiltrosPedidos = {
-  /** Día para el que se quiere el pedido (`YYYY-MM-DD`). */
-  fechaEntrega?: string;
-  /** Día en que entró el pedido (`YYYY-MM-DD`), en hora de Madrid. */
-  fechaEntrada?: string;
-  /**
-   * Texto libre: lo que el cliente dice por teléfono. Casa con un trozo del
-   * nombre, del correo, del teléfono o de la referencia (el uuid), sin
-   * distinguir mayúsculas. Vacío o solo espacios, no filtra.
-   */
-  texto?: string;
-};
-
-export async function listarPedidos(
-  limite = 100,
-  { fechaEntrega, fechaEntrada, texto }: FiltrosPedidos = {},
-): Promise<PedidoConLineas[]> {
-  const busqueda = patronBusqueda(texto);
-  const { rows } = await pool.query<PedidoConLineas>(
-    `select p.id,
-            p.user_id           as "userId",
-            p.stripe_session_id as "stripeSessionId",
-            p.mode,
-            to_char(p.fecha_entrega, 'YYYY-MM-DD') as "fechaEntrega",
-            p.slot,
-            p.store_id     as "storeId",
-            p.address,
-            p.postal_code  as "postalCode",
-            p.email,
-            p.telefono,
-            p.nombre,
-            p.notas,
-            p.subtotal_cents as "subtotalCents",
-            p.envio_cents    as "envioCents",
-            p.total_cents    as "totalCents",
-            p.estado,
-            p.reconstruido,
-            p.created_at     as "createdAt",
-            coalesce(
-              (select json_agg(json_build_object(
-                        'slug', l.slug,
-                        'nombre', l.nombre,
-                        'varianteLabel', l.variante_label,
-                        'qty', l.qty,
-                        'unitPriceCents', l.unit_price_cents)
-                      order by l.orden)
-                 from lineas_pedido l
-                where l.pedido_id = p.id),
-              '[]'::json
-            ) as lineas
-       from pedidos p
-      where p.estado in ('pagado', 'sin_pago')
-        and ($2::date is null or p.fecha_entrega = $2::date)
-        and ($3::date is null
-             or (p.created_at at time zone 'Europe/Madrid')::date = $3::date)
-        and ($4::text is null
-             or p.nombre ilike $4
-             or p.email ilike $4
-             or p.telefono ilike $4
-             or p.id::text ilike $4
-             -- El teléfono se guarda tal como lo escribió el cliente, con o
-             -- sin espacios; si lo buscado son solo dígitos se compara sin
-             -- separadores por ambos lados.
-             or ($5::text is not null
-                 and regexp_replace(p.telefono, '\\D', '', 'g') like '%' || $5 || '%'))
-      order by p.created_at desc
-      limit $1`,
-    [limite, fechaEntrega ?? null, fechaEntrada ?? null, busqueda.patron, busqueda.soloDigitos],
-  );
-  return rows;
-}
-
 /**
- * La misma proyección que arma un `PedidoConLineas` en `listarPedidos`: las
- * columnas en camelCase y las líneas agregadas en una subconsulta, en su
- * orden. Va en una constante para que el historial del cliente devuelva
- * exactamente lo mismo que ve el panel. `listarPedidos` conserva de momento
- * su copia literal porque se está ampliando en paralelo (filtro de texto
- * libre); cuando eso aterrice, debería pasar a usar esta constante.
+ * La proyección que arma un `PedidoConLineas`: las columnas en camelCase y
+ * las líneas agregadas en una subconsulta, en su orden. Va en una constante
+ * para que el panel y el historial del cliente devuelvan exactamente lo
+ * mismo.
  */
 const PROYECCION_PEDIDO = `
   p.id,
@@ -401,6 +327,49 @@ const PROYECCION_PEDIDO = `
     '[]'::json
   ) as lineas
 `;
+
+export type FiltrosPedidos = {
+  /** Día para el que se quiere el pedido (`YYYY-MM-DD`). */
+  fechaEntrega?: string;
+  /** Día en que entró el pedido (`YYYY-MM-DD`), en hora de Madrid. */
+  fechaEntrada?: string;
+  /**
+   * Texto libre: lo que el cliente dice por teléfono. Casa con un trozo del
+   * nombre, del correo, del teléfono o de la referencia (el uuid), sin
+   * distinguir mayúsculas. Vacío o solo espacios, no filtra.
+   */
+  texto?: string;
+};
+
+export async function listarPedidos(
+  limite = 100,
+  { fechaEntrega, fechaEntrada, texto }: FiltrosPedidos = {},
+): Promise<PedidoConLineas[]> {
+  const busqueda = patronBusqueda(texto);
+  const { rows } = await pool.query<PedidoConLineas>(
+    `select ${PROYECCION_PEDIDO}
+       from pedidos p
+      where p.estado in ('pagado', 'sin_pago')
+        and ($2::date is null or p.fecha_entrega = $2::date)
+        and ($3::date is null
+             or (p.created_at at time zone 'Europe/Madrid')::date = $3::date)
+        and ($4::text is null
+             or p.nombre ilike $4
+             or p.email ilike $4
+             or p.telefono ilike $4
+             or p.id::text ilike $4
+             -- El teléfono se guarda tal como lo escribió el cliente, con o
+             -- sin espacios; si lo buscado son solo dígitos se compara sin
+             -- separadores por ambos lados.
+             or ($5::text is not null
+                 and regexp_replace(p.telefono, '\\D', '', 'g') like '%' || $5 || '%'))
+      order by p.created_at desc
+      limit $1`,
+    [limite, fechaEntrega ?? null, fechaEntrada ?? null, busqueda.patron, busqueda.soloDigitos],
+  );
+  return rows;
+}
+
 
 /**
  * Lo que ve el cliente en /cuenta: SUS pedidos, del más reciente al más
