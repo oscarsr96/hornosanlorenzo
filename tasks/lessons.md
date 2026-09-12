@@ -83,3 +83,29 @@ fichero en mitad de su prueba; que pase depende del orden de llegada.
 entrada en 2021), y afirma con `toContain`, no con `toEqual` sobre la tabla
 entera. Antes de dar por buena una prueba nueva de base de datos, correr la
 suite completa tres veces seguidas.
+
+## Un `astro dev` olvidado apunta a producción
+
+Al integrar la hoja de producción, el buscador y el historial (12 de
+septiembre de 2026), un usuario de prueba cayó **dos veces en la base de
+producción** aunque yo arrancaba el servidor con `DATABASE_URL` de pruebas y
+luego con `.env.development`. El que respondía en el puerto 4399 no era mi
+servidor: un agente había arrancado `astro dev` en su worktree —con la copia
+de `.env`, o sea, producción— para comprobar que una ruta devolvía 302, y lo
+dejó vivo. Astro, al ver el puerto ocupado, arranca el mío en el siguiente
+sin decir nada. Al mirar había además diez `astro dev` huérfanos de sesiones
+anteriores conectados a producción.
+
+**Why:** un `dev` es un proceso con la cadena de conexión real dentro. Mientras
+`.env` apunte a producción (pendiente del todo «separar la base de datos de
+desarrollo»), cualquier servidor olvidado es una puerta a datos reales, y un
+`curl` a `localhost:PUERTO` no dice qué proceso contesta.
+
+**How to apply:** antes de arrancar un `dev`, `lsof -ti :PUERTO` tiene que
+estar vacío; si no, matar lo que haya, no elegir otro puerto. Después de una
+prueba local que escriba, comprobar **en qué base** ha caído la fila antes de
+seguir (una consulta a cada rama), no dar por hecho que fue a la de pruebas.
+Un agente que arranque un servidor lo mata al terminar, y la instrucción se
+lo tiene que decir. Y para redirigir el `dev` a otra base no vale exportar la
+variable: `pool.ts` lee `import.meta.env.DATABASE_URL`, que Vite rellena
+desde `.env`.
