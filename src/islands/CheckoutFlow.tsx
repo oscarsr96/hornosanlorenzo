@@ -18,6 +18,8 @@ import {
   esTelefonoValido,
   minimoPedidoCents,
   MIN_ORDER_COPY,
+  esRecogidaMismoDia,
+  RECOGIDA_MISMO_DIA_DESDE,
 } from "~/lib/entrega";
 import type { Cart } from "~/lib/cart";
 
@@ -206,6 +208,13 @@ export default function CheckoutFlow({
 
   const emailOk = /.+@.+\..+/.test(email.trim());
   const telefonoOk = esTelefonoValido(phone);
+  /** Recoger hoy mismo solo se puede por la tarde: el pedido no está antes. */
+  const mismoDia =
+    Boolean(mode && dateISO) && esRecogidaMismoDia(mode!, dateISO, today);
+  useEffect(() => {
+    if (mismoDia) setSlot("afternoon");
+  }, [mismoDia]);
+
   /** El mínimo del reparto depende del día elegido: 0 hasta que lo hay. */
   const minimoCents = mode && dateISO ? minimoPedidoCents(mode, dateISO) : 0;
   const llegaAlMinimo = totalCents >= minimoCents;
@@ -888,34 +897,41 @@ export default function CheckoutFlow({
                     {(
                       [
                         { id: "morning", label: "Mañana" },
-                        { id: "afternoon", label: "Tarde" },
+                        {
+                          id: "afternoon",
+                          label: mismoDia
+                            ? `Tarde · desde las ${RECOGIDA_MISMO_DIA_DESDE}`
+                            : "Tarde",
+                        },
                       ] as const
-                    ).map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setSlot(s.id)}
-                        aria-pressed={slot === s.id}
-                        style={{
-                          minHeight: 40,
-                          padding: "0 1rem",
-                          border: "1px solid var(--color-avellana)",
-                          background:
-                            slot === s.id
-                              ? "var(--color-caramelo)"
-                              : "transparent",
-                          color:
-                            slot === s.id
-                              ? "var(--color-leche)"
-                              : "var(--color-moka)",
-                          cursor: "pointer",
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
+                    )
+                      .filter((s) => !mismoDia || s.id === "afternoon")
+                      .map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSlot(s.id)}
+                          aria-pressed={slot === s.id}
+                          style={{
+                            minHeight: 40,
+                            padding: "0 1rem",
+                            border: "1px solid var(--color-avellana)",
+                            background:
+                              slot === s.id
+                                ? "var(--color-caramelo)"
+                                : "transparent",
+                            color:
+                              slot === s.id
+                                ? "var(--color-leche)"
+                                : "var(--color-moka)",
+                            cursor: "pointer",
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}

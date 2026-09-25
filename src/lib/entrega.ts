@@ -4,8 +4,8 @@
  *   Envío a domicilio — «Entregamos en 24 horas. Entrega programada al día
  *   siguiente para pedidos realizados antes de las 18:00 del día anterior.»
  *
- *   Recogida en tienda — el mismo día en Alcobendas si se pide antes de las
- *   15:00; en Pozuelo, siempre de un día para otro.
+ *   Recogida en tienda — el mismo día en Alcobendas, a partir de las 17:00,
+ *   si se pide antes de las 13:00; en Pozuelo, siempre de un día para otro.
  *
  *   Cualquier modalidad — desde 250 € el obrador necesita dos días.
  */
@@ -16,7 +16,10 @@ export type DeliveryMode = "domicilio" | "recogida";
 export const CUTOFF_HOUR = 18;
 
 /** Hora límite para que la recogida del mismo día siga siendo posible. */
-export const RECOGIDA_MISMO_DIA_HOUR = 15;
+export const RECOGIDA_MISMO_DIA_HOUR = 13;
+
+/** Una recogida del mismo día no está lista hasta esta hora: solo vale la tarde. */
+export const RECOGIDA_MISMO_DIA_DESDE = "17:00";
 
 /** Desde este importe el obrador necesita dos días: no vale el día siguiente. */
 export const DOS_DIAS_DESDE_CENTS = 25_000;
@@ -34,7 +37,7 @@ export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = 
   },
   recogida: {
     label: "Recogida en tienda",
-    body: "Recogida el mismo día en Alcobendas para pedidos antes de las 15h. En Pozuelo, siempre de un día para otro.",
+    body: "Recogida el mismo día en Alcobendas a partir de las 17h para pedidos antes de las 13h. En Pozuelo, siempre de un día para otro.",
   },
 };
 
@@ -138,7 +141,7 @@ export type PlazoOpts = {
 /**
  * Primer día que se puede elegir.
  *
- * Recogida: hoy mismo si aún no son las 15:00, salvo en Pozuelo, que siempre
+ * Recogida: hoy mismo si aún no son las 13:00, salvo en Pozuelo, que siempre
  * es de un día para otro.
  * Domicilio: mañana si aún no son las 18:00; si no, pasado.
  * En ambas, un pedido de 250 € o más no baja de dos días.
@@ -150,7 +153,7 @@ export function earliestDate(
 ): string {
   let dias =
     mode === "recogida"
-      ? // Pozuelo nunca prepara para hoy; en Alcobendas hay hasta las 15:00.
+      ? // Pozuelo nunca prepara para hoy; en Alcobendas hay hasta las 13:00.
         (storeId && TIENDAS_SIN_MISMO_DIA.includes(storeId)) ||
         now.getHours() >= RECOGIDA_MISMO_DIA_HOUR
         ? 1
@@ -163,6 +166,16 @@ export function earliestDate(
 
   return toISO(nextOpenDay(addDays(now, dias)));
 }
+
+/**
+ * La recogida es para hoy mismo. Entonces el pedido no está listo hasta las
+ * 17:00 y la franja de mañana no existe.
+ */
+export const esRecogidaMismoDia = (
+  mode: DeliveryMode,
+  dateISO: string,
+  now: Date = new Date(),
+): boolean => mode === "recogida" && dateISO === toISO(now);
 
 /** El calendario abre con la opción más permisiva: la recogida. */
 export function earliestSelectableDate(now: Date = new Date()): string {

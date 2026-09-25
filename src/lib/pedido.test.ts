@@ -70,7 +70,9 @@ const pedidoBase = (): OrderPayload => ({
   items: [{ slug: SENCILLO.slug, qty: 2 }],
   mode: "recogida",
   dateISO: FECHA_RECOGIDA,
-  slot: "morning",
+  // FECHA_RECOGIDA es el mismo día (se pide a las 10:00 en Alcobendas), y
+  // la recogida del mismo día solo es de tarde.
+  slot: "afternoon",
   storeId: "alcobendas",
   email: "cliente@example.com",
   phone: "666123456",
@@ -142,6 +144,28 @@ describe("priceOrder", () => {
     await expect(priceOrder(payload, { now: AHORA })).rejects.toMatchObject({
       message: expect.stringContaining("mínimo a domicilio es de 35 €"),
     });
+  });
+
+  it("la recogida del mismo día no admite la franja de mañana", async () => {
+    expect(FECHA_RECOGIDA).toBe("2026-03-10");
+    await expect(
+      priceOrder({ ...pedidoBase(), slot: "morning" }, { now: AHORA }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("a partir de las 17:00"),
+    });
+  });
+
+  it("a partir de las 13:00 Alcobendas ya no prepara para hoy", () => {
+    expect(
+      earliestDate("recogida", new Date("2026-03-10T12:59:00"), {
+        storeId: "alcobendas",
+      }),
+    ).toBe("2026-03-10");
+    expect(
+      earliestDate("recogida", new Date("2026-03-10T13:00:00"), {
+        storeId: "alcobendas",
+      }),
+    ).toBe("2026-03-11");
   });
 
   it("rechaza una fecha de recogida anterior a la primera disponible", async () => {

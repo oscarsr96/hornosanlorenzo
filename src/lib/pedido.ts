@@ -7,6 +7,8 @@ import {
   esTelefonoValido,
   ZONA_REPARTO_COPY,
   minimoPedidoCents,
+  esRecogidaMismoDia,
+  RECOGIDA_MISMO_DIA_DESDE,
   MIN_ORDER_COPY,
 } from "~/lib/entrega";
 import { stores, type StoreId } from "~/data/stores";
@@ -205,6 +207,15 @@ export async function priceOrder(
   ) {
     throw new OrderError(
       "La fecha elegida no está disponible para este pedido. Revisa el día de entrega.",
+    );
+  }
+
+  if (
+    esRecogidaMismoDia(payload.mode, payload.dateISO, now) &&
+    payload.slot !== "afternoon"
+  ) {
+    throw new OrderError(
+      `La recogida del mismo día es a partir de las ${RECOGIDA_MISMO_DIA_DESDE}: elige la franja de tarde.`,
     );
   }
 
