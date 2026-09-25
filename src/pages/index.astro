@@ -79,12 +79,13 @@ const localBizJsonLd = stores.map((s) => ({
     </div>
     <!-- Carrusel con scroll nativo: se arrastra en el móvil y con trackpad sin
          JS; las flechas pasan de una en una. -->
-    <div class="carrusel-marco">
+    <div class="carrusel-marco" data-carrusel>
     <button type="button" class="carrusel-flecha carrusel-flecha--prev" data-carrusel-prev aria-controls="carrusel-destacados" aria-label="Producto anterior">‹</button>
     <button type="button" class="carrusel-flecha carrusel-flecha--next" data-carrusel-next aria-controls="carrusel-destacados" aria-label="Producto siguiente">›</button>
     <div
       id="carrusel-destacados"
       class="carrusel flex gap-5 overflow-x-auto snap-x snap-mandatory"
+      data-carrusel-pista
       role="region"
       aria-roledescription="carrusel"
       aria-label="Productos destacados"
@@ -183,36 +184,5 @@ const localBizJsonLd = stores.map((s) => ({
 </style>
 
 <script>
-  // El sitio navega sin recargar (`ClientRouter`): un script de página solo
-  // corre la primera vez, y al volver a la home las flechas quedaban sin
-  // enganchar. Por eso se inicia en cada `astro:page-load`, con una marca en
-  // el carrusel para no engancharlo dos veces.
-  function iniciarCarrusel() {
-    const pista = document.getElementById("carrusel-destacados");
-    const prev = document.querySelector<HTMLButtonElement>("[data-carrusel-prev]");
-    const next = document.querySelector<HTMLButtonElement>("[data-carrusel-next]");
-    if (!pista || !prev || !next || pista.dataset.listo) return;
-    pista.dataset.listo = "1";
-
-    const actualiza = () => {
-      const max = pista.scrollWidth - pista.clientWidth;
-      prev.disabled = pista.scrollLeft <= 1;
-      // Con todo en pantalla quedan las dos desactivadas, o sea, ocultas.
-      next.disabled = pista.scrollLeft >= max - 1;
-    };
-    // Un paso = una tarjeta más el hueco entre tarjetas.
-    const paso = () => {
-      const a = pista.children[0] as HTMLElement | undefined;
-      const b = pista.children[1] as HTMLElement | undefined;
-      return a && b ? b.offsetLeft - a.offsetLeft : pista.clientWidth;
-    };
-    prev.addEventListener("click", () => pista.scrollBy({ left: -paso() }));
-    next.addEventListener("click", () => pista.scrollBy({ left: paso() }));
-    pista.addEventListener("scroll", actualiza, { passive: true });
-    // Observa el propio carrusel: muere con él al navegar, sin dejar
-    // escuchas colgadas en `window`.
-    new ResizeObserver(actualiza).observe(pista);
-    actualiza();
-  }
-  document.addEventListener("astro:page-load", iniciarCarrusel);
+  import "~/scripts/carrusel";
 </script>

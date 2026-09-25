@@ -6,7 +6,8 @@ import MarketingLayout from "~/layouts/MarketingLayout.astro";
 /**
  * La carta impresa, página a página, con la opción de descargar el PDF.
  *
- * Se enseña como imágenes y no incrustando el PDF: en iPhone un PDF dentro de
+ * En carrusel, de dos en dos, para no hacer bajar doce páginas. Se enseña
+ * como imágenes y no incrustando el PDF: en iPhone un PDF dentro de
  * un iframe solo muestra la primera página. Las imágenes salen de ese mismo
  * PDF (cómo regenerarlas, en `src/assets/carta/LEEME.md`).
  */
@@ -22,33 +23,140 @@ const paginas = Object.entries(
   title="Carta"
   description="La carta del obrador, con precios y raciones. Consúltala aquí o descárgala en PDF."
 >
-  <section class="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-14">
+  <section class="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14">
     <div class="flex flex-wrap items-end justify-between gap-4">
-      <h1 class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">La carta</h1>
+      <div>
+        <h1 class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">La carta</h1>
+        <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+          {paginas.length} páginas · PDF de 1,4 MB
+        </p>
+      </div>
       <a href={PDF} download class="btn btn-primario">Descargar PDF</a>
     </div>
-    <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
-      {paginas.length} páginas · PDF de 1,4 MB
+
+    <!-- Página a página en horizontal: de dos en dos desde tablet, una en el
+         móvil (dos en 390 px no se leen). Cada flecha pasa lo que se ve. -->
+    <div class="mt-8" data-carrusel="pantalla">
+    <div class="carta-marco">
+      <button type="button" class="carta-flecha carta-flecha--prev" data-carrusel-prev aria-controls="carta-paginas" aria-label="Páginas anteriores">‹</button>
+      <button type="button" class="carta-flecha carta-flecha--next" data-carrusel-next aria-controls="carta-paginas" aria-label="Páginas siguientes">›</button>
+      <ol
+        id="carta-paginas"
+        class="carta-pista flex gap-4 overflow-x-auto snap-x snap-mandatory"
+        data-carrusel-pista
+        role="region"
+        aria-roledescription="carrusel"
+        aria-label="Páginas de la carta"
+        tabindex="0"
+      >
+        {paginas.map((img, i) => (
+          <li class="carta-pagina snap-start shrink-0 border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)]">
+            <Image
+              src={img}
+              alt={`Carta del obrador, página ${i + 1} de ${paginas.length}`}
+              widths={[480, 720, 1080]}
+              sizes="(min-width: 640px) 440px, calc(100vw - 2rem)"
+              quality={80}
+              loading={i < 2 ? "eager" : "lazy"}
+              class="block w-full h-auto"
+            />
+          </li>
+        ))}
+      </ol>
+    </div>
+    <p class="carta-contador numeracion mt-4 text-center" aria-live="polite">
+      Páginas <span data-carrusel-contador>1–2 de {paginas.length}</span>
     </p>
-
-    <ol class="mt-8 flex flex-col gap-6">
-      {paginas.map((img, i) => (
-        <li class="border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)]">
-          <Image
-            src={img}
-            alt={`Carta del obrador, página ${i + 1} de ${paginas.length}`}
-            widths={[480, 720, 1080]}
-            sizes="(min-width: 672px) 624px, calc(100vw - 2rem)"
-            quality={80}
-            loading={i === 0 ? "eager" : "lazy"}
-            class="block w-full h-auto"
-          />
-        </li>
-      ))}
-    </ol>
-
-    <div class="mt-10 text-center">
-      <a href={PDF} download class="btn btn-primario">Descargar PDF</a>
     </div>
   </section>
 </MarketingLayout>
+
+<style>
+  .carta-marco {
+    position: relative;
+  }
+  .carta-pista {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    list-style: none;
+    padding: 0;
+  }
+  .carta-pista::-webkit-scrollbar {
+    display: none;
+  }
+  .carta-pista:focus-visible {
+    outline: 2px solid var(--color-caramelo);
+    outline-offset: 4px;
+  }
+  .carta-pagina {
+    flex-basis: 100%;
+  }
+  @media (min-width: 640px) {
+    .carta-pagina {
+      flex-basis: calc((100% - 1rem) / 2);
+    }
+    /* De dos en dos, el carrusel solo encaja en las impares: al girar la
+       tablet con la 2 abierta se ve 1–2, no 2–3. */
+    .carta-pagina:nth-child(even) {
+      scroll-snap-align: none;
+    }
+  }
+  .carta-flecha {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--color-avellana);
+    background: var(--color-leche);
+    color: var(--color-moka);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .carta-flecha--prev {
+    left: 8px;
+  }
+  .carta-flecha--next {
+    right: 8px;
+  }
+  .carta-flecha:hover {
+    background: var(--color-latte);
+  }
+  .carta-flecha:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* En el móvil la página ocupa todo el ancho y las flechas tapaban nombres
+     y precios: bajan a la fila del contador, una a cada lado. */
+  @media (max-width: 639px) {
+    .carta-marco {
+      padding-bottom: 60px;
+    }
+    .carta-flecha {
+      top: auto;
+      bottom: 0;
+      transform: none;
+    }
+    .carta-flecha--prev {
+      left: 0;
+    }
+    .carta-flecha--next {
+      right: 0;
+    }
+    .carta-contador {
+      margin-top: -44px;
+      line-height: 44px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .carta-pista {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  import "~/scripts/carrusel";
+</script>
