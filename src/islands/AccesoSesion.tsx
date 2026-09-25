@@ -57,8 +57,12 @@ export default function AccesoSesion({ tono }: { tono: Tono }) {
 
   if (!data?.user) {
     return (
-      <a href="/acceso" data-mobile-nav-link className={estilo.enlaceSolo}>
-        Acceso clientes
+      <a
+        href="/acceso?modo=registro"
+        data-mobile-nav-link
+        className={estilo.enlaceSolo}
+      >
+        Regístrate aquí
       </a>
     );
   }

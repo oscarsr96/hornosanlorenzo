@@ -93,6 +93,8 @@ export default function AccesoForm() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get("recuperada") === "1") setContrasenaRecuperada(true);
+    // El botón «Regístrate aquí» de la cabecera abre directamente el alta.
+    if (p.get("modo") === "registro") setModo("registro");
   }, []);
 
   function cambiarModo(m: Modo) {
