@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "~/hooks/useCart";
 import { formatPriceCents } from "~/lib/format";
 import { MODE_COPY } from "~/lib/entrega";
 import CheckoutFlow, { type Prefill } from "~/islands/CheckoutFlow";
+import {
+  recogerCheckout,
+  type CheckoutAparcado,
+} from "~/lib/reanudar-checkout";
 
 type Props = {
   /** Sin sesión llega `undefined` y el checkout se abre como siempre. */
@@ -13,6 +17,17 @@ export default function CartPage({ prefill }: Props) {
   const { cart, totalCents, totalQty, updateQty, removeItem, clearCart } =
     useCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [reanudar, setReanudar] = useState<CheckoutAparcado | null>(null);
+
+  // De vuelta de «Ya soy cliente»: el checkout se reabre solo donde estaba.
+  // Solo con sesión; si no llegó a entrar, el carrito se ve como siempre.
+  useEffect(() => {
+    const aparcado = recogerCheckout();
+    if (aparcado && prefill) {
+      setReanudar(aparcado);
+      setCheckoutOpen(true);
+    }
+  }, [prefill]);
 
   if (cart.items.length === 0) {
     return (
@@ -260,8 +275,12 @@ export default function CartPage({ prefill }: Props) {
         <CheckoutFlow
           cart={cart}
           totalCents={totalCents}
-          onClose={() => setCheckoutOpen(false)}
+          onClose={() => {
+            setCheckoutOpen(false);
+            setReanudar(null);
+          }}
           prefill={prefill}
+          reanudar={reanudar}
         />
       )}
     </section>

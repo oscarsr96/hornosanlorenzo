@@ -20,7 +20,14 @@ import {
   MIN_ORDER_COPY,
   esRecogidaMismoDia,
   RECOGIDA_MISMO_DIA_DESDE,
+  isDateAllowed,
+  meetsMinimum,
 } from "~/lib/entrega";
+import {
+  aparcarCheckout,
+  VOLVER_AL_CARRITO,
+  type CheckoutAparcado,
+} from "~/lib/reanudar-checkout";
 import type { Cart } from "~/lib/cart";
 
 type Step = "dia" | "opcion" | "direccion" | "tienda" | "resumen";
@@ -53,6 +60,8 @@ type Props = {
   onClose: () => void;
   /** Sin sesión llega `undefined`: el checkout de invitado no cambia. */
   prefill?: Prefill;
+  /** Lo elegido antes de ir a entrar con «Ya soy cliente», para seguir ahí. */
+  reanudar?: CheckoutAparcado | null;
 };
 
 /** Valor del selector de direcciones cuando toca escribir una a mano. */
@@ -96,9 +105,39 @@ export default function CheckoutFlow({
   totalCents,
   onClose,
   prefill,
+  reanudar,
 }: Props) {
-  const [step, setStep] = useState<Step>("opcion");
-  const [history, setHistory] = useState<Step[]>([]);
+  // De vuelta del login se sigue en la dirección, con el día ya elegido. Si
+  // ese día ha dejado de valer mientras tanto, se vuelve a pedir.
+  const [inicio] = useState(() => {
+    if (reanudar?.mode !== "domicilio") {
+      return {
+        step: "opcion" as Step,
+        history: [] as Step[],
+        mode: null,
+        dateISO: "",
+      };
+    }
+    const sigueValiendo =
+      isDateAllowed("domicilio", reanudar.dateISO, new Date(), {
+        subtotalCents: totalCents,
+      }) && meetsMinimum("domicilio", totalCents, reanudar.dateISO);
+    return sigueValiendo
+      ? {
+          step: "direccion" as Step,
+          history: ["opcion", "dia"] as Step[],
+          mode: "domicilio" as const,
+          dateISO: reanudar.dateISO,
+        }
+      : {
+          step: "dia" as Step,
+          history: ["opcion"] as Step[],
+          mode: "domicilio" as const,
+          dateISO: "",
+        };
+  });
+  const [step, setStep] = useState<Step>(inicio.step);
+  const [history, setHistory] = useState<Step[]>(inicio.history);
 
   // La predeterminada, si la hay, es lo único de `prefill` que rellena
   // campos por sí sola. El resto de direcciones solo entran al elegirlas en
@@ -107,8 +146,8 @@ export default function CheckoutFlow({
     (d) => d.predeterminada,
   );
 
-  const [dateISO, setDateISO] = useState("");
-  const [mode, setMode] = useState<DeliveryMode | null>(null);
+  const [dateISO, setDateISO] = useState(inicio.dateISO);
+  const [mode, setMode] = useState<DeliveryMode | null>(inicio.mode);
   const [address, setAddress] = useState(direccionPredeterminada?.calle ?? "");
   const [postalCode, setPostalCode] = useState(
     direccionPredeterminada?.postalCode ?? "",
@@ -761,17 +800,21 @@ export default function CheckoutFlow({
               >
                 Seleccionar
               </button>
-              <p style={{ marginTop: 14, textAlign: "center", fontSize: 13 }}>
-                <a
-                  href="/a-quien-servimos#alta"
-                  style={{
-                    textDecoration: "underline",
-                    color: "var(--color-caramelo)",
-                  }}
-                >
-                  Ya soy cliente
-                </a>
-              </p>
+              {/* Con sesión las direcciones guardadas ya están arriba. */}
+              {!prefill && (
+                <p style={{ marginTop: 14, textAlign: "center", fontSize: 13 }}>
+                  <a
+                    href={VOLVER_AL_CARRITO}
+                    onClick={() => mode && aparcarCheckout({ mode, dateISO })}
+                    style={{
+                      textDecoration: "underline",
+                      color: "var(--color-caramelo)",
+                    }}
+                  >
+                    Ya soy cliente: entrar y usar una dirección guardada
+                  </a>
+                </p>
+              )}
             </>
           )}
 

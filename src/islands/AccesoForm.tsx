@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { authClient } from "~/lib/auth/cliente";
+import { rutaDeVuelta } from "~/lib/reanudar-checkout";
 import {
   MIN_PASSWORD,
   validaEntrada,
@@ -141,7 +142,10 @@ export default function AccesoForm() {
           return;
         }
       }
-      window.location.href = "/cuenta";
+      // Desde el checkout llega `?volver=/carrito`: se regresa allí, no a la cuenta.
+      window.location.href = rutaDeVuelta(
+        new URLSearchParams(window.location.search).get("volver"),
+      );
     } catch {
       setErrorServidor("No hemos podido conectar. Comprueba tu conexión.");
       setEnviando(false);
