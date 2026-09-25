@@ -14,6 +14,8 @@ const publicos = [
   {
     id: "particulares",
     number: "01",
+    icono: "casa",
+    resumen: "La mesa de casa: tienda, encargo online y reparto propio.",
     tag: "Mostrador y tienda online",
     title: "Particulares",
     lead: "La compra del día en cualquiera de las dos tiendas y el encargo de la semana desde la tienda online.",
@@ -24,12 +26,14 @@ const publicos = [
       "Reparto propio de lunes a sábado a Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
       "Tartas y encargos especiales avisando con antelación.",
     ],
-    cta: { href: "/catalogo", label: "Ver el catálogo", style: "btn-primario" },
+    cta: null,
     foot: "Recogida en tienda · reparto propio",
   },
   {
     id: "hosteleria",
     number: "02",
+    icono: "taza",
+    resumen: "Bares, restaurantes y hoteles: suministro diario de obrador.",
     tag: "Base B2B consolidada",
     title: "Hostelería",
     lead: "Suministro recurrente de tartas, empanadas, bollería y panes en la zona norte de Madrid.",
@@ -46,6 +50,8 @@ const publicos = [
   {
     id: "empresas",
     number: "03",
+    icono: "edificio",
+    resumen: "Desayunos de equipo, coffee breaks y catering con factura mensual.",
     tag: "Canal prioritario",
     title: "Empresas",
     lead: "Desayunos de equipo, coffee breaks, catering de reuniones y regalos corporativos.",
@@ -84,36 +90,53 @@ const ventajas = [
   title="A quién servimos"
   description="Particulares, hostelería y empresas. El mismo obrador para la mesa de casa, la barra del bar y el desayuno de oficina."
 >
+  <!-- Lo primero: los tres canales, cada uno a su sección. -->
   <section class="bg-[color:var(--color-leche)] border-b border-[color:var(--color-avellana)]">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 grid gap-10 md:grid-cols-[1.15fr_1fr] items-center">
-      <div>
-        <p class="numeracion">A quién servimos</p>
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl leading-[1.02] mt-3">
-          Comida de verdad
-          <em class="italic text-[color:var(--color-caramelo)] font-normal block">servida cada día.</em>
-        </h1>
-        <p class="mt-5 max-w-lg text-lg text-[color:var(--color-ink-muted)]">
-          Tres públicos y una misma cocina. Dos obradores y reparto propio: la misma
-          calidad para un cumpleaños que para cien desayunos de oficina.
-        </p>
-        <div class="mt-7 flex flex-wrap gap-3">
-          <a href="#particulares" class="btn btn-primario">Ver los tres canales</a>
-          <a href="/catalogo" class="btn btn-secundario">Ver el catálogo</a>
-        </div>
-      </div>
-      <dl class="grid grid-cols-2 gap-px bg-[color:var(--color-avellana)] border border-[color:var(--color-avellana)]">
-        {[
-          ["40", "años de trayectoria"],
-          ["2", "obradores en Madrid"],
-          ["L–S", "reparto propio"],
-          ["3", "canales de negocio"],
-        ].map(([figure, label]) => (
-          <div class="bg-[color:var(--color-leche)] p-5 sm:p-6">
-            <dt class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">{figure}</dt>
-            <dd class="numeracion mt-2">{label}</dd>
-          </div>
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
+      <h1 class="numeracion">A quién servimos</h1>
+      <ul class="mt-5 grid gap-4 md:grid-cols-3">
+        {publicos.map((p) => (
+          <li>
+            <a
+              href={`#${p.id}`}
+              class="canal group flex h-full flex-col border border-[color:var(--color-avellana)] bg-[color:var(--color-paper)] p-6 sm:p-8 transition-colors hover:bg-[color:var(--color-latte)]"
+            >
+              <span class="flex items-start justify-between">
+                <span class="canal-icono" aria-hidden="true">
+                  {p.icono === "casa" && (
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+                      <path d="M8 22 24 9l16 13" />
+                      <path d="M12 19v20h24V19" />
+                      <path d="M20 39V28h8v11" />
+                    </svg>
+                  )}
+                  {p.icono === "taza" && (
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+                      <path d="M10 18h24v10a10 10 0 0 1-10 10h-4a10 10 0 0 1-10-10V18Z" />
+                      <path d="M34 21h3a5 5 0 0 1 0 10h-3.5" />
+                      <path d="M8 42h30" />
+                      <path d="M17 7c-1.5 2 1.5 3.5 0 6M23 7c-1.5 2 1.5 3.5 0 6M29 7c-1.5 2 1.5 3.5 0 6" />
+                    </svg>
+                  )}
+                  {p.icono === "edificio" && (
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+                      <path d="M10 41V9h20v32" />
+                      <path d="M30 19h8v22" />
+                      <path d="M6 41h36" />
+                      <path d="M15 15h4M21 15h4M15 21h4M21 21h4M15 27h4M21 27h4" />
+                      <path d="M18 41v-7h4v7" />
+                    </svg>
+                  )}
+                </span>
+                <span class="numeracion">{p.number}</span>
+              </span>
+              <span class="mt-6 block font-[family-name:var(--font-display)] text-2xl sm:text-3xl">{p.title}</span>
+              <span class="mt-2 block text-sm leading-relaxed text-[color:var(--color-ink-muted)]">{p.resumen}</span>
+              <span class="numeracion mt-auto pt-6 group-hover:text-[color:var(--color-moka)]">Ver más ↓</span>
+            </a>
+          </li>
         ))}
-      </dl>
+      </ul>
     </div>
   </section>
 
@@ -130,7 +153,7 @@ const ventajas = [
           <blockquote class="mt-6 pt-5 border-t border-[color:var(--color-avellana)] font-[family-name:var(--font-display)] italic text-lg">
             «{p.key}»
           </blockquote>
-          <a href={p.cta.href} class:list={["btn mt-7", p.cta.style]}>{p.cta.label}</a>
+          {p.cta && <a href={p.cta.href} class:list={["btn mt-7", p.cta.style]}>{p.cta.label}</a>}
         </div>
         <div class="border border-[color:var(--color-avellana)] p-6 sm:p-8 bg-[color:var(--color-leche)]">
           <ul class="space-y-3 text-sm text-[color:var(--color-ink-muted)]">
@@ -194,3 +217,22 @@ const ventajas = [
     </div>
   </section>
 </MarketingLayout>
+
+<style>
+  .canal-icono {
+    display: inline-flex;
+    width: 56px;
+    height: 56px;
+    padding: 8px;
+    border: 1px solid var(--color-avellana);
+    color: var(--color-caramelo);
+    background: var(--color-leche);
+  }
+  .canal-icono svg {
+    width: 100%;
+    height: 100%;
+  }
+  .canal:hover .canal-icono {
+    color: var(--color-moka);
+  }
+</style>
