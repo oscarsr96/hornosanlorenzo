@@ -17,8 +17,10 @@ interface Props {
   productos: Producto[];
   grupo?: GrupoId | null;
   eyebrow: string;
-  title: string;
-  intro: string;
+  /** Sin título ni entrada, el bloque arranca en la etiqueta (la página ya
+      tiene su h1). */
+  title?: string;
+  intro?: string;
   /** Agrupa el listado en los bloques de la carta impresa. */
   porSeccion?: boolean;
   /** Solo los marcados como destacados, sin filtrar por grupo. */
@@ -96,11 +98,11 @@ function seccionLabelDe(seccion: string | null): string | undefined {
 ---
 <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12">
   <p class="numeracion">{eyebrow}</p>
-  <h1 class="text-4xl sm:text-5xl mt-2">{title}</h1>
-  <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">{intro}</p>
+  {title && <h1 class="text-4xl sm:text-5xl mt-2">{title}</h1>}
+  {intro && <p class="text-[color:var(--color-ink-muted)] mt-3 max-w-xl">{intro}</p>}
 
   {conFiltro && (
-    <div class="mt-8">
+    <div class={title ? "mt-8" : "mt-4"}>
       <CategoryFilter
         client:load
         grupo={grupo}
