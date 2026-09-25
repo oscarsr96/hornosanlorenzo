@@ -65,4 +65,19 @@ describe("agruparSabores", () => {
     const r = agruparSabores([p("a", "tartas"), p("b", "tartas")]);
     expect(r).toHaveLength(2);
   });
+
+  it("el surtido de mini croissants se queda aparte", () => {
+    const surtido = {
+      ...p("mini-surtido", "las-lorenzas-salado"),
+      name: "Surtido Salado",
+    };
+    const r = agruparSabores([
+      p("mini-york", "las-lorenzas-salado"),
+      p("mini-serrano", "las-lorenzas-salado"),
+      surtido,
+    ]);
+    expect(
+      r.map((e) => (e.tipo === "producto" ? e.producto.slug : e.titulo)),
+    ).toEqual(["Mini Croissants Salados", "mini-surtido"]);
+  });
 });

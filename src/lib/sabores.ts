@@ -14,6 +14,10 @@ export const GRUPOS_SABOR = {
   empanadas: { titulo: "Empanadas", singular: "Empanada" },
   supremas: { titulo: "Supremas", singular: "Suprema" },
   quiches: { titulo: "Quiches", singular: "Quiche" },
+  "las-lorenzas-salado": {
+    titulo: "Mini Croissants Salados",
+    singular: "Mini croissants",
+  },
 } as const;
 
 export type SeccionConSabores = keyof typeof GRUPOS_SABOR;
@@ -32,6 +36,16 @@ const esSeccionConSabores = (s: string | null): s is SeccionConSabores =>
   s !== null && Object.hasOwn(GRUPOS_SABOR, s);
 
 /**
+ * Un surtido no es un sabor más: mezcla varios y tiene su propio precio, así
+ * que se queda en su tarjeta aunque comparta sección.
+ */
+const esSurtido = (p: Producto) => /^surtido\b/i.test(p.name);
+
+/** La sección por la que se agrupa este producto, o null si va suelto. */
+const grupoDe = (p: Producto): SeccionConSabores | null =>
+  esSeccionConSabores(p.seccion) && !esSurtido(p) ? p.seccion : null;
+
+/**
  * Junta los sabores de cada grupo en un elemento, que ocupa el sitio del
  * primero de ellos: el orden de la carta se mantiene. Con un solo sabor no
  * hay nada que elegir y se queda como tarjeta normal.
@@ -39,15 +53,14 @@ const esSeccionConSabores = (s: string | null): s is SeccionConSabores =>
 export function agruparSabores(productos: Producto[]): ElementoCatalogo[] {
   const porSeccion = new Map<SeccionConSabores, Producto[]>();
   for (const p of productos) {
-    if (esSeccionConSabores(p.seccion)) {
-      porSeccion.set(p.seccion, [...(porSeccion.get(p.seccion) ?? []), p]);
-    }
+    const g = grupoDe(p);
+    if (g) porSeccion.set(g, [...(porSeccion.get(g) ?? []), p]);
   }
 
   const salida: ElementoCatalogo[] = [];
   const yaPuestos = new Set<SeccionConSabores>();
   for (const p of productos) {
-    const seccion = esSeccionConSabores(p.seccion) ? p.seccion : null;
+    const seccion = grupoDe(p);
     const sabores = seccion ? porSeccion.get(seccion)! : [];
     if (!seccion || sabores.length < 2) {
       salida.push({ tipo: "producto", producto: p });
