@@ -1,0 +1,67 @@
+---
+/**
+ * Una casilla del catálogo: la tarjeta de un producto o, si es un grupo de
+ * sabores, la tarjeta agrupada. Lleva los `data-*` con los que filtran el
+ * buscador y los chips (`CategoryFilter`); en un grupo, `data-search` junta
+ * los nombres de todos los sabores para que buscar «bonito» encuentre la
+ * tarjeta de las empanadas.
+ */
+import ProductCard from "~/components/ProductCard.astro";
+import ProductoSaboresCard from "~/components/ProductoSaboresCard.astro";
+import { grupoOfCategory, type CategoryId } from "~/data/categories";
+import type { Producto } from "~/lib/db/productos";
+import type { ElementoCatalogo } from "~/lib/sabores";
+
+interface Props {
+  elemento: ElementoCatalogo;
+  seccionLabel?: string;
+  /** Sin `data-*` de filtro: el carrusel de la home no filtra. */
+  sinFiltro?: boolean;
+}
+
+const { elemento, seccionLabel, sinFiltro = false } = Astro.props;
+
+function imagenDe(p: Producto) {
+  if (!p.imageUrl || !p.imageWidth || !p.imageHeight) return null;
+  return { url: p.imageUrl, alt: p.imageAlt ?? p.name, ancho: p.imageWidth, alto: p.imageHeight };
+}
+
+const primero = elemento.tipo === "producto" ? elemento.producto : elemento.sabores[0];
+const search =
+  elemento.tipo === "producto"
+    ? `${primero.name} ${primero.shortDescription} ${seccionLabel ?? ""}`
+    : `${elemento.titulo} ${elemento.sabores.map((s) => s.name).join(" ")} ${seccionLabel ?? ""}`;
+const datos = sinFiltro
+  ? {}
+  : {
+      "data-product": "",
+      "data-category": primero.category,
+      "data-grupo": grupoOfCategory(primero.category as CategoryId),
+      "data-seccion": primero.seccion ?? undefined,
+      "data-search": search,
+    };
+---
+<div {...datos} class={sinFiltro ? "contents" : undefined}>
+  {elemento.tipo === "producto" ? (
+    <ProductCard
+      slug={primero.slug}
+      name={primero.name}
+      category={primero.category as CategoryId}
+      seccionLabel={seccionLabel}
+      imagen={imagenDe(primero)}
+      shortDescription={primero.shortDescription}
+      priceCents={primero.priceCents ?? undefined}
+      consultar={primero.consultar}
+      agotado={primero.agotado}
+      unit={primero.unit ?? undefined}
+      variants={primero.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
+    />
+  ) : (
+    <ProductoSaboresCard
+      titulo={elemento.titulo}
+      singular={elemento.singular}
+      eyebrow={seccionLabel}
+      sabores={elemento.sabores}
+    />
+  )}
+</div>

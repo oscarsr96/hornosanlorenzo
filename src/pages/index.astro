@@ -1,11 +1,11 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import Hero from "~/components/Hero.astro";
-import ProductCard from "~/components/ProductCard.astro";
+import ElementoCatalogo from "~/components/ElementoCatalogo.astro";
+import { agruparSabores } from "~/lib/sabores";
 import SectionLabel from "~/components/SectionLabel.astro";
 import type { Producto } from "~/lib/db/productos";
 import { catalogoPublico } from "~/lib/lectura-publica";
-import type { CategoryId } from "~/data/categories";
 import { stores } from "~/data/stores";
 import { site } from "~/data/site";
 
@@ -19,13 +19,6 @@ export const prerender = false;
 const productsAll: Producto[] = await catalogoPublico(Astro.response);
 // `listarProductos` ya devuelve en el orden de la carta.
 const featured = productsAll.filter((p) => p.destacado).slice(0, 6);
-
-/** La foto solo se pinta si tiene URL y las dos medidas: si falta alguna,
-    la tarjeta cae al placeholder «Foto pendiente» en vez de romperse. */
-function imagenDe(p: Producto): { url: string; alt: string; ancho: number; alto: number } | null {
-  if (!p.imageUrl || !p.imageWidth || !p.imageHeight) return null;
-  return { url: p.imageUrl, alt: p.imageAlt ?? p.name, ancho: p.imageWidth, alto: p.imageHeight };
-}
 
 const heroImage = (await import("../../public/images/productos/bolleria.jpeg")).default;
 
@@ -97,20 +90,9 @@ const localBizJsonLd = stores.map((s) => ({
       aria-label="Productos destacados"
       tabindex="0"
     >
-      {featured.map((p) => (
+      {agruparSabores(featured).map((e) => (
         <div class="carrusel-item snap-start shrink-0">
-        <ProductCard
-          slug={p.slug}
-          name={p.name}
-          category={p.category as CategoryId}
-          imagen={imagenDe(p)}
-          shortDescription={p.shortDescription}
-          priceCents={p.priceCents ?? undefined}
-          consultar={p.consultar}
-          agotado={p.agotado}
-          unit={p.unit ?? undefined}
-          variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
-        />
+          <ElementoCatalogo elemento={e} sinFiltro />
         </div>
       ))}
     </div>

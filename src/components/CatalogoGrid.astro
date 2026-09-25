@@ -1,5 +1,6 @@
 ---
-import ProductCard from "~/components/ProductCard.astro";
+import ElementoCatalogo from "~/components/ElementoCatalogo.astro";
+import { agruparSabores } from "~/lib/sabores";
 import CategoryFilter from "~/islands/CategoryFilter.tsx";
 import type { Producto } from "~/lib/db/productos";
 import { grupoCategories, grupoOfCategory, grupoLabel, type GrupoId, type CategoryId } from "~/data/categories";
@@ -76,13 +77,6 @@ const gamas = porGrupo
       .map((g) => ({ id: g, label: grupoLabel[g] })))
   : undefined;
 
-/** La foto solo se pinta si tiene URL y las dos medidas: si falta alguna,
-    la tarjeta cae al placeholder «Foto pendiente» en vez de romperse. */
-function imagenDe(p: Producto): { url: string; alt: string; ancho: number; alto: number } | null {
-  if (!p.imageUrl || !p.imageWidth || !p.imageHeight) return null;
-  return { url: p.imageUrl, alt: p.imageAlt ?? p.name, ancho: p.imageWidth, alto: p.imageHeight };
-}
-
 /**
  * `seccion` es texto libre en la base de datos, sin CHECK ni FK: a
  * diferencia de antes (`z.enum(seccionIds)` en `content.config.ts`), el
@@ -139,28 +133,8 @@ function seccionLabelDe(seccion: string | null): string | undefined {
             )}
           </div>
           <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {b.items.map((p) => (
-              <div
-                data-product
-                data-category={p.category}
-                data-grupo={grupoOfCategory(p.category as CategoryId)}
-                data-seccion={p.seccion}
-                data-search={`${p.name} ${p.shortDescription} ${b.seccion.label}`}
-              >
-                <ProductCard
-                  slug={p.slug}
-                  name={p.name}
-                  category={p.category as CategoryId}
-                  seccionLabel={seccionById(b.seccion.id).label}
-                  imagen={imagenDe(p)}
-                  shortDescription={p.shortDescription}
-                  priceCents={p.priceCents ?? undefined}
-                  consultar={p.consultar}
-                  agotado={p.agotado}
-                  unit={p.unit ?? undefined}
-                  variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
-                />
-              </div>
+            {agruparSabores(b.items).map((e) => (
+              <ElementoCatalogo elemento={e} seccionLabel={seccionById(b.seccion.id).label} />
             ))}
           </div>
         </div>
@@ -179,26 +153,8 @@ function seccionLabelDe(seccion: string | null): string | undefined {
             </h2>
           </div>
           <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {sueltos.map((p) => (
-              <div
-                data-product
-                data-category={p.category}
-                data-grupo={grupoOfCategory(p.category as CategoryId)}
-                data-search={`${p.name} ${p.shortDescription}`}
-              >
-                <ProductCard
-                  slug={p.slug}
-                  name={p.name}
-                  category={p.category as CategoryId}
-                  imagen={imagenDe(p)}
-                  shortDescription={p.shortDescription}
-                  priceCents={p.priceCents ?? undefined}
-                  consultar={p.consultar}
-                  agotado={p.agotado}
-                  unit={p.unit ?? undefined}
-                  variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
-                />
-              </div>
+            {agruparSabores(sueltos).map((e) => (
+              <ElementoCatalogo elemento={e} />
             ))}
           </div>
         </div>
@@ -206,28 +162,11 @@ function seccionLabelDe(seccion: string | null): string | undefined {
     </div>
   ) : (
     <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {sueltos.map((p) => (
-        <div
-          data-product
-          data-category={p.category}
-          data-grupo={grupoOfCategory(p.category as CategoryId)}
-          data-seccion={p.seccion}
-          data-search={`${p.name} ${p.shortDescription} ${seccionLabelDe(p.seccion) ?? ""}`}
-        >
-          <ProductCard
-            slug={p.slug}
-            name={p.name}
-            category={p.category as CategoryId}
-            seccionLabel={seccionLabelDe(p.seccion)}
-            imagen={imagenDe(p)}
-            shortDescription={p.shortDescription}
-            priceCents={p.priceCents ?? undefined}
-            consultar={p.consultar}
-            agotado={p.agotado}
-            unit={p.unit ?? undefined}
-            variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
-          />
-        </div>
+      {agruparSabores(sueltos).map((e) => (
+        <ElementoCatalogo
+          elemento={e}
+          seccionLabel={seccionLabelDe((e.tipo === "producto" ? e.producto : e.sabores[0]).seccion)}
+        />
       ))}
     </div>
   )}

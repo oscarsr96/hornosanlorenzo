@@ -1,0 +1,83 @@
+---
+/**
+ * Una tarjeta para todos los sabores de un mismo producto (empanadas,
+ * supremas): una foto y, debajo, el selector de sabor. Mismo marco que
+ * `ProductCard` para que no desentone en la rejilla ni en el carrusel.
+ */
+import { Image } from "astro:assets";
+import ElegirSabor from "~/islands/ElegirSabor.tsx";
+import type { Producto } from "~/lib/db/productos";
+import { categoryById, isCategoryId } from "~/data/categories";
+
+interface Props {
+  titulo: string;
+  singular: string;
+  eyebrow?: string;
+  sabores: Producto[];
+}
+
+const { titulo, singular, sabores } = Astro.props;
+// Sin sección, la categoría, como hace `ProductCard`.
+const categoria = sabores[0]?.category;
+const eyebrow =
+  Astro.props.eyebrow ?? (categoria && isCategoryId(categoria) ? categoryById(categoria).label : "");
+
+// La foto del primer sabor que la tenga: todas son de la misma pieza.
+const conFoto = sabores.find((p) => p.imageUrl && p.imageWidth && p.imageHeight);
+const imagen = conFoto
+  ? {
+      url: conFoto.imageUrl!,
+      alt: `${titulo} de hojaldre del obrador`,
+      ancho: conFoto.imageWidth!,
+      alto: conFoto.imageHeight!,
+    }
+  : null;
+
+// La descripción que más se repite entre los sabores es la del producto.
+const cuenta = new Map<string, number>();
+for (const p of sabores) cuenta.set(p.shortDescription, (cuenta.get(p.shortDescription) ?? 0) + 1);
+const descripcion = [...cuenta].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+---
+<article class="group bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:scale-[1.02] transition-transform duration-200">
+  <div class="aspect-[4/3] overflow-hidden">
+    {imagen ? (
+      <Image quality={80}
+        src={imagen.url}
+        alt={imagen.alt}
+        width={imagen.ancho}
+        height={imagen.alto}
+        widths={[300, 600, 900]}
+        sizes="(min-width:1024px) 360px, (min-width:640px) 50vw, 100vw"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      />
+    ) : (
+      <div
+        class="w-full h-full flex items-center justify-center bg-[color:var(--color-latte)] border-b border-[color:var(--color-avellana)]"
+        aria-hidden="true"
+      >
+        <span class="numeracion">Foto pendiente</span>
+      </div>
+    )}
+  </div>
+  <div class="p-4 sm:p-5">
+    <p class="numeracion">{eyebrow}</p>
+    <h3 class="font-[family-name:var(--font-display)] text-xl mt-1">{titulo}</h3>
+    <p class="text-sm text-[color:var(--color-ink-muted)] mt-1 line-clamp-2">
+      {descripcion} {sabores.length} sabores.
+    </p>
+    <ElegirSabor
+      client:visible
+      titulo={titulo}
+      singular={singular}
+      sabores={sabores.map((p) => ({
+        slug: p.slug,
+        name: p.name,
+        priceCents: p.priceCents,
+        consultar: p.consultar,
+        agotado: p.agotado,
+        unit: p.unit ?? undefined,
+        variants: p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents })),
+      }))}
+    />
+  </div>
+</article>
