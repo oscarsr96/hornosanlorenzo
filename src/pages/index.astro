@@ -1,18 +1,13 @@
 ---
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 import Hero from "~/components/Hero.astro";
-import PromoBanner from "~/components/PromoBanner.astro";
 import ProductCard from "~/components/ProductCard.astro";
-import ServiceCard from "~/components/ServiceCard.astro";
-import StoreCard from "~/components/StoreCard.astro";
 import SectionLabel from "~/components/SectionLabel.astro";
 import type { Producto } from "~/lib/db/productos";
 import { catalogoPublico } from "~/lib/lectura-publica";
 import type { CategoryId } from "~/data/categories";
-import { services } from "~/data/services";
 import { stores } from "~/data/stores";
 import { site } from "~/data/site";
-import { tradicion } from "~/data/tradicion";
 
 // Lee el catálogo de la base de datos: bajo demanda, con la caché ISR delante
 // y el panel invalidándola al guardar.
@@ -104,47 +99,6 @@ const localBizJsonLd = stores.map((s) => ({
           variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
         />
       ))}
-    </div>
-  </section>
-
-  <PromoBanner
-    label="Temporada · diciembre"
-    title="Roscón de Reyes — reservas abiertas"
-    ctaHref="/catalogo/dulce"
-    ctaLabel="Reservar"
-  />
-
-  <section class="bg-[color:var(--color-leche)] border-y border-[color:var(--color-avellana)]">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-      <SectionLabel number="02" label="Tres canales, una misma cocina" />
-      <h2 class="text-3xl sm:text-4xl mt-2">A quién servimos cada día.</h2>
-      <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">{site.usp}</p>
-      <div class="mt-8 grid gap-5 md:grid-cols-3">
-        {services.map((s) => <ServiceCard service={s} />)}
-      </div>
-      <a href="/a-quien-servimos#alta" class="btn btn-primario mt-8">Dar de alta mi empresa</a>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-    <SectionLabel number="03" label="Las pruebas" />
-    <h2 class="text-3xl sm:text-4xl mt-2">{tradicion.promesa}</h2>
-    <p class="max-w-xl text-[color:var(--color-ink-muted)] mt-3">{tradicion.promesaBody}</p>
-    <ul class="mt-10 grid gap-x-10 gap-y-6 md:grid-cols-3">
-      {tradicion.pruebas.map((prueba, i) => (
-        <li class="border-t border-[color:var(--color-avellana)] pt-4">
-          <p class="numeracion">Nº 0{i + 1} —</p>
-          <p class="mt-2 text-[color:var(--color-ink-muted)]">{prueba}</p>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24">
-    <SectionLabel number="04" label="Dónde estamos" />
-    <h2 class="text-3xl sm:text-4xl mt-2">Dos obradores en Madrid.</h2>
-    <div class="mt-8 grid gap-8">
-      {stores.map((s) => <StoreCard store={s} />)}
     </div>
   </section>
 </MarketingLayout>
