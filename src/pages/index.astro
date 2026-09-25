@@ -183,11 +183,17 @@ const localBizJsonLd = stores.map((s) => ({
 </style>
 
 <script>
-  const pista = document.getElementById("carrusel-destacados");
-  const prev = document.querySelector<HTMLButtonElement>("[data-carrusel-prev]");
-  const next = document.querySelector<HTMLButtonElement>("[data-carrusel-next]");
+  // El sitio navega sin recargar (`ClientRouter`): un script de página solo
+  // corre la primera vez, y al volver a la home las flechas quedaban sin
+  // enganchar. Por eso se inicia en cada `astro:page-load`, con una marca en
+  // el carrusel para no engancharlo dos veces.
+  function iniciarCarrusel() {
+    const pista = document.getElementById("carrusel-destacados");
+    const prev = document.querySelector<HTMLButtonElement>("[data-carrusel-prev]");
+    const next = document.querySelector<HTMLButtonElement>("[data-carrusel-next]");
+    if (!pista || !prev || !next || pista.dataset.listo) return;
+    pista.dataset.listo = "1";
 
-  if (pista && prev && next) {
     const actualiza = () => {
       const max = pista.scrollWidth - pista.clientWidth;
       prev.disabled = pista.scrollLeft <= 1;
@@ -203,7 +209,10 @@ const localBizJsonLd = stores.map((s) => ({
     prev.addEventListener("click", () => pista.scrollBy({ left: -paso() }));
     next.addEventListener("click", () => pista.scrollBy({ left: paso() }));
     pista.addEventListener("scroll", actualiza, { passive: true });
-    window.addEventListener("resize", actualiza);
+    // Observa el propio carrusel: muere con él al navegar, sin dejar
+    // escuchas colgadas en `window`.
+    new ResizeObserver(actualiza).observe(pista);
     actualiza();
   }
+  document.addEventListener("astro:page-load", iniciarCarrusel);
 </script>
