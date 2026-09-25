@@ -19,7 +19,6 @@ const ESTILOS: Record<
   Tono,
   {
     contenedor: string;
-    enlaceSolo: string;
     enlaceEnGrupo: string;
     salir: string;
   }
@@ -27,10 +26,7 @@ const ESTILOS: Record<
   // Banda superior de escritorio: fondo teja, texto en leche.
   claro: {
     contenedor: "hidden lg:inline-flex items-center gap-3",
-    enlaceSolo:
-      "hidden lg:inline-flex items-center h-10 px-4 whitespace-nowrap border border-[color:var(--color-leche)]/45 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-leche)] hover:bg-[color:var(--color-leche)] hover:text-[color:var(--color-teja)] transition-colors",
-    // Mismo estilo que `enlaceSolo`, pero sin repetir la visibilidad/el
-    // `inline-flex` que ya pone el `contenedor` que lo envuelve.
+    // La visibilidad y el `inline-flex` los pone el `contenedor`.
     enlaceEnGrupo:
       "inline-flex items-center h-10 px-4 whitespace-nowrap border border-[color:var(--color-leche)]/45 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-leche)] hover:bg-[color:var(--color-leche)] hover:text-[color:var(--color-teja)] transition-colors",
     salir:
@@ -39,7 +35,6 @@ const ESTILOS: Record<
   // Panel del menú móvil: fondo latte, texto en moka con filete avellana.
   moka: {
     contenedor: "flex items-center gap-3 mt-4",
-    enlaceSolo: "btn btn-secundario mt-4",
     enlaceEnGrupo: "btn btn-secundario",
     salir:
       "text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--color-moka)] underline underline-offset-4 hover:text-[color:var(--color-caramelo)] transition-colors",
@@ -57,13 +52,19 @@ export default function AccesoSesion({ tono }: { tono: Tono }) {
 
   if (!data?.user) {
     return (
-      <a
-        href="/acceso?modo=registro"
-        data-mobile-nav-link
-        className={estilo.enlaceSolo}
-      >
-        Regístrate aquí
-      </a>
+      <div className={estilo.contenedor}>
+        <a
+          href="/acceso?modo=registro"
+          data-mobile-nav-link
+          className={estilo.enlaceEnGrupo}
+        >
+          Regístrate aquí
+        </a>
+        {/* Para quien ya tiene cuenta: /acceso abre en «Entrar». */}
+        <a href="/acceso" data-mobile-nav-link className={estilo.salir}>
+          Entrar
+        </a>
+      </div>
     );
   }
 
