@@ -38,9 +38,7 @@ export const stores: readonly Store[] = [
       { number: "+34653985065", display: "653 985 065" },
     ],
     email: "info@hornosanlorenzo.com",
-    // OJO: este horario no cuadra con la recogida hasta las 19:30 y el cliente
-    // ha confirmado que está mal. Pendiente el horario bueno (tasks/todo.md).
-    hoursText: "Lun–Sáb 7:00–14:00 · Domingos cerrado",
+    hoursText: "Recogida de 09:30 a 19:30 ininterrumpida · Domingos cerrado",
     pickupUntil: "19:30",
     openDays: [1, 2, 3, 4, 5, 6],
     mapsEmbed:
