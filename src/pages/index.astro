@@ -84,8 +84,21 @@ const localBizJsonLd = stores.map((s) => ({
       </div>
       <a href="/catalogo" class="text-sm font-semibold underline whitespace-nowrap">Ver todo el catálogo →</a>
     </div>
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Carrusel con scroll nativo: se arrastra en el móvil y con trackpad sin
+         JS; las flechas pasan de una en una. -->
+    <div class="carrusel-marco">
+    <button type="button" class="carrusel-flecha carrusel-flecha--prev" data-carrusel-prev aria-controls="carrusel-destacados" aria-label="Producto anterior">‹</button>
+    <button type="button" class="carrusel-flecha carrusel-flecha--next" data-carrusel-next aria-controls="carrusel-destacados" aria-label="Producto siguiente">›</button>
+    <div
+      id="carrusel-destacados"
+      class="carrusel flex gap-5 overflow-x-auto snap-x snap-mandatory"
+      role="region"
+      aria-roledescription="carrusel"
+      aria-label="Productos destacados"
+      tabindex="0"
+    >
       {featured.map((p) => (
+        <div class="carrusel-item snap-start shrink-0">
         <ProductCard
           slug={p.slug}
           name={p.name}
@@ -98,7 +111,114 @@ const localBizJsonLd = stores.map((s) => ({
           unit={p.unit ?? undefined}
           variants={p.variantes.map((v) => ({ id: v.variantId, label: v.label, priceCents: v.priceCents }))}
         />
+        </div>
       ))}
+    </div>
     </div>
   </section>
 </MarketingLayout>
+
+<style>
+  .carrusel {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: 0 1px 2px 0;
+  }
+  .carrusel::-webkit-scrollbar {
+    display: none;
+  }
+  .carrusel:focus-visible {
+    outline: 2px solid var(--color-caramelo);
+    outline-offset: 4px;
+  }
+  /* Móvil: una tarjeta y un asomo de la siguiente, para que se vea que hay más. */
+  .carrusel-item {
+    flex-basis: 82%;
+  }
+  @media (min-width: 640px) {
+    .carrusel-item {
+      flex-basis: calc((100% - 1.25rem) / 2);
+    }
+  }
+  @media (min-width: 1024px) {
+    .carrusel-item {
+      flex-basis: calc((100% - 2.5rem) / 3);
+    }
+  }
+  /* Las flechas van sobre la foto, a media altura de ella. La foto es 4:3,
+     así que su centro queda a 3/8 del ancho de la tarjeta; con `cqw` ese
+     ancho se calcula igual que el `flex-basis` de cada tramo. */
+  .carrusel-marco {
+    position: relative;
+    container-type: inline-size;
+    --tarjeta: 82cqw;
+  }
+  @media (min-width: 640px) {
+    .carrusel-marco {
+      --tarjeta: calc((100cqw - 1.25rem) / 2);
+    }
+  }
+  @media (min-width: 1024px) {
+    .carrusel-marco {
+      --tarjeta: calc((100cqw - 2.5rem) / 3);
+    }
+  }
+  .carrusel-flecha {
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--tarjeta) * 0.375);
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--color-avellana);
+    background: var(--color-leche);
+    color: var(--color-moka);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .carrusel-flecha--prev {
+    left: 8px;
+  }
+  .carrusel-flecha--next {
+    right: 8px;
+  }
+  .carrusel-flecha:hover {
+    background: var(--color-latte);
+  }
+  .carrusel-flecha:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .carrusel {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  const pista = document.getElementById("carrusel-destacados");
+  const prev = document.querySelector<HTMLButtonElement>("[data-carrusel-prev]");
+  const next = document.querySelector<HTMLButtonElement>("[data-carrusel-next]");
+
+  if (pista && prev && next) {
+    const actualiza = () => {
+      const max = pista.scrollWidth - pista.clientWidth;
+      prev.disabled = pista.scrollLeft <= 1;
+      // Con todo en pantalla quedan las dos desactivadas, o sea, ocultas.
+      next.disabled = pista.scrollLeft >= max - 1;
+    };
+    // Un paso = una tarjeta más el hueco entre tarjetas.
+    const paso = () => {
+      const a = pista.children[0] as HTMLElement | undefined;
+      const b = pista.children[1] as HTMLElement | undefined;
+      return a && b ? b.offsetLeft - a.offsetLeft : pista.clientWidth;
+    };
+    prev.addEventListener("click", () => pista.scrollBy({ left: -paso() }));
+    next.addEventListener("click", () => pista.scrollBy({ left: paso() }));
+    pista.addEventListener("scroll", actualiza, { passive: true });
+    window.addEventListener("resize", actualiza);
+    actualiza();
+  }
+</script>
