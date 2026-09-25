@@ -15,7 +15,14 @@ export type Store = {
   hoursText: string;
   /** Hora tope para pasar a recoger un pedido. */
   pickupUntil: string;
+  /**
+   * Hora tope los sábados, domingos y festivos, si ese día cierra antes.
+   * Entonces solo hay franja de mañana.
+   */
+  pickupUntilReducido?: string;
   openDays: number[]; // 0=Sun ... 6=Sat
+  /** Días en que se puede elegir recoger aquí. 0=domingo ... 6=sábado. */
+  diasRecogida: readonly number[];
   mapsEmbed: string;
   mapsLink: string;
   coords: { lat: number; lng: number };
@@ -38,9 +45,12 @@ export const stores: readonly Store[] = [
       { number: "+34653985065", display: "653 985 065" },
     ],
     email: "info@hornosanlorenzo.com",
-    hoursText: "Recogida de 09:30 a 19:30 ininterrumpida · Domingos cerrado",
+    hoursText:
+      "Recogida de lunes a viernes de 09:30 a 19:30 ininterrumpida · Sábados, domingos y festivos de 09:30 a 14:30",
     pickupUntil: "19:30",
-    openDays: [1, 2, 3, 4, 5, 6],
+    pickupUntilReducido: "14:30",
+    openDays: [0, 1, 2, 3, 4, 5, 6],
+    diasRecogida: [0, 1, 2, 3, 4, 5, 6],
     mapsEmbed:
       "https://www.google.com/maps?q=C%2FValgrande+21+Alcobendas&output=embed",
     mapsLink: "https://www.google.com/maps?q=C%2FValgrande+21+Alcobendas",
@@ -62,6 +72,8 @@ export const stores: readonly Store[] = [
     hoursText: "Lun–Dom 8:00–14:30 y 17:00–20:30",
     pickupUntil: "20:30",
     openDays: [0, 1, 2, 3, 4, 5, 6],
+    // La tienda abre el domingo, pero de momento no se recoge ese día.
+    diasRecogida: [1, 2, 3, 4, 5, 6],
     mapsEmbed:
       "https://www.google.com/maps?q=Avenida+Europa+28+Pozuelo+de+Alarcon&output=embed",
     mapsLink:

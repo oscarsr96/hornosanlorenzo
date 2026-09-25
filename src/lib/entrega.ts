@@ -6,9 +6,15 @@
  *
  *   Recogida en tienda — el mismo día en Alcobendas, a partir de las 17:00,
  *   si se pide antes de las 13:00; en Pozuelo, siempre de un día para otro.
+ *   Para el día siguiente hay que pedir antes de las 17:00: a esa hora se
+ *   cierra la lista que el obrador prepara al día siguiente.
+ *   Alcobendas abre también los domingos; sábados, domingos y festivos
+ *   cierra a las 14:30, así que ese día solo hay mañana y no hay mismo día.
  *
  *   Cualquier modalidad — desde 250 € el obrador necesita dos días.
  */
+
+import { stores } from "~/data/stores";
 
 export type DeliveryMode = "domicilio" | "recogida";
 
@@ -17,6 +23,9 @@ export const CUTOFF_HOUR = 18;
 
 /** Hora límite para que la recogida del mismo día siga siendo posible. */
 export const RECOGIDA_MISMO_DIA_HOUR = 13;
+
+/** Hora límite para recoger al día siguiente: se cierra la lista del obrador. */
+export const RECOGIDA_DIA_SIGUIENTE_HOUR = 17;
 
 /** Una recogida del mismo día no está lista hasta esta hora: solo vale la tarde. */
 export const RECOGIDA_MISMO_DIA_DESDE = "17:00";
@@ -30,16 +39,17 @@ const TIENDAS_SIN_MISMO_DIA: readonly string[] = ["pozuelo"];
 export const DOS_DIAS_COPY =
   "Los pedidos desde 250 € necesitan dos días de preparación.";
 
-export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = {
-  domicilio: {
-    label: "Envío a domicilio",
-    body: "Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior. Pedido mínimo 25 € de lunes a jueves y 35 € viernes, sábados y vísperas de festivo. Solo Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
-  },
-  recogida: {
-    label: "Recogida en tienda",
-    body: "Recogida el mismo día en Alcobendas a partir de las 17h para pedidos antes de las 13h. En Pozuelo, siempre de un día para otro.",
-  },
-};
+export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> =
+  {
+    domicilio: {
+      label: "Envío a domicilio",
+      body: "Reparto de lunes a sábado. Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior. Pedido mínimo 25 € de lunes a jueves y 35 € viernes, sábados y vísperas de festivo. Solo Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
+    },
+    recogida: {
+      label: "Recogida en tienda",
+      body: "Recogida el mismo día en Alcobendas a partir de las 17h para pedidos antes de las 13h. Para el día siguiente, pide antes de las 17h. Sábados, domingos y festivos, Alcobendas de 09:30 a 14:30. En Pozuelo, siempre de un día para otro.",
+    },
+  };
 
 /**
  * El envío a domicilio no se elige por franja: el reparto propio sale por la
@@ -56,7 +66,11 @@ export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = 
  * **Los rangos los tomé de fuentes públicas, no del cliente**, así que hay
  * que validarlos con el obrador antes de cobrar (ver tasks/todo.md).
  */
-const CP_RANGOS: readonly { desde: number; hasta: number; municipio: string }[] = [
+const CP_RANGOS: readonly {
+  desde: number;
+  hasta: number;
+  municipio: string;
+}[] = [
   { desde: 28001, hasta: 28055, municipio: "Madrid capital" },
   { desde: 28100, hasta: 28109, municipio: "Alcobendas" },
   { desde: 28220, hasta: 28224, municipio: "Pozuelo de Alarcón" },
@@ -106,8 +120,21 @@ export const ZONA_REPARTO_COPY = `Solo enviamos a ${ZONA_REPARTO.slice(0, -1).jo
 
 export const ENTREGA_DOMICILIO_COPY = "Entrega antes de las 14:30h";
 
-/** Reparto propio y obrador: de lunes a sábado. */
-export const isClosed = (date: Date): boolean => date.getDay() === 0;
+/**
+ * Día sin servicio. El reparto propio no sale los domingos; la recogida
+ * depende de la tienda (Alcobendas abre también el domingo). Sin tienda
+ * conocida, el domingo se da por cerrado.
+ */
+export const isClosed = (
+  date: Date,
+  { mode, storeId }: { mode?: DeliveryMode | null; storeId?: string } = {},
+): boolean => {
+  if (mode === "recogida") {
+    const tienda = stores.find((s) => s.id === storeId);
+    if (tienda) return !tienda.diasRecogida.includes(date.getDay());
+  }
+  return date.getDay() === 0;
+};
 
 export const toISO = (date: Date): string => {
   const y = date.getFullYear();
@@ -124,12 +151,6 @@ const addDays = (date: Date, days: number): Date => {
   return d;
 };
 
-const nextOpenDay = (date: Date): Date => {
-  let d = new Date(date);
-  while (isClosed(d)) d = addDays(d, 1);
-  return d;
-};
-
 /** Lo que condiciona el primer día disponible, además de la modalidad. */
 export type PlazoOpts = {
   /** Subtotal del pedido: desde 250 € hacen falta dos días. */
@@ -142,7 +163,7 @@ export type PlazoOpts = {
  * Primer día que se puede elegir.
  *
  * Recogida: hoy mismo si aún no son las 13:00, salvo en Pozuelo, que siempre
- * es de un día para otro.
+ * es de un día para otro; mañana si aún no son las 17:00; si no, pasado.
  * Domicilio: mañana si aún no son las 18:00; si no, pasado.
  * En ambas, un pedido de 250 € o más no baja de dos días.
  */
@@ -151,31 +172,67 @@ export function earliestDate(
   now: Date = new Date(),
   { subtotalCents = 0, storeId }: PlazoOpts = {},
 ): string {
+  const hora = now.getHours();
+  const sinMismoDia = Boolean(
+    storeId && TIENDAS_SIN_MISMO_DIA.includes(storeId),
+  );
   let dias =
     mode === "recogida"
       ? // Pozuelo nunca prepara para hoy; en Alcobendas hay hasta las 13:00.
-        (storeId && TIENDAS_SIN_MISMO_DIA.includes(storeId)) ||
-        now.getHours() >= RECOGIDA_MISMO_DIA_HOUR
-        ? 1
-        : 0
-      : now.getHours() < CUTOFF_HOUR
+        // Para mañana, hasta las 17:00; después, pasado mañana.
+        !sinMismoDia && hora < RECOGIDA_MISMO_DIA_HOUR
+        ? 0
+        : hora < RECOGIDA_DIA_SIGUIENTE_HOUR
+          ? 1
+          : 2
+      : hora < CUTOFF_HOUR
         ? 1
         : 2;
 
   if (subtotalCents >= DOS_DIAS_DESDE_CENTS) dias = Math.max(dias, 2);
 
-  return toISO(nextOpenDay(addDays(now, dias)));
+  // Se salta lo cerrado y, en recogida, los días sin ninguna franja posible
+  // (un sábado para el mismo día en Alcobendas, por ejemplo).
+  let d = addDays(now, dias);
+  while (
+    isClosed(d, { mode, storeId }) ||
+    (mode === "recogida" &&
+      franjasRecogida(storeId, toISO(d), now).length === 0)
+  ) {
+    d = addDays(d, 1);
+  }
+  return toISO(d);
 }
 
+export type Franja = "morning" | "afternoon";
+
+/** Sábado, domingo o festivo: los días en que la tienda cierra antes. */
+export const esDiaReducido = (dateISO: string): boolean => {
+  const dia = fromISO(dateISO).getDay();
+  return dia === 0 || dia === 6 || FESTIVOS.has(dateISO);
+};
+
 /**
- * La recogida es para hoy mismo. Entonces el pedido no está listo hasta las
- * 17:00 y la franja de mañana no existe.
+ * Franjas en que se puede recoger ese día en esa tienda.
+ *
+ * Con horario reducido (Alcobendas cierra a las 14:30 en fin de semana y
+ * festivo) solo hay mañana. Para hoy mismo el pedido no está listo hasta las
+ * 17:00, así que solo hay tarde. Las dos cosas a la vez dejan el día vacío.
  */
-export const esRecogidaMismoDia = (
-  mode: DeliveryMode,
+export function franjasRecogida(
+  storeId: string | undefined,
   dateISO: string,
   now: Date = new Date(),
-): boolean => mode === "recogida" && dateISO === toISO(now);
+): Franja[] {
+  const tienda = stores.find((s) => s.id === storeId);
+  let franjas: Franja[] =
+    tienda?.pickupUntilReducido && esDiaReducido(dateISO)
+      ? ["morning"]
+      : ["morning", "afternoon"];
+  if (dateISO === toISO(now))
+    franjas = franjas.filter((f) => f === "afternoon");
+  return franjas;
+}
 
 /** El calendario abre con la opción más permisiva: la recogida. */
 export function earliestSelectableDate(now: Date = new Date()): string {
@@ -251,7 +308,10 @@ export function minimoPedidoCents(mode: DeliveryMode, dateISO: string): number {
 }
 
 /** Lo que cuesta el reparto para un subtotal dado. La recogida nunca cuesta. */
-export function shippingCents(mode: DeliveryMode, subtotalCents: number): number {
+export function shippingCents(
+  mode: DeliveryMode,
+  subtotalCents: number,
+): number {
   if (mode === "recogida") return 0;
   if (
     FREE_SHIPPING_FROM_CENTS !== null &&
@@ -281,6 +341,12 @@ export function isDateAllowed(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return false;
   const date = fromISO(dateISO);
   if (Number.isNaN(date.getTime())) return false;
-  if (isClosed(date)) return false;
+  if (isClosed(date, { mode, storeId: opts.storeId })) return false;
+  if (
+    mode === "recogida" &&
+    franjasRecogida(opts.storeId, dateISO, now).length === 0
+  ) {
+    return false;
+  }
   return dateISO >= earliestDate(mode, now, opts);
 }

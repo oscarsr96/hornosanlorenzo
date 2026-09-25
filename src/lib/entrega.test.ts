@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { admiteCP, esTelefonoValido, minimoPedidoCents, meetsMinimum } from "~/lib/entrega";
+import {
+  admiteCP,
+  earliestDate,
+  esTelefonoValido,
+  franjasRecogida,
+  isClosed,
+  isDateAllowed,
+  meetsMinimum,
+  minimoPedidoCents,
+} from "~/lib/entrega";
 
 describe("esTelefonoValido", () => {
   it("acepta un móvil con espacios y con prefijo", () => {
@@ -37,7 +46,12 @@ describe("minimoPedidoCents", () => {
 
   it("25 € de lunes a jueves", () => {
     // Semana del 28-9-2026: lunes a jueves, sin festivos al día siguiente.
-    for (const iso of ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"]) {
+    for (const iso of [
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01",
+    ]) {
       expect(minimoPedidoCents("domicilio", iso)).toBe(2500);
     }
   });
@@ -65,5 +79,87 @@ describe("meetsMinimum", () => {
     expect(meetsMinimum("domicilio", 2499, "2026-09-29")).toBe(false);
     expect(meetsMinimum("domicilio", 3000, "2026-10-02")).toBe(false);
     expect(meetsMinimum("recogida", 100, "2026-10-02")).toBe(true);
+  });
+});
+
+describe("recogida en fin de semana y festivo", () => {
+  const JUEVES = new Date("2026-10-01T10:00:00");
+
+  it("Alcobendas: sábado, domingo y festivo solo de mañana", () => {
+    expect(franjasRecogida("alcobendas", "2026-10-03", JUEVES)).toEqual([
+      "morning",
+    ]);
+    expect(franjasRecogida("alcobendas", "2026-10-04", JUEVES)).toEqual([
+      "morning",
+    ]);
+    // Lunes 12 de octubre, festivo.
+    expect(franjasRecogida("alcobendas", "2026-10-12", JUEVES)).toEqual([
+      "morning",
+    ]);
+    expect(franjasRecogida("alcobendas", "2026-10-05", JUEVES)).toEqual([
+      "morning",
+      "afternoon",
+    ]);
+  });
+
+  it("Pozuelo no cambia: mañana y tarde también el sábado", () => {
+    expect(franjasRecogida("pozuelo", "2026-10-03", JUEVES)).toEqual([
+      "morning",
+      "afternoon",
+    ]);
+  });
+
+  it("el domingo se recoge en Alcobendas, no en Pozuelo ni a domicilio", () => {
+    const domingo = new Date("2026-10-04T00:00:00");
+    expect(isClosed(domingo, { mode: "recogida", storeId: "alcobendas" })).toBe(
+      false,
+    );
+    expect(isClosed(domingo, { mode: "recogida", storeId: "pozuelo" })).toBe(
+      true,
+    );
+    expect(isClosed(domingo, { mode: "domicilio" })).toBe(true);
+    expect(
+      isDateAllowed("recogida", "2026-10-04", JUEVES, {
+        storeId: "alcobendas",
+      }),
+    ).toBe(true);
+  });
+
+  it("el sábado no hay recogida para el mismo día en Alcobendas", () => {
+    const sabado = new Date("2026-10-03T10:00:00");
+    expect(earliestDate("recogida", sabado, { storeId: "alcobendas" })).toBe(
+      "2026-10-04",
+    );
+    expect(
+      isDateAllowed("recogida", "2026-10-03", sabado, {
+        storeId: "alcobendas",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("recogida al día siguiente: hasta las 17:00", () => {
+  it("Alcobendas", () => {
+    const opts = { storeId: "alcobendas" };
+    expect(
+      earliestDate("recogida", new Date("2026-09-29T16:59:00"), opts),
+    ).toBe("2026-09-30");
+    expect(
+      earliestDate("recogida", new Date("2026-09-29T17:00:00"), opts),
+    ).toBe("2026-10-01");
+  });
+
+  it("Pozuelo", () => {
+    const opts = { storeId: "pozuelo" };
+    expect(
+      earliestDate("recogida", new Date("2026-09-29T10:00:00"), opts),
+    ).toBe("2026-09-30");
+    expect(
+      earliestDate("recogida", new Date("2026-09-29T17:00:00"), opts),
+    ).toBe("2026-10-01");
+    // Viernes tarde: pasado mañana es domingo, y Pozuelo no recoge en domingo.
+    expect(
+      earliestDate("recogida", new Date("2026-10-02T18:00:00"), opts),
+    ).toBe("2026-10-05");
   });
 });

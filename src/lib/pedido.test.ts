@@ -155,6 +155,18 @@ describe("priceOrder", () => {
     });
   });
 
+  it("en Alcobendas el sábado solo se recoge por la mañana", async () => {
+    const sabado = { ...pedidoBase(), dateISO: "2026-03-14" };
+    await expect(
+      priceOrder({ ...sabado, slot: "afternoon" }, { now: AHORA }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("cierra a las 14:30"),
+    });
+    await expect(
+      priceOrder({ ...sabado, slot: "morning" }, { now: AHORA }),
+    ).resolves.toBeTruthy();
+  });
+
   it("a partir de las 13:00 Alcobendas ya no prepara para hoy", () => {
     expect(
       earliestDate("recogida", new Date("2026-03-10T12:59:00"), {

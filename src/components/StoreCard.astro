@@ -19,7 +19,10 @@ const { store } = Astro.props;
       </div>
       <div>
         <dt class="numeracion">Recogida de pedidos</dt>
-        <dd>Hasta las {store.pickupUntil}</dd>
+        <dd>
+          Hasta las {store.pickupUntil}
+          {store.pickupUntilReducido && ` · sábados, domingos y festivos hasta las ${store.pickupUntilReducido}`}
+        </dd>
       </div>
       <div>
         <dt class="numeracion">Teléfono</dt>

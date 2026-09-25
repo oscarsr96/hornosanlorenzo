@@ -18,7 +18,8 @@ import {
   esTelefonoValido,
   minimoPedidoCents,
   MIN_ORDER_COPY,
-  esRecogidaMismoDia,
+  franjasRecogida,
+  type Franja,
   RECOGIDA_MISMO_DIA_DESDE,
   isDateAllowed,
   meetsMinimum,
@@ -236,7 +237,7 @@ export default function CheckoutFlow({
     setMode(next);
     if (
       dateISO &&
-      dateISO < earliestDate(next, today, { subtotalCents: totalCents })
+      !isDateAllowed(next, dateISO, today, { subtotalCents: totalCents })
     ) {
       setDateISO("");
     }
@@ -247,12 +248,20 @@ export default function CheckoutFlow({
 
   const emailOk = /.+@.+\..+/.test(email.trim());
   const telefonoOk = esTelefonoValido(phone);
-  /** Recoger hoy mismo solo se puede por la tarde: el pedido no está antes. */
-  const mismoDia =
-    Boolean(mode && dateISO) && esRecogidaMismoDia(mode!, dateISO, today);
+  /**
+   * Franjas de recogida del día elegido: para hoy solo tarde, y en Alcobendas
+   * los sábados, domingos y festivos solo mañana. Si la elegida deja de
+   * valer, se pasa a la que queda.
+   */
+  const franjas: Franja[] =
+    mode === "recogida" && dateISO
+      ? franjasRecogida(storeId, dateISO, today)
+      : ["morning", "afternoon"];
+  const tiendaElegida = stores.find((s) => s.id === storeId);
+  const mismoDia = mode === "recogida" && dateISO === toISO(today);
   useEffect(() => {
-    if (mismoDia) setSlot("afternoon");
-  }, [mismoDia]);
+    if (franjas.length > 0 && !franjas.includes(slot)) setSlot(franjas[0]);
+  }, [franjas.join(), slot]);
 
   /** El mínimo del reparto depende del día elegido: 0 hasta que lo hay. */
   const minimoCents = mode && dateISO ? minimoPedidoCents(mode, dateISO) : 0;
@@ -528,7 +537,9 @@ export default function CheckoutFlow({
                 {cells.map((date, i) => {
                   if (!date) return <span key={`empty-${i}`} />;
                   const iso = toISO(date);
-                  const disabled = iso < minISO || isClosed(date);
+                  const disabled = mode
+                    ? !isDateAllowed(mode, iso, today, plazoOpts)
+                    : iso < minISO || isClosed(date);
                   const selected = iso === dateISO;
                   return (
                     <button
@@ -568,8 +579,9 @@ export default function CheckoutFlow({
                   color: "var(--color-ink-muted)",
                 }}
               >
-                Obrador y reparto propio de lunes a sábado. Los domingos no hay
-                servicio.
+                {mode === "recogida" && tiendaElegida?.pickupUntilReducido
+                  ? `En ${tiendaElegida.shortName}, recogida también en domingo. Sábados, domingos y festivos, de 09:30 a ${tiendaElegida.pickupUntilReducido} y sin recogida para el mismo día.`
+                  : "Obrador y reparto propio de lunes a sábado. Los domingos no hay servicio."}
               </p>
 
               {mode === "domicilio" && (
@@ -828,11 +840,10 @@ export default function CheckoutFlow({
                     setStoreId(s.id);
                     if (
                       dateISO &&
-                      dateISO <
-                        earliestDate("recogida", today, {
-                          subtotalCents: totalCents,
-                          storeId: s.id,
-                        })
+                      !isDateAllowed("recogida", dateISO, today, {
+                        subtotalCents: totalCents,
+                        storeId: s.id,
+                      })
                     ) {
                       setDateISO("");
                     }
@@ -864,6 +875,8 @@ export default function CheckoutFlow({
                     }}
                   >
                     Recogida hasta las {s.pickupUntil}
+                    {s.pickupUntilReducido &&
+                      ` · sáb., dom. y festivos hasta las ${s.pickupUntilReducido}`}
                     {s.id === "pozuelo" && " · siempre de un día para otro"}
                   </span>
                   <span
@@ -939,7 +952,12 @@ export default function CheckoutFlow({
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     {(
                       [
-                        { id: "morning", label: "Mañana" },
+                        {
+                          id: "morning",
+                          label: franjas.includes("afternoon")
+                            ? "Mañana"
+                            : `Mañana · hasta las ${tiendaElegida?.pickupUntilReducido ?? "14:30"}`,
+                        },
                         {
                           id: "afternoon",
                           label: mismoDia
@@ -948,7 +966,7 @@ export default function CheckoutFlow({
                         },
                       ] as const
                     )
-                      .filter((s) => !mismoDia || s.id === "afternoon")
+                      .filter((s) => franjas.includes(s.id))
                       .map((s) => (
                         <button
                           key={s.id}
