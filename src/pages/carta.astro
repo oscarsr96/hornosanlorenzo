@@ -1,0 +1,54 @@
+---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import MarketingLayout from "~/layouts/MarketingLayout.astro";
+
+/**
+ * La carta impresa, página a página, con la opción de descargar el PDF.
+ *
+ * Se enseña como imágenes y no incrustando el PDF: en iPhone un PDF dentro de
+ * un iframe solo muestra la primera página. Las imágenes salen de ese mismo
+ * PDF (cómo regenerarlas, en `src/assets/carta/LEEME.md`).
+ */
+const PDF = "/carta-horno-san-lorenzo.pdf";
+
+const paginas = Object.entries(
+  import.meta.glob<{ default: ImageMetadata }>("../assets/carta/pagina-*.jpg", { eager: true }),
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, m]) => m.default);
+---
+<MarketingLayout
+  title="Carta"
+  description="La carta del obrador, con precios y raciones. Consúltala aquí o descárgala en PDF."
+>
+  <section class="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-14">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <h1 class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">La carta</h1>
+      <a href={PDF} download class="btn btn-primario">Descargar PDF</a>
+    </div>
+    <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+      {paginas.length} páginas · PDF de 1,4 MB
+    </p>
+
+    <ol class="mt-8 flex flex-col gap-6">
+      {paginas.map((img, i) => (
+        <li class="border border-[color:var(--color-avellana)] bg-[color:var(--color-leche)]">
+          <Image
+            src={img}
+            alt={`Carta del obrador, página ${i + 1} de ${paginas.length}`}
+            widths={[480, 720, 1080]}
+            sizes="(min-width: 672px) 624px, calc(100vw - 2rem)"
+            quality={80}
+            loading={i === 0 ? "eager" : "lazy"}
+            class="block w-full h-auto"
+          />
+        </li>
+      ))}
+    </ol>
+
+    <div class="mt-10 text-center">
+      <a href={PDF} download class="btn btn-primario">Descargar PDF</a>
+    </div>
+  </section>
+</MarketingLayout>

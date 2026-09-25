@@ -52,9 +52,8 @@ export const mainNav: readonly NavItem[] = [
     ],
   },
   {
-    href: "/carta-horno-san-lorenzo.pdf",
+    href: "/carta",
     label: "Carta",
-    download: true,
   },
   {
     href: "/a-quien-servimos",
