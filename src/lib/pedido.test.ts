@@ -105,6 +105,45 @@ describe("priceOrder", () => {
     });
   });
 
+  it("rechaza un reparto por debajo del mínimo del día de entrega", async () => {
+    // Miércoles 11 de marzo: mínimo de 25 €. Una tarta de 18,50 no llega.
+    const payload: OrderPayload = {
+      items: [{ slug: SENCILLO.slug, qty: 1 }],
+      mode: "domicilio",
+      dateISO: FECHA_DOMICILIO,
+      address: "Calle Falsa 123",
+      postalCode: "28001",
+      email: "cliente@example.com",
+      phone: "666123456",
+    };
+    await expect(priceOrder(payload, { now: AHORA })).rejects.toMatchObject({
+      message: expect.stringContaining("mínimo a domicilio es de 25 €"),
+    });
+  });
+
+  it("el viernes el mínimo del reparto sube a 35 €", async () => {
+    // Dos tartas, 37 €: pasan el viernes 13. Con una menos de precio no.
+    const payload: OrderPayload = {
+      items: [{ slug: SENCILLO.slug, qty: 2 }],
+      mode: "domicilio",
+      dateISO: "2026-03-13",
+      address: "Calle Falsa 123",
+      postalCode: "28001",
+      email: "cliente@example.com",
+      phone: "666123456",
+    };
+    await expect(priceOrder(payload, { now: AHORA })).resolves.toMatchObject({
+      subtotalCents: 3700,
+    });
+
+    productosParaPedido.mockResolvedValue(
+      catalogo({ ...SENCILLO, priceCents: 1500 }),
+    );
+    await expect(priceOrder(payload, { now: AHORA })).rejects.toMatchObject({
+      message: expect.stringContaining("mínimo a domicilio es de 35 €"),
+    });
+  });
+
   it("rechaza una fecha de recogida anterior a la primera disponible", async () => {
     const payload: OrderPayload = {
       ...pedidoBase(),

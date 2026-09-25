@@ -30,7 +30,7 @@ export const DOS_DIAS_COPY =
 export const MODE_COPY: Record<DeliveryMode, { label: string; body: string }> = {
   domicilio: {
     label: "Envío a domicilio",
-    body: "Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior. Solo Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
+    body: "Entregamos en 24 horas. Entrega programada al día siguiente para pedidos realizados antes de las 18:00 del día anterior. Pedido mínimo 25 € de lunes a jueves y 35 € viernes, sábados y vísperas de festivo. Solo Madrid capital, Alcobendas, San Sebastián de los Reyes, Tres Cantos y Pozuelo de Alarcón.",
   },
   recogida: {
     label: "Recogida en tienda",
@@ -171,8 +171,9 @@ export function earliestSelectableDate(now: Date = new Date()): string {
 
 /* -------------------------------------------------------------------------
  * Reglas comerciales del reparto.
- * Pendientes de confirmar con el obrador: hoy el envío es gratuito y no hay
- * pedido mínimo. Cambiar estas cuatro constantes basta para activarlos.
+ * El envío sigue siendo gratuito. El pedido mínimo del reparto a domicilio
+ * depende del día de entrega: 25 € de lunes a jueves; 35 € los viernes, los
+ * sábados y las vísperas de festivo.
  * ---------------------------------------------------------------------- */
 
 /** Coste del reparto a domicilio, en céntimos. 0 = gratuito. */
@@ -181,8 +182,60 @@ export const SHIPPING_CENTS = 0;
 /** Importe a partir del cual el reparto sale gratis. null = tarifa siempre igual. */
 export const FREE_SHIPPING_FROM_CENTS: number | null = null;
 
-/** Pedido mínimo para el reparto a domicilio, en céntimos. 0 = sin mínimo. */
-export const MIN_ORDER_CENTS = 0;
+/** Pedido mínimo del reparto a domicilio de lunes a jueves, en céntimos. */
+export const MIN_ORDER_CENTS = 2_500;
+
+/** Pedido mínimo del reparto los viernes, sábados y vísperas de festivo. */
+export const MIN_ORDER_ALTO_CENTS = 3_500;
+
+export const MIN_ORDER_COPY =
+  "Pedido mínimo a domicilio: 25 € de lunes a jueves; 35 € viernes, sábados y vísperas de festivo.";
+
+/**
+ * Festivos de Madrid, en ISO. Solo sirven para saber qué día es víspera.
+ *
+ * 2026: los doce de la Comunidad (Decreto 75/2025, BOCM 25-9-2025) y los dos
+ * locales de Madrid capital (BOCM 12-12-2025), que es donde cae casi todo el
+ * reparto. Los locales de Alcobendas, Pozuelo, Sanse y Tres Cantos no están:
+ * **falta confirmar con el obrador si también cuentan**.
+ * 2027: solo los dos nacionales fijos de enero. **El resto hay que añadirlo
+ * cuando salga el calendario oficial** (la Comunidad lo aprueba a finales de
+ * septiembre y los locales llegan en diciembre).
+ */
+export const FESTIVOS: ReadonlySet<string> = new Set([
+  "2026-01-01",
+  "2026-01-06",
+  "2026-04-02",
+  "2026-04-03",
+  "2026-05-01",
+  "2026-05-02",
+  "2026-05-15", // San Isidro, local de Madrid
+  "2026-08-15",
+  "2026-10-12",
+  "2026-11-02",
+  "2026-11-09", // La Almudena, local de Madrid
+  "2026-12-07",
+  "2026-12-08",
+  "2026-12-25",
+  "2027-01-01",
+  "2027-01-06",
+]);
+
+/** El día siguiente es festivo. */
+export const esVisperaDeFestivo = (dateISO: string): boolean =>
+  FESTIVOS.has(toISO(addDays(fromISO(dateISO), 1)));
+
+/**
+ * Pedido mínimo para una modalidad y un día de entrega. La recogida no tiene
+ * mínimo; el reparto sube a 35 € los viernes, sábados y vísperas de festivo.
+ */
+export function minimoPedidoCents(mode: DeliveryMode, dateISO: string): number {
+  if (mode === "recogida") return 0;
+  const dia = fromISO(dateISO).getDay();
+  return dia === 5 || dia === 6 || esVisperaDeFestivo(dateISO)
+    ? MIN_ORDER_ALTO_CENTS
+    : MIN_ORDER_CENTS;
+}
 
 /** Lo que cuesta el reparto para un subtotal dado. La recogida nunca cuesta. */
 export function shippingCents(mode: DeliveryMode, subtotalCents: number): number {
@@ -196,10 +249,13 @@ export function shippingCents(mode: DeliveryMode, subtotalCents: number): number
   return SHIPPING_CENTS;
 }
 
-/** ¿Llega el pedido al mínimo exigido para su modalidad? */
-export function meetsMinimum(mode: DeliveryMode, subtotalCents: number): boolean {
-  if (mode === "recogida") return true;
-  return subtotalCents >= MIN_ORDER_CENTS;
+/** ¿Llega el pedido al mínimo exigido para su modalidad y día de entrega? */
+export function meetsMinimum(
+  mode: DeliveryMode,
+  subtotalCents: number,
+  dateISO: string,
+): boolean {
+  return subtotalCents >= minimoPedidoCents(mode, dateISO);
 }
 
 /** ¿Es una fecha admisible para esta modalidad, importe y tienda? */

@@ -95,8 +95,12 @@
       webhook de Stripe avisa por Resend al cobrar, pero esta rama no pasa por
       ahí. Hoy solo se ven entrando en `/admin/pedidos`
 - [ ] Condiciones de compra: razón social, CIF y revisión legal
-- [ ] Confirmar con el obrador gastos de envío y pedido mínimo
-      (constantes en `src/lib/entrega.ts`, hoy a cero)
+- [ ] Confirmar con el obrador gastos de envío (constante en
+      `src/lib/entrega.ts`, hoy a cero). El pedido mínimo ya está: 25 € de
+      lunes a jueves, 35 € viernes, sábados y vísperas de festivo
+- [ ] Festivos de `FESTIVOS` en `src/lib/entrega.ts`: ¿cuentan los locales
+      de Alcobendas, Pozuelo, Sanse y Tres Cantos, o solo los de Madrid
+      capital? Y añadir los de 2027 cuando salga el calendario oficial
 - [ ] Confirmar qué formas de pago admite cada tienda
 
 ## Carta: lo que falta

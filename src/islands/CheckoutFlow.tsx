@@ -16,6 +16,8 @@ import {
   admiteCP,
   municipioDeCP,
   esTelefonoValido,
+  minimoPedidoCents,
+  MIN_ORDER_COPY,
 } from "~/lib/entrega";
 import type { Cart } from "~/lib/cart";
 
@@ -204,7 +206,15 @@ export default function CheckoutFlow({
 
   const emailOk = /.+@.+\..+/.test(email.trim());
   const telefonoOk = esTelefonoValido(phone);
-  const canPay = Boolean(mode && dateISO) && emailOk && telefonoOk && !sending;
+  /** El mínimo del reparto depende del día elegido: 0 hasta que lo hay. */
+  const minimoCents = mode && dateISO ? minimoPedidoCents(mode, dateISO) : 0;
+  const llegaAlMinimo = totalCents >= minimoCents;
+  const canPay =
+    Boolean(mode && dateISO) &&
+    llegaAlMinimo &&
+    emailOk &&
+    telefonoOk &&
+    !sending;
 
   /**
    * Guarda la dirección nueva en la cuenta, si toca. Deliberadamente no
@@ -514,18 +524,36 @@ export default function CheckoutFlow({
                 servicio.
               </p>
 
+              {mode === "domicilio" && (
+                <p
+                  role={dateISO && !llegaAlMinimo ? "alert" : undefined}
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    color:
+                      dateISO && !llegaAlMinimo
+                        ? "var(--color-teja)"
+                        : "var(--color-ink-muted)",
+                  }}
+                >
+                  {dateISO && !llegaAlMinimo
+                    ? `Para ese día el pedido mínimo es de ${formatPriceCents(minimoCents)}: te faltan ${formatPriceCents(minimoCents - totalCents)}. Añade algo más o elige otro día.`
+                    : MIN_ORDER_COPY}
+                </p>
+              )}
+
               <button
                 type="button"
                 className="btn btn-primario"
-                disabled={!dateISO}
+                disabled={!dateISO || !llegaAlMinimo}
                 onClick={() =>
                   go(mode === "domicilio" ? "direccion" : "resumen")
                 }
                 style={{
                   width: "100%",
                   marginTop: 16,
-                  opacity: dateISO ? 1 : 0.5,
-                  cursor: dateISO ? "pointer" : "not-allowed",
+                  opacity: dateISO && llegaAlMinimo ? 1 : 0.5,
+                  cursor: dateISO && llegaAlMinimo ? "pointer" : "not-allowed",
                   border: "none",
                 }}
               >

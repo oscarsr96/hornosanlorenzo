@@ -6,7 +6,8 @@ import {
   admiteCP,
   esTelefonoValido,
   ZONA_REPARTO_COPY,
-  MIN_ORDER_CENTS,
+  minimoPedidoCents,
+  MIN_ORDER_COPY,
 } from "~/lib/entrega";
 import { stores, type StoreId } from "~/data/stores";
 import { productosParaPedido } from "~/lib/db/productos";
@@ -207,9 +208,11 @@ export async function priceOrder(
     );
   }
 
-  if (!meetsMinimum(payload.mode, subtotalCents)) {
+  // El mínimo depende del día de entrega, no del día en que se pide.
+  if (!meetsMinimum(payload.mode, subtotalCents, payload.dateISO)) {
+    const minimo = minimoPedidoCents(payload.mode, payload.dateISO) / 100;
     throw new OrderError(
-      `El pedido mínimo para reparto a domicilio es de ${(MIN_ORDER_CENTS / 100).toFixed(2)} €.`,
+      `Para ese día el pedido mínimo a domicilio es de ${minimo} €. ${MIN_ORDER_COPY}`,
     );
   }
 
