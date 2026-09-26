@@ -236,6 +236,57 @@ const CAMBIOS = {
   "mini-croissants-salmon-y-queso-crema": { short: MINI_SALADO_DESC },
 };
 
+/**
+ * Etiqueta de especialidad, tal cual la pone la carta final junto al nombre
+ * (necesita la migración 011). La mayoría «desde 1986»; los Calados solo
+ * «Especialidad» y la quiche de salchichas «Especialidad niños».
+ */
+const DESDE_1986 = "Especialidad desde 1986";
+const ESPECIALIDADES = {
+  "bombon-noir": DESDE_1986,
+  "bombon-ivoire": DESDE_1986,
+  "la-sacher-de-frambuesa": DESDE_1986,
+  "cremoso-de-queso": DESDE_1986,
+  "arroz-con-leche-del-obrador": DESDE_1986,
+  "brazo-el-clasico": DESDE_1986,
+  "brazo-el-segoviano": DESDE_1986,
+  "plancha-san-marcos-nata": DESDE_1986,
+  "plancha-san-marcos-trufa": DESDE_1986,
+  "plancha-dulce-de-leche": DESDE_1986,
+  "plancha-manzana-y-crema": DESDE_1986,
+  "plancha-milhojas-de-nata-y-crema": DESDE_1986,
+  "mini-croissants-caladas": "Especialidad",
+  "empanada-de-pollo-y-datiles": DESDE_1986,
+  "empanada-de-picadillo-adobado": DESDE_1986,
+  "suprema-salmon-cebolla-caramelizada-y-queso-crema": DESDE_1986,
+  "quiche-puerros-cebolla-y-bacon": DESDE_1986,
+  "quiche-champinon-y-jamon-serrano": DESDE_1986,
+  "quiche-salchicha-y-queso": "Especialidad niños",
+  "tarta-salada-la-vegetal": DESDE_1986,
+  "tarta-salada-salmon-y-gambas": DESDE_1986,
+  "los-prenaos-de-la-casa": DESDE_1986,
+};
+for (const [slug, etiqueta] of Object.entries(ESPECIALIDADES)) {
+  CAMBIOS[slug] = { ...CAMBIOS[slug], especialidad: etiqueta };
+}
+
+/**
+ * Precios que cambian. Solo el suplemento de la tarta con fotografía: la
+ * carta final lo da como Grande +6, Mediana +10, Pequeña +15 (la web lo
+ * tenía al revés) y Oscar confirmó el 26-9-2026 que manda la carta.
+ */
+const PRECIOS = {
+  "tarta-retrato": { grande: 600, mediana: 1000, pequena: 1500 },
+};
+for (const slug of Object.keys(PRECIOS)) CAMBIOS[slug] ??= {};
+
+/**
+ * Fichas que no están en la carta final. Sin pedidos que las lleven; la
+ * noticia que enlazaba la corbata se queda publicada sin botón (la FK es
+ * `on delete set null`).
+ */
+const BORRAR = ["corbata-de-hojaldre"];
+
 const aplicar = process.argv.includes("--aplicar");
 const copia = process.argv.find((a) => a.startsWith("--copia="))?.slice(8);
 if (aplicar && !copia) {
@@ -250,7 +301,7 @@ await c.connect();
 
 const slugs = Object.keys(CAMBIOS);
 const { rows: filas } = await c.query(
-  `select id, slug, name, short_description, unit from productos where slug = any($1)`,
+  `select id, slug, name, short_description, unit, especialidad from productos where slug = any($1)`,
   [slugs],
 );
 const { rows: vars } = await c.query(
@@ -273,6 +324,7 @@ for (const f of filas) {
     ["name", "name"],
     ["short", "short_description"],
     ["unit", "unit"],
+    ["especialidad", "especialidad"],
   ]) {
     if (cambio[campo] !== undefined && cambio[campo] !== f[col]) {
       console.log(`${f.slug} · ${col}: «${f[col]}» → «${cambio[campo]}»`);
@@ -301,6 +353,42 @@ for (const f of filas) {
     }
   }
 }
+for (const [slug, precios] of Object.entries(PRECIOS)) {
+  const f = filas.find((x) => x.slug === slug);
+  for (const [variantId, cents] of Object.entries(precios)) {
+    const v = vars.find((x) => x.producto_id === f.id && x.variant_id === variantId);
+    if (!v) {
+      console.error(`${slug}: no tiene la variante «${variantId}»`);
+      process.exit(1);
+    }
+    if (v.price_cents !== cents) {
+      console.log(`${slug} · precio ${variantId}: ${v.price_cents} → ${cents} céntimos`);
+      sentencias.push([
+        `update variantes set price_cents = $1 where producto_id = $2 and variant_id = $3`,
+        [cents, f.id, variantId],
+      ]);
+      n++;
+    }
+  }
+}
+
+const { rows: aBorrar } = await c.query(`select * from productos where slug = any($1)`, [BORRAR]);
+const { rows: varsBorrar } = await c.query(
+  `select v.* from variantes v join productos p on p.id = v.producto_id where p.slug = any($1)`,
+  [BORRAR],
+);
+for (const f of aBorrar) {
+  const { rows } = await c.query(`select count(*)::int n from lineas_pedido where slug = $1`, [f.slug]);
+  if (rows[0].n > 0) {
+    console.error(`${f.slug} está en ${rows[0].n} línea(s) de pedido: no se borra.`);
+    process.exit(1);
+  }
+  console.log(`${f.slug}: se borra «${f.name}»`);
+  sentencias.push([`delete from variantes where producto_id = $1`, [f.id]]);
+  sentencias.push([`delete from productos where id = $1`, [f.id]]);
+  n++;
+}
+
 console.log(`\n${n} cambios en ${filas.length} fichas.`);
 
 if (!aplicar) {
@@ -311,7 +399,11 @@ if (!aplicar) {
 
 writeFileSync(
   copia,
-  JSON.stringify({ productos: filas, variantes: vars }, null, 2),
+  JSON.stringify(
+      { productos: filas, variantes: vars, borrados: aBorrar, variantesBorradas: varsBorrar },
+      null,
+      2,
+    ),
 );
 console.log(`Copia de cómo estaba: ${copia}`);
 
@@ -343,6 +435,9 @@ if (token && base) {
     "/catalogo/top-ventas",
     "/sitemap-contenido.xml",
     ...slugs.map((s) => `/catalogo/${s}`),
+    ...BORRAR.map((s) => `/catalogo/${s}`),
+    "/noticias",
+    "/noticias/dia-del-padre-2026",
   ];
   const res = await Promise.all(
     rutas.map((r) =>

@@ -14,6 +14,8 @@ export type Sabor = {
   agotado: boolean;
   unit?: string;
   variants: Variant[];
+  /** Etiqueta de la carta del sabor, si la tiene. */
+  especialidad?: string | null;
 };
 
 type Props = {
@@ -109,6 +111,12 @@ export default function ElegirSabor({ singular, titulo, sabores }: Props) {
           </option>
         ))}
       </select>
+
+      {sabor.especialidad && (
+        <p className="especialidad" style={{ margin: 0 }}>
+          {sabor.especialidad}
+        </p>
+      )}
 
       {sabor.variants.length > 1 && (
         <select

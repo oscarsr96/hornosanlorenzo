@@ -139,6 +139,7 @@ const breadcrumbs = {
       <div>
         <p class="numeracion">{eyebrow}</p>
         <h1 class="text-4xl sm:text-5xl mt-2">{product.name}</h1>
+        {product.especialidad && <p class="especialidad mt-2">{product.especialidad}</p>}
         {seccion?.nota && (
           <p class="mt-2 text-xs text-[color:var(--color-ink-muted)]">{seccion.nota}</p>
         )}

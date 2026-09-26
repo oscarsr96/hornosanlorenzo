@@ -108,6 +108,17 @@
   color: var(--color-caramelo);
 }
 
+/* La etiqueta de especialidad de la carta: versalitas en teja, como en la
+   carta impresa. Es un acento, no un bloque: sin fondo ni borde. */
+.especialidad {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-teja);
+}
+
 /* La cinta cromática: la paleta en proporción, una por pieza. */
 .cinta {
   display: flex;

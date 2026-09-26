@@ -26,6 +26,7 @@ describeSiHayBD("repositorio de productos", () => {
     imageHeight: null,
     activo: true,
     agotado: false,
+    especialidad: null,
     variantes: [],
     ...extra,
   });
@@ -41,6 +42,18 @@ describeSiHayBD("repositorio de productos", () => {
   afterAll(async () => {
     await pool.query("delete from productos");
     await pool.end();
+  });
+
+  it("guarda la etiqueta de especialidad y la quita al dejarla en null", async () => {
+    const creado = await repo.crearProducto(
+      datos({ name: "Flan de Queso", especialidad: "Especialidad desde 1986" }),
+    );
+    expect(creado.especialidad).toBe("Especialidad desde 1986");
+    const sinEtiqueta = await repo.actualizarProducto(
+      creado.id,
+      datos({ name: "Flan de Queso", especialidad: null }),
+    );
+    expect(sinEtiqueta?.especialidad).toBeNull();
   });
 
   it("crea un producto con sus variantes y las devuelve en orden", async () => {

@@ -57,6 +57,14 @@ const esquema = z
     imageHeight: z.number().int().positive().nullable().default(null),
     activo: z.boolean().default(true),
     agotado: z.boolean().default(false),
+    // Vacía cuenta como «sin etiqueta».
+    especialidad: z
+      .string()
+      .trim()
+      .max(60)
+      .nullable()
+      .default(null)
+      .transform((v) => v || null),
     variantes: z
       .array(
         z.object({

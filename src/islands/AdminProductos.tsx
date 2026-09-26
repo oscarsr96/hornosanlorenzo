@@ -37,6 +37,7 @@ export type Producto = {
   imageHeight: number | null;
   activo: boolean;
   agotado: boolean;
+  especialidad: string | null;
   variantes: Variante[];
 };
 
@@ -150,6 +151,7 @@ type FormularioProducto = {
   imageHeight: number | null;
   activo: boolean;
   agotado: boolean;
+  especialidad: string;
   variantes: FormularioVariante[];
 };
 
@@ -172,6 +174,7 @@ const FORMULARIO_VACIO: FormularioProducto = {
   imageHeight: null,
   activo: true,
   agotado: false,
+  especialidad: "",
   variantes: [],
 };
 
@@ -195,6 +198,7 @@ function formularioDesdeProducto(p: Producto): FormularioProducto {
     imageHeight: p.imageHeight,
     activo: p.activo,
     agotado: p.agotado,
+    especialidad: p.especialidad ?? "",
     variantes: p.variantes.map((v) => ({
       variantId: v.variantId,
       label: v.label,
@@ -444,6 +448,7 @@ export default function AdminProductos({ productosIniciales }: Props) {
       imageHeight: formulario.imageHeight,
       activo: formulario.activo,
       agotado: formulario.agotado,
+      especialidad: formulario.especialidad.trim() || null,
       variantes: formulario.variantes.map((v, i) => ({
         variantId: v.variantId.trim(),
         label: v.label.trim(),
@@ -509,6 +514,9 @@ export default function AdminProductos({ productosIniciales }: Props) {
       imageHeight: p.imageHeight,
       activo: p.activo,
       agotado: p.agotado,
+      // Se reenvía tal cual: si faltara, el servidor la daría por vacía y
+      // marcar «agotado» borraría la etiqueta.
+      especialidad: p.especialidad,
       variantes: p.variantes,
       [campo]: !p[campo],
     };
@@ -679,6 +687,7 @@ export default function AdminProductos({ productosIniciales }: Props) {
                   </span>
 
                   <div style={{ display: "flex", gap: 8 }}>
+                    {p.especialidad && <span style={badge}>{p.especialidad}</span>}
                     {p.agotado && <span style={badge}>Agotado</span>}
                     {!p.activo && <span style={badge}>Desactivado</span>}
                   </div>
@@ -854,6 +863,26 @@ export default function AdminProductos({ productosIniciales }: Props) {
                 style={field}
               />
             </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label style={label} htmlFor="ap-especialidad">
+              Etiqueta de especialidad
+            </label>
+            <input
+              id="ap-especialidad"
+              list="ap-especialidades"
+              value={formulario.especialidad}
+              onChange={(e) => actualizaCampo("especialidad", e.target.value)}
+              placeholder="Vacía = sin etiqueta"
+              maxLength={60}
+              style={field}
+            />
+            <datalist id="ap-especialidades">
+              <option value="Especialidad desde 1986" />
+              <option value="Especialidad" />
+              <option value="Especialidad niños" />
+            </datalist>
           </div>
 
           <div style={{ marginTop: 16 }}>

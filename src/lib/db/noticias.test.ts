@@ -128,6 +128,7 @@ describeSiHayBD("repositorio de noticias", () => {
       imageHeight: null,
       activo: true,
       agotado: false,
+      especialidad: null,
       variantes: [
         { variantId: "mediano", label: "Mediano", priceCents: 2400, orden: 0 },
         { variantId: "grande", label: "Grande", priceCents: 3600, orden: 1 },

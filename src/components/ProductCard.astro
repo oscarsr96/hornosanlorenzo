@@ -19,6 +19,8 @@ interface Props {
   agotado?: boolean;
   unit?: string;
   variants?: { id: string; label: string; priceCents: number }[];
+  /** Etiqueta de la carta, p. ej. «Especialidad desde 1986». */
+  especialidad?: string | null;
 }
 
 const {
@@ -33,6 +35,7 @@ const {
   agotado = false,
   unit,
   variants,
+  especialidad = null,
 } = Astro.props;
 
 // `category` llega ya convertida con `as CategoryId` desde quien la pinta,
@@ -71,6 +74,7 @@ const eyebrow = seccionLabel ?? (isCategoryId(category) ? categoryById(category)
     <h3 class="font-[family-name:var(--font-display)] text-xl mt-1">
       <a href={`/catalogo/${slug}`} class="hover:text-[color:var(--color-accent-dark)]">{name}</a>
     </h3>
+    {especialidad && <p class="especialidad mt-1">{especialidad}</p>}
     <p class="text-sm text-[color:var(--color-ink-muted)] mt-1 line-clamp-2">{shortDescription}</p>
     <CompraRapida
       slug={slug}
