@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
+import { statSync } from "node:fs";
 import MarketingLayout from "~/layouts/MarketingLayout.astro";
 
 /**
@@ -12,11 +13,14 @@ import MarketingLayout from "~/layouts/MarketingLayout.astro";
  * PDF (cómo regenerarlas, en `src/assets/carta/LEEME.md`).
  */
 const PDF = "/carta-horno-san-lorenzo.pdf";
+// Se mide al construir: la página es estática y el PDF va en `public/`.
+const pesoPdf = `${(statSync(`public${PDF}`).size / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
 
 const paginas = Object.entries(
   import.meta.glob<{ default: ImageMetadata }>("../assets/carta/pagina-*.jpg", { eager: true }),
 )
-  .sort(([a], [b]) => a.localeCompare(b))
+  // Orden numérico: con diez páginas o más, «pagina-10» iría detrás de la 1.
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
   .map(([, m]) => m.default);
 ---
 <MarketingLayout
@@ -28,7 +32,7 @@ const paginas = Object.entries(
       <div>
         <h1 class="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">La carta</h1>
         <p class="mt-2 text-sm text-[color:var(--color-ink-muted)]">
-          {paginas.length} páginas · PDF de 1,4 MB
+          {paginas.length} páginas · PDF de {pesoPdf}
         </p>
       </div>
       <a href={PDF} download class="btn btn-primario">Descargar PDF</a>
